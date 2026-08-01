@@ -49,7 +49,7 @@ _work/               gitignored: plans, progress, scratch
 | Consumer | Uses NiusBurner for |
 |---|---|
 | **NiusDisplay** | building and flashing its 8051 / PIC / MSP430 ports without putting any of that in the library |
-| **the simulator** | turning source into a real firmware image, so what is simulated is what would be flashed |
+| **firmware simulators** | turning source into a real firmware image, so what is simulated is what would be flashed |
 | future Arduino libraries | the same, unchanged |
 
 Nothing here depends on those projects. NiusBurner is usable on its own with any

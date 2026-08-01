@@ -9,9 +9,9 @@ the reverse. A tool that knew about the projects using it could not be shipped
 to anyone else, and could not be reasoned about on its own.
 
 ```
-    NiusDisplay  ─┐
-    the simulator     ─┼──>  NiusBurner  ──>  C:\embd_toolchains
-    (future libs)─┘
+    NiusDisplay   ─┐
+    simulators    ─┼──>  NiusBurner  ──>  C:\embd_toolchains
+    (future libs) ─┘
 ```
 
 ## NiusDisplay
@@ -34,9 +34,9 @@ The split is by *what the file is*, not by what it is about:
 | `ports/**` — HAL implementations, source only | toolchain discovery and install |
 | `tools/compile_matrix.py` — verifies *this library* | flashing, chip erase, signature checks |
 
-## the simulator
+## Simulators
 
-the simulator needs real firmware to be worth trusting. Simulating a hand-written
+A simulator needs real firmware to be worth trusting. Simulating a hand-written
 image proves something about the simulator; simulating **the image that would
 actually be flashed** proves something about the firmware.
 
