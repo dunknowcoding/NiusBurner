@@ -1,0 +1,52 @@
+# Internal working directory: plans, progress, scratch, build cache.
+# Everything in here is private and pruned regularly.
+_work/
+
+# Toolchains are NEVER vendored. They live in C:\embd_toolchains.
+# If one is ever unpacked here by accident, it must not be committed.
+toolchains/
+vendor/
+*.tar.gz
+*.tar.xz
+*.zip
+*.7z
+*.exe
+*.msi
+
+# Build artifacts from the compilers this tool drives
+*.ihx
+*.hex
+*.bin
+*.elf
+*.rel
+*.rst
+*.sym
+*.lst
+*.asm
+*.map
+*.mem
+*.lk
+*.cdb
+*.adb
+*.omf
+*.o
+*.obj
+*.d
+*.p1
+*.sdb
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store

@@ -1,0 +1,91 @@
+NiusDisplay
+Copyright 2026 dunknowcoding (NiusRobotLab)
+
+Author / maintainer:  dunknowcoding
+YouTube channel:      NiusRobotLab
+
+A universal embedded display library: color TFT, monochrome OLED/LCD,
+character LCD, 7-segment, LED matrix, e-paper and touch, spanning Arduino
+boards, 8051, PIC, MSP430, TI C2000 DSP and FPGA.
+
+This product includes software originally developed by dunknowcoding
+(NiusRobotLab) and licensed under the Apache License, Version 2.0 (see the
+LICENSE file).
+
+------------------------------------------------------------------------
+What you may and must do (summary of the Apache 2.0 terms)
+------------------------------------------------------------------------
+You MAY use this software for any purpose, including commercial products,
+modify it, and redistribute it.
+
+If you redistribute it or ship it inside a product, the License requires
+that you:
+
+  * Keep this attribution to the original author, dunknowcoding
+    (NiusRobotLab) — see Section 4(d). Retaining this NOTICE file (or
+    reproducing its attribution in your own documentation / credits)
+    satisfies this.
+
+  * State the changes you made. Any file you modified must carry a
+    prominent notice that you changed it — see Section 4(b).
+
+  * Include a copy of the Apache License 2.0 with the distribution — see
+    Section 4(a).
+
+Patents: under Section 3, every contributor grants you a patent license to
+their contributions, and that grant terminates automatically for anyone who
+starts patent litigation alleging that this software infringes a patent. In
+other words, this work is contributed with a patent grant and cannot be
+weaponized through patent claims against its users.
+
+This is a plain-language summary only; the LICENSE file is the binding text.
+
+------------------------------------------------------------------------
+Origin of the driver code
+------------------------------------------------------------------------
+NiusDisplay's panel drivers are clean-room implementations written from
+manufacturer datasheets and controller programming guides. They are not
+copied from, and do not derive from, the source of any other display
+library.
+
+Where a hardware behaviour is documented only by community reverse
+engineering rather than by a datasheet — for example the ST7735 "tab"
+variant offsets, the SH1106 132-column window, or the module-specific
+colstart/rowstart values in the module database — the observation is
+credited in a comment at the point of use, together with the issue or
+discussion it came from.
+
+The following projects were studied as prior art for behaviour and for the
+catalogue of real-world module quirks. No code was taken from them. Each is
+distributed by its own authors under its own license:
+
+  * Adafruit-GFX-Library and Adafruit display drivers — BSD license,
+    Copyright Adafruit Industries.
+  * TFT_eSPI — FreeBSD (BSD 2-clause) license, Copyright Bodmer.
+  * LovyanGFX — FreeBSD (BSD 2-clause) license, Copyright lovyan03.
+  * Arduino_GFX — BSD license, Copyright moononournation.
+  * u8g2 / U8g2_Arduino — BSD 2-clause license, Copyright olikraus.
+  * GxEPD2 — GPL-3.0 license, Copyright Jean-Marc Zingg. Consulted only for
+    its published panel/controller compatibility tables, which are factual
+    hardware data; no GxEPD2 source was read into, or reproduced in, this
+    project.
+  * MD_MAX72xx / MD_Parola — LGPL-2.1 license, Copyright majicDesigns.
+    Consulted only for its documented FC-16 module wiring variants, which
+    are factual hardware data; no source was reproduced.
+  * MCUFRIEND_kbv — BSD license, Copyright David Prentice. Consulted for its
+    documented controller-ID readback quirks on UNO parallel shields.
+
+------------------------------------------------------------------------
+Third-party components (each retains its own license)
+------------------------------------------------------------------------
+The Apache License 2.0 above covers NiusDisplay's own code. Any vendored
+third-party source keeps its original license, stated in the file itself.
+
+At present NiusDisplay vendors no third-party source. Should that change,
+the component will be listed here and its license reproduced alongside it.
+
+Toolchains, Arduino cores and simulation tools referenced by the build and
+verification scripts are not distributed with this project; they are
+obtained from their own vendors under their own licenses.
+
+When in doubt, the per-file license header governs that file.

@@ -1,0 +1,203 @@
+{
+  "_comment": [
+    "Where every tool comes from and how to recognise it.",
+    "",
+    "NOTHING HERE IS VENDORED. This file describes tools that live at",
+    "'root' below; it never contains one. 'detect' is how we know a tool is",
+    "really present and which version -- probing rather than trusting a path",
+    "is what stops a half-finished install from looking like a working one.",
+    "",
+    "'install' is deliberately a URL plus a human instruction, not an",
+    "automated silent installer. Several of these vendors require accepting a",
+    "licence or registering, and scripting around that would be both fragile",
+    "and wrong.",
+    "Globs are version-agnostic on purpose: every one of these was first written as a fixed path and every one of them was wrong. A toolchain upgrade must not silently turn into 'missing'."
+  ],
+  "root": "C:/embd_toolchains",
+  "compilers": {
+    "sdcc": {
+      "family": [
+        "mcs51",
+        "stm8",
+        "pic14",
+        "pic16"
+      ],
+      "detect": {
+        "cmd": "sdcc",
+        "args": [
+          "--version"
+        ],
+        "match": "SDCC"
+      },
+      "install": {
+        "url": "https://sourceforge.net/projects/sdcc/files/",
+        "note": "Installer adds itself to PATH. Free, GPL."
+      },
+      "note": "Primary 8051 compiler. No C++ mode at all, which is why an 8051 Arduino core needs IAR instead."
+    },
+    "iar_8051": {
+      "family": [
+        "mcs51"
+      ],
+      "detect": {
+        "glob": "C:/Program Files (x86)/IAR Systems/Embedded Workbench */8051/bin/icc8051.exe"
+      },
+      "install": {
+        "url": "https://www.iar.com/ew8051",
+        "note": "Commercial, size-limited evaluation available. Requires registration; cannot be scripted."
+      },
+      "note": "The only 8051 compiler here with C++ (--eec++), so the only one an Arduino core can be built on."
+    },
+    "xc8": {
+      "family": [
+        "pic10",
+        "pic12",
+        "pic16",
+        "pic18"
+      ],
+      "detect": {
+        "glob": "C:/embd_toolchains/pic/xc8/*/bin/xc8-cc.exe"
+      },
+      "install": {
+        "url": "https://www.microchip.com/mplab/compilers",
+        "note": "Free tier works; unoptimised but complete. Silent install supported."
+      }
+    },
+    "xc16": {
+      "family": [
+        "pic24",
+        "dspic33"
+      ],
+      "detect": {
+        "glob": "C:/embd_toolchains/pic/xc16/*/bin/xc16-gcc.exe"
+      },
+      "install": {
+        "url": "https://www.microchip.com/mplab/compilers"
+      }
+    },
+    "xc32": {
+      "family": [
+        "pic32"
+      ],
+      "detect": {
+        "glob": "C:/embd_toolchains/pic/xc32/*/bin/xc32-gcc.exe"
+      },
+      "install": {
+        "url": "https://www.microchip.com/mplab/compilers"
+      }
+    },
+    "msp430_gcc": {
+      "family": [
+        "msp430"
+      ],
+      "detect": {
+        "glob": "C:/embd_toolchains/msp430/msp430-gcc-*/bin/msp430-elf-gcc.exe"
+      },
+      "install": {
+        "url": "https://www.ti.com/tool/MSP430-GCC-OPENSOURCE",
+        "note": "Unpack to C:/embd_toolchains/msp430. Free."
+      }
+    },
+    "c2000": {
+      "family": [
+        "c2000"
+      ],
+      "detect": {
+        "glob": "C:/embd_toolchains/c2000/*/ti-cgt-c2000*/bin/cl2000.exe"
+      },
+      "install": {
+        "url": "https://www.ti.com/tool/C2000-CGT",
+        "note": "Free. C++14 capable, which is why a C2000 Arduino core is possible."
+      }
+    },
+    "arm_none_eabi": {
+      "family": [
+        "cortex-m"
+      ],
+      "detect": {
+        "cmd": "arm-none-eabi-gcc",
+        "args": [
+          "--version"
+        ],
+        "match": "arm-none-eabi"
+      },
+      "install": {
+        "url": "https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads",
+        "note": "Portable: unpack to C:/embd_toolchains/arm and add bin to PATH for the session."
+      },
+      "note": "Carried here for the simulator even though Arduino cores exist -- a simulator needs a toolchain it controls."
+    },
+    "riscv_none_elf": {
+      "family": [
+        "rv32",
+        "rv64"
+      ],
+      "detect": {
+        "glob": "C:/embd_toolchains/riscv/xpack-riscv-none-elf-gcc-*/bin/riscv-none-elf-gcc.exe"
+      },
+      "install": {
+        "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases",
+        "note": "Portable xPack build. Unpack to C:/embd_toolchains/riscv."
+      }
+    }
+  },
+  "programmers": {
+    "usbasp": {
+      "programs": [
+        "at89s51",
+        "at89s52",
+        "stc89c52rc",
+        "avr"
+      ],
+      "transport": "usb",
+      "detect": {
+        "cmd": "avrdude",
+        "args": [
+          "-v"
+        ],
+        "match": "avrdude"
+      },
+      "note": "SPI ISP. A crystal MUST be running on the target or ISP never responds -- the commonest failure by a wide margin.",
+      "wiring": "docs/wiring/usbasp-idc10.md"
+    },
+    "nano_at89c2051": {
+      "programs": [
+        "at89c2051",
+        "at89c4051"
+      ],
+      "transport": "serial",
+      "firmware": "programmers/nano_at89c2051/",
+      "note": "The AT89C2051 has NO ISP at all. It needs a 12 V parallel programming sequence, so we build the programmer ourselves on a Nano.",
+      "wiring": "programmers/nano_at89c2051/README.md"
+    },
+    "stcgal": {
+      "programs": [
+        "stc15w408as",
+        "stc8",
+        "stc89"
+      ],
+      "transport": "serial",
+      "detect": {
+        "cmd": "stcgal",
+        "args": [
+          "--version"
+        ],
+        "match": ""
+      },
+      "install": {
+        "url": "https://github.com/grigorig/stcgal",
+        "note": "pip install stcgal"
+      },
+      "note": "Serial bootloader, entered by power-cycling the target while the tool waits. STC89 parts can ALSO be done over SPI ISP with a USB-ISP; STC15 cannot."
+    },
+    "pickit3": {
+      "programs": [
+        "pic12f675",
+        "pic16f877a"
+      ],
+      "transport": "usb",
+      "note": "Dropped by MPLAB X 6.x. Use MPLAB IPE 5.50 or earlier, or a PICkit 4/5.",
+      "wiring": "docs/programming-pic.md"
+    }
+  }
+}
