@@ -125,7 +125,7 @@
         "url": "https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads",
         "note": "Portable: unpack to C:/embd_toolchains/arm and add bin to PATH for the session."
       },
-      "note": "Carried here for the simulator even though Arduino cores exist -- a simulator needs a toolchain it controls."
+      "note": "Carried here for firmware simulators even though Arduino cores exist -- a simulator needs a toolchain it controls and can pin a version of."
     },
     "riscv_none_elf": {
       "family": [
