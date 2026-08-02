@@ -76,14 +76,14 @@ def test_detection_paths_point_outside_this_repository():
                 value = pathlib.Path(rule[key])
                 assert not value.is_absolute() or ROOT not in value.parents, (
                     f"{name} expects a tool inside the repository")
-                assert "embd_toolchains" in rule[key] or value.is_absolute(), (
+                assert value.is_absolute(), (
                     f"{name} uses a relative tool path; it would resolve "
                     "against the working directory")
 
 
 def test_probing_a_missing_tool_gives_a_reason_not_a_crash():
     ok, where, version, reason = registry.probe(
-        {"detect": {"path": "C:/definitely/not/here/nope.exe"}})
+        {"detect": {"path": str(ROOT.parent / "definitely-not-here" / "nope")}})
     assert not ok
     assert reason, "a failed probe must say why"
 

@@ -13,7 +13,7 @@
     "and wrong.",
     "Globs are version-agnostic on purpose: every one of these was first written as a fixed path and every one of them was wrong. A toolchain upgrade must not silently turn into 'missing'."
   ],
-  "root": "C:/embd_toolchains",
+  "root": "~/.local/share/niusburner/toolchains",
   "compilers": {
     "sdcc": {
       "family": [
@@ -40,7 +40,11 @@
         "mcs51"
       ],
       "detect": {
-        "glob": "C:/Program Files (x86)/IAR Systems/Embedded Workbench */8051/bin/icc8051.exe"
+        "cmd": "icc8051",
+        "args": [
+          "--version"
+        ],
+        "match": "IAR"
       },
       "install": {
         "url": "https://www.iar.com/ew8051",
@@ -56,7 +60,7 @@
         "pic18"
       ],
       "detect": {
-        "glob": "C:/embd_toolchains/pic/xc8/*/bin/xc8-cc.exe"
+        "glob": "${EMBD_TOOLCHAINS}/pic/xc8/*/bin/xc8-cc.exe"
       },
       "install": {
         "url": "https://www.microchip.com/mplab/compilers",
@@ -69,7 +73,7 @@
         "dspic33"
       ],
       "detect": {
-        "glob": "C:/embd_toolchains/pic/xc16/*/bin/xc16-gcc.exe"
+        "glob": "${EMBD_TOOLCHAINS}/pic/xc16/*/bin/xc16-gcc.exe"
       },
       "install": {
         "url": "https://www.microchip.com/mplab/compilers"
@@ -80,7 +84,7 @@
         "pic32"
       ],
       "detect": {
-        "glob": "C:/embd_toolchains/pic/xc32/*/bin/xc32-gcc.exe"
+        "glob": "${EMBD_TOOLCHAINS}/pic/xc32/*/bin/xc32-gcc.exe"
       },
       "install": {
         "url": "https://www.microchip.com/mplab/compilers"
@@ -91,11 +95,11 @@
         "msp430"
       ],
       "detect": {
-        "glob": "C:/embd_toolchains/msp430/msp430-gcc-*/bin/msp430-elf-gcc.exe"
+        "glob": "${EMBD_TOOLCHAINS}/msp430/msp430-gcc-*/bin/msp430-elf-gcc.exe"
       },
       "install": {
         "url": "https://www.ti.com/tool/MSP430-GCC-OPENSOURCE",
-        "note": "Unpack to C:/embd_toolchains/msp430. Free."
+        "note": "Unpack below the configured toolchain root. Free."
       }
     },
     "c2000": {
@@ -103,7 +107,7 @@
         "c2000"
       ],
       "detect": {
-        "glob": "C:/embd_toolchains/c2000/*/ti-cgt-c2000*/bin/cl2000.exe"
+        "glob": "${EMBD_TOOLCHAINS}/c2000/*/ti-cgt-c2000*/bin/cl2000.exe"
       },
       "install": {
         "url": "https://www.ti.com/tool/C2000-CGT",
@@ -123,7 +127,7 @@
       },
       "install": {
         "url": "https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads",
-        "note": "Portable: unpack to C:/embd_toolchains/arm and add bin to PATH for the session."
+        "note": "Portable: unpack below the configured toolchain root and add bin to PATH for the session."
       },
       "note": "Carried here for firmware simulators even though Arduino cores exist -- a simulator needs a toolchain it controls and can pin a version of."
     },
@@ -133,11 +137,11 @@
         "rv64"
       ],
       "detect": {
-        "glob": "C:/embd_toolchains/riscv/xpack-riscv-none-elf-gcc-*/bin/riscv-none-elf-gcc.exe"
+        "glob": "${EMBD_TOOLCHAINS}/riscv/xpack-riscv-none-elf-gcc-*/bin/riscv-none-elf-gcc.exe"
       },
       "install": {
         "url": "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases",
-        "note": "Portable xPack build. Unpack to C:/embd_toolchains/riscv."
+        "note": "Portable xPack build. Unpack below the configured toolchain root."
       }
     }
   },

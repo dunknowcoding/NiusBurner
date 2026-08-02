@@ -17,9 +17,11 @@ flash, halfway through erasing a chip, is the worst possible moment.
 from __future__ import annotations
 
 import argparse
+import pathlib
 import sys
 
-from . import __version__, registry
+from . import __version__, debugger, registry
+from .package import package_image, verify_package
 
 
 def _cmd_list(args: argparse.Namespace) -> int:
@@ -82,19 +84,26 @@ def _cmd_which(args: argparse.Namespace) -> int:
 
 
 def _cmd_flash(args: argparse.Namespace) -> int:
-    opts = [f for f in registry.programmers_for(args.part) if f.present]
-    if not opts:
-        print(f"no usable programmer for {args.part}.", file=sys.stderr)
-        print("'python -m niusburner which %s' lists what would work and why "
-              "it does not yet." % args.part, file=sys.stderr)
-        return 1
+    try:
+        return debugger.burn(target=args.target, image=args.image,
+                             confirm=args.confirm,
+                             state_policy=args.state_policy,
+                             address=args.address, config=args.config)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"refused: {exc}", file=sys.stderr)
+        return 2
 
-    print("not implemented yet: no part has been flashed with this tool.",
-          file=sys.stderr)
-    print("The AT89C2051 path is closest -- see "
-          "niusburner/targets/at89c2051_nano.py, which runs standalone today.",
-          file=sys.stderr)
-    return 2
+
+def _cmd_package(args: argparse.Namespace) -> int:
+    try:
+        manifest = package_image(args.image, args.output, target=args.target,
+                                 load_address=args.address)
+        verify_package(manifest)
+    except (OSError, ValueError) as exc:
+        print(f"package failed: {exc}", file=sys.stderr)
+        return 2
+    print(manifest)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -115,10 +124,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("part")
     p.set_defaults(fn=_cmd_which)
 
-    p = sub.add_parser("flash", help="write firmware to a part")
-    p.add_argument("part")
-    p.add_argument("image", nargs="?")
-    p.add_argument("--port")
+    p = sub.add_parser("package", help="create a reproducible image package")
+    p.add_argument("target")
+    p.add_argument("image", type=pathlib.Path)
+    p.add_argument("output", type=pathlib.Path)
+    p.add_argument("--address", type=lambda value: int(value, 0), default=0)
+    p.set_defaults(fn=_cmd_package)
+
+    p = sub.add_parser("flash", help="delegate physical programming to niusprog")
+    p.add_argument("target")
+    p.add_argument("image", type=pathlib.Path)
+    p.add_argument("--confirm", required=True)
+    p.add_argument("--ack-data-loss", action="store_true", required=True)
+    p.add_argument("--state-policy", choices=("replace", "restore"), required=True)
+    p.add_argument("--address", type=lambda value: int(value, 0), default=0)
+    p.add_argument("--config", type=pathlib.Path)
     p.set_defaults(fn=_cmd_flash)
 
     args = ap.parse_args(argv)

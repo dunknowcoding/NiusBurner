@@ -16,12 +16,15 @@ different routes.
 ## Quick reference
 
 ```bash
-arduino-cli compile -b arduino:avr:nano --upload -p COM5 nano_at89c2051.ino
+arduino-cli compile -b arduino:avr:nano --upload -p <PORT> nano_at89c2051.ino
 
-python flash.py COM5 --signature      # expects 1E 21 - always do this first
-python flash.py COM5 firmware.ihx     # erase, write, verify every byte
-python flash.py COM5 --read dump.bin
+niusburner package at89c2051 firmware.ihx out
 ```
+
+Physical use remains blocked until an external programming backend has a reviewed backend
+for this exact 12 V programmer protocol. NiusBurner does not carry a second
+host flasher or bypass `niusprog` identity, backup, verification, and restoration
+gates.
 
 > ### ⚠️ A2 and A3 must never be high together
 > A2 switches 12 V onto RST; A3 switches 5 V. Both high connects 12 V to the

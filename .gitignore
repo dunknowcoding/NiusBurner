@@ -2,7 +2,7 @@
 # Everything in here is private and pruned regularly.
 _work/
 
-# Toolchains are NEVER vendored. They live in C:\embd_toolchains.
+# Toolchains are NEVER vendored. They live below a caller-selected root.
 # If one is ever unpacked here by accident, it must not be committed.
 toolchains/
 vendor/

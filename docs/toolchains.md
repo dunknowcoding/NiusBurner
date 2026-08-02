@@ -1,9 +1,7 @@
 # Toolchains
 
-Everything installs to **`C:\embd_toolchains\`**. Nothing installs into a
-repository, ever.
-
-Override the root with `EMBD_TOOLCHAINS` if you keep it elsewhere.
+Choose a directory outside every repository and expose it as
+`EMBD_TOOLCHAINS`. Nothing installs into a repository, ever.
 
 ## Why nothing is vendored
 
@@ -22,7 +20,7 @@ an ignore rule alone would not catch a file committed before the rule existed.
 ## Layout
 
 ```
-C:\embd_toolchains\
+<toolchain-root>/
   pic\xc8\v3.00\           pic\xc16\v2.10\      pic\xc32\v6.00\
   msp430\msp430-gcc-9.3.1.11_win64\
   c2000\25.11.1.LTS\ti-cgt-c2000_25.11.1.LTS\
@@ -59,12 +57,12 @@ Run it — this document does not restate the result, because a table here would
 be a claim about your machine that nobody checked:
 
 ```bash
-conda run -n embedded python -m niusburner detect
+python -m niusburner detect
 ```
 
 ## Adding one
 
-1. Install it under `C:\embd_toolchains\<family>\<version>\`.
+1. Install it under `$EMBD_TOOLCHAINS/<family>/<version>/`.
 2. Add an entry to `niusburner/toolchains.json` with a `detect` rule and an
    `install` URL.
 3. Run `detect` and confirm it is found.

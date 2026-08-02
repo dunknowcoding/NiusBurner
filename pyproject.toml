@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "niusburner"
+version = "0.1.0"
+description = "Reproducible embedded image packaging with delegated physical recovery"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+
+[project.scripts]
+niusburner = "niusburner.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["niusburner*"]
+
+[tool.setuptools.package-data]
+niusburner = ["toolchains.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

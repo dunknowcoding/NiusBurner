@@ -1,11 +1,10 @@
 # NiusBurner
 
-Build and flash firmware for the parts the Arduino IDE cannot reach.
+Build and package firmware for the parts the Arduino IDE cannot reach.
 
 The Arduino toolchain stops at chips with a C++ compiler and a board package.
-NiusBurner covers the rest — 8051, PIC, MSP430, DSP, FPGA — and carries the
-portable ARM and RISC-V toolchains too, so a simulator can produce a real image
-for any target without a system-wide install.
+NiusBurner covers image resolution, building, and packaging for 8051, PIC,
+MSP430, DSP, FPGA, ARM, and RISC-V toolchains.
 
 It exists so that **NiusDisplay stays a plain Arduino library**. Everything
 that is not `.h`/`.cpp` under `src/` — programmers, 12 V rails, Intel HEX,
@@ -20,14 +19,9 @@ licences, their own update cadence and their own installers, and a copy pinned
 inside a git repo goes stale silently and redistributes software we have no
 right to redistribute.
 
-Instead NiusBurner **locates** a toolchain, or **fetches** it into a single
-machine-local root:
-
-```
-C:\embd_toolchains\
-```
-
-and records the exact version it found. If a tool is missing, it says which one
+Instead NiusBurner **locates** a toolchain below the caller-selected
+`EMBD_TOOLCHAINS` root (or a per-user default) and records the exact version it
+found. If a tool is missing, it says which one
 and how to get it — it never silently substitutes another.
 
 ## Layout
@@ -36,7 +30,6 @@ and how to get it — it never silently substitutes another.
 niusburner/          the Python package and CLI
   registry.py        toolchain + programmer discovery
   toolchains.json    where each tool comes from, and how to detect it
-  targets/           one module per programming method
 programmers/         firmware for the DIY programmers we build ourselves
   nano_at89c2051/    Arduino Nano as a 12 V parallel programmer
 docs/                per-family programming guides and wiring
@@ -48,7 +41,7 @@ _work/               gitignored: plans, progress, scratch
 
 | Consumer | Uses NiusBurner for |
 |---|---|
-| **NiusDisplay** | building and flashing its 8051 / PIC / MSP430 ports without putting any of that in the library |
+| **NiusDisplay** | building and packaging its 8051 / PIC / MSP430 images without putting any of that in the library |
 | **firmware simulators** | turning source into a real firmware image, so what is simulated is what would be flashed |
 | future Arduino libraries | the same, unchanged |
 
@@ -65,12 +58,12 @@ Honest labelling, the same vocabulary the sibling projects use:
 
 | Target | Method | Status |
 |---|---|---|
-| AT89C2051 | Nano-hosted 12 V parallel programmer | `implemented` — no chip flashed yet |
+| AT89C2051 | Nano-hosted 12 V programmer firmware | `implemented`; physical `niusprog` backend pending |
 | AT89S52 / STC89C52RC | USB-ISP over SPI | `planned` |
 | STC15W408AS | `stcgal` serial bootloader | `planned` |
 | PIC12F675 / PIC16F877A | PICkit 3 | `planned` |
 | MSP430 | MSP430-GCC + mspdebug | `planned` |
-| ARM / RISC-V (portable) | fetched into `C:\embd_toolchains` | `planned` |
+| ARM / RISC-V (portable) | resolved below the configured toolchain root | `planned` |
 
 **No part has been programmed with this yet — no hardware has been connected.**
 Everything above is code and documentation, and says so.
@@ -78,10 +71,16 @@ Everything above is code and documentation, and says so.
 ## Quick start
 
 ```bash
-conda run -n embedded python -m niusburner list          # what is installed
-conda run -n embedded python -m niusburner detect        # probe the toolchain root
-conda run -n embedded python -m niusburner flash --help
+python -m niusburner list
+python -m niusburner detect
+python -m niusburner package TARGET firmware.bin out
+python -m niusburner flash TARGET out/firmware.bin \
+  --confirm TARGET --ack-data-loss --state-policy replace
 ```
+
+`package` creates a reproducible host-neutral manifest. `flash` never opens a
+USB or programmer transport itself: it delegates exact identity, mutation,
+verification, recovery, and restoration to `niusprog` (an external programming backend).
 
 ## Guides
 

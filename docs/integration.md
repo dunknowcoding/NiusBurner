@@ -1,7 +1,7 @@
 # Using NiusBurner from another project
 
 NiusBurner has **no dependency on any of its consumers**. It is a standalone
-tool for building and flashing parts the Arduino IDE cannot reach, and it works
+tool for building and packaging parts the Arduino IDE cannot reach, and it works
 against any source tree.
 
 That direction matters and is deliberate: consumers depend on NiusBurner, never
@@ -10,7 +10,7 @@ to anyone else, and could not be reasoned about on its own.
 
 ```
     NiusDisplay   ─┐
-    simulators    ─┼──>  NiusBurner  ──>  C:\embd_toolchains
+    simulators    ─┼──>  NiusBurner  ──>  configured toolchain root
     (future libs) ─┘
 ```
 
@@ -40,7 +40,7 @@ A simulator needs real firmware to be worth trusting. Simulating a hand-written
 image proves something about the simulator; simulating **the image that would
 actually be flashed** proves something about the firmware.
 
-So the flow is: source → NiusBurner builds it with the real toolchain → the
+So the flow is: source → NiusBurner builds/packages it with the real toolchain → the
 resulting `.ihx`/`.elf` is what the simulator executes. Nothing in the chain is
 a special "simulation build", because a special build is exactly where the
 divergence would hide.
@@ -54,7 +54,7 @@ happens to bundle this month.
 
 Two things, both stable:
 
-**A CLI.** `list`, `detect`, `which <part>`, `flash <part>`. Machine-readable
+**A CLI.** `list`, `detect`, `which <part>`, `package`, and delegated `flash`.
 output is added when a consumer needs it, not before.
 
 **A Python API.**
@@ -80,3 +80,7 @@ that belongs to whoever can see the bench.
 - **Vendor.** See [toolchains.md](toolchains.md).
 - **Flash without a check.** `detect` is separate from `flash` so that an
   environment problem surfaces before a chip is half-erased.
+
+NiusBurner never implements a second physical transport stack. `flash`
+delegates to an external programming backend (`niusprog`), which owns exact probe identity,
+mutation, verification, recovery, restoration, and USB safety.

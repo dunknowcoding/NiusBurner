@@ -52,7 +52,24 @@ class Found:
 
 def load_registry(path: pathlib.Path | None = None) -> dict[str, Any]:
     with open(path or REGISTRY_PATH, "r", encoding="utf-8") as fh:
-        return json.load(fh)
+        registry = json.load(fh)
+
+    default_root = pathlib.Path(registry.get("root", "~/.local/share/niusburner/toolchains"))
+    root = pathlib.Path(os.environ.get("EMBD_TOOLCHAINS", default_root)).expanduser()
+
+    def expand(value: Any) -> Any:
+        if isinstance(value, str):
+            return os.path.expandvars(
+                value.replace("${EMBD_TOOLCHAINS}", str(root)))
+        if isinstance(value, list):
+            return [expand(item) for item in value]
+        if isinstance(value, dict):
+            return {key: expand(item) for key, item in value.items()}
+        return value
+
+    registry = expand(registry)
+    registry["root"] = str(root)
+    return registry
 
 
 def _first_line(text: str) -> str:
@@ -137,7 +154,7 @@ def scan(registry: dict[str, Any] | None = None) -> list[Found]:
 
 def toolchain_root(registry: dict[str, Any] | None = None) -> pathlib.Path:
     reg = registry if registry is not None else load_registry()
-    return pathlib.Path(os.environ.get("EMBD_TOOLCHAINS", reg["root"]))
+    return pathlib.Path(reg["root"]).expanduser()
 
 
 def for_family(family: str, registry: dict[str, Any] | None = None) -> list[Found]:

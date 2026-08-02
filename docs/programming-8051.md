@@ -65,7 +65,7 @@ Fall back to the serial bootloader, which every STC part has:
 
 ```bash
 pip install stcgal
-stcgal -P stc89 -p COM7 firmware.hex
+stcgal -P stc89 -p <PORT> firmware.hex
 ```
 
 ---
@@ -82,7 +82,7 @@ This part has **no SPI ISP**. The USB-ISP cannot reach it.
 | 5 V or 3.3 V | VCC |
 
 ```bash
-stcgal -P stc15 -p COM7 firmware.hex
+stcgal -P stc15 -p <PORT> firmware.hex
 ```
 
 `stcgal` prints `waiting for MCU` and then **you must power-cycle the board** —
@@ -148,18 +148,19 @@ Whatever the arrangement:
 
 ```bash
 # 1. Flash the programmer firmware onto the Nano (once)
-arduino-cli compile -b arduino:avr:nano --upload -p COM5 \
+arduino-cli compile -b arduino:avr:nano --upload -p <PORT> \
     tools/at89c2051_prog/nano_at89c2051.ino
 
 # 2. Wire the target, apply the 12 V rail, then ALWAYS check the signature
-python tools/at89c2051_prog/flash.py COM5 --signature
+niusburner package at89c2051 firmware.ihx out
 #    expects: SIG 1E 21  /  OK AT89C2051
 
 # 3. Flash
-python tools/at89c2051_prog/flash.py COM5 firmware.ihx
+niusprog --config targets.local.json burn <TARGET> out/firmware.ihx \
+  --confirm <TARGET> --ack-data-loss --state-policy replace
 
 # 4. Read back if you want an independent check
-python tools/at89c2051_prog/flash.py COM5 --read dump.bin
+niusprog --config targets.local.json dump <TARGET> 0 <SIZE> backup.bin
 ```
 
 The signature step costs a second and separates "the 12 V rail is not
