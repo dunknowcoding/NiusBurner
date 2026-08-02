@@ -80,7 +80,8 @@ python -m niusburner flash TARGET out/firmware.bin \
 
 `package` creates a reproducible host-neutral manifest. `flash` never opens a
 USB or programmer transport itself: it delegates exact identity, mutation,
-verification, recovery, and restoration to `niusprog` (an external programming backend).
+verification, recovery, and restoration to an external programming
+backend.
 
 ## Guides
 

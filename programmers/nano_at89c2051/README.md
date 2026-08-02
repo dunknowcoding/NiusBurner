@@ -21,7 +21,7 @@ arduino-cli compile -b arduino:avr:nano --upload -p <PORT> nano_at89c2051.ino
 niusburner package at89c2051 firmware.ihx out
 ```
 
-Physical use remains blocked until an external programming backend has a reviewed backend
+Physical use remains blocked until the external programming backend is
 for this exact 12 V programmer protocol. NiusBurner does not carry a second
 host flasher or bypass `niusprog` identity, backup, verification, and restoration
 gates.

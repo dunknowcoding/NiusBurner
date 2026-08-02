@@ -82,5 +82,5 @@ that belongs to whoever can see the bench.
   environment problem surfaces before a chip is half-erased.
 
 NiusBurner never implements a second physical transport stack. `flash`
-delegates to an external programming backend (`niusprog`), which owns exact probe identity,
+delegates to an external programming backend, which owns exact probe identity,
 mutation, verification, recovery, restoration, and USB safety.
