@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "niusburner"
-version = "0.2.1"
+version = "0.2.2"
 description = "Reproducible embedded image packaging with delegated physical recovery"
 readme = "README.md"
 requires-python = ">=3.10"
