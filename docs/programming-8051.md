@@ -180,10 +180,9 @@ programmer adds it.
 
 What genuinely works, most useful first:
 
-1. **[NiusDispVis](../../../NiusDispVis/)** — display logic (init sequences,
-   addressing, offsets, rendering) is checked on the host against a
-   datasheet-derived model of the controller, before any chip is involved.
-   Most display bugs never need to reach hardware at all.
+1. **Host-side protocol tests** — check display initialization, addressing,
+   offsets, and rendering against controller data sheets before programming a
+   chip. Most display bugs never need to reach hardware at all.
 2. **UART `printf`** — all four parts have a hardware UART on P3.0/P3.1. On the
    STC parts the adapter is already connected for flashing, so this is free.
 3. **A GPIO toggled as a scope trigger** — crude, but on a part with 128 bytes

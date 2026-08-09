@@ -8,10 +8,8 @@ That direction matters and is deliberate: consumers depend on NiusBurner, never
 the reverse. A tool that knew about the projects using it could not be shipped
 to anyone else, and could not be reasoned about on its own.
 
-```
-    NiusDisplay   ─┐
-    simulators    ─┼──>  NiusBurner  ──>  configured toolchain root
-    (future libs) ─┘
+```text
+    source project  -->  NiusBurner  -->  configured toolchain root
 ```
 
 ## NiusDisplay
@@ -34,21 +32,12 @@ The split is by *what the file is*, not by what it is about:
 | `ports/**` — HAL implementations, source only | toolchain discovery and install |
 | `tools/compile_matrix.py` — verifies *this library* | flashing, chip erase, signature checks |
 
-## Simulators
+## Reproducible non-Arduino builds
 
-A simulator needs real firmware to be worth trusting. Simulating a hand-written
-image proves something about the simulator; simulating **the image that would
-actually be flashed** proves something about the firmware.
-
-So the flow is: source → NiusBurner builds/packages it with the real toolchain → the
-resulting `.ihx`/`.elf` is what the simulator executes. Nothing in the chain is
-a special "simulation build", because a special build is exactly where the
-divergence would hide.
-
-This is also why NiusBurner carries **ARM and RISC-V** toolchains even though
-the Arduino IDE supports those targets perfectly well. A simulator needs a
-compiler it controls and can pin a version of, not whatever a board package
-happens to bundle this month.
+NiusBurner also resolves **ARM and RISC-V** toolchains even when an Arduino core
+exists. Standalone firmware, CI, release packaging, and independent verification
+need a caller-selected compiler revision rather than whichever tool a board
+package happens to bundle.
 
 ## The contract
 

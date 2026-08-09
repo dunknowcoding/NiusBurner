@@ -9,7 +9,10 @@ from niusburner import build
 def _contract(path: pathlib.Path) -> pathlib.Path:
     path.write_text(json.dumps({
         "kernel_data_bytes": 12,
-        "resource_ladder": {"maximum_linked_system_bytes": 1024},
+        "resource_ladder": {
+            "runtime_baseline_budget_bytes": 1024,
+            "maximum_linked_image_bytes": 2048,
+        },
     }), encoding="utf-8")
     return path
 
@@ -55,23 +58,56 @@ def test_mcs51_build_retains_assembly_and_enforces_receipt(tmp_path, monkeypatch
         "kernel_data_bytes": 12,
         "linked_system_program_bytes": 694,
     }
-    assert manifest["limits"]["linked_system_program_bytes"] == 1024
+    assert manifest["limits"]["linked_system_program_bytes"] == 2048
     assert manifest["artifacts"]["assembly"][0]["name"].endswith(".asm")
     assert str(tmp_path) not in result.manifest.read_text(encoding="utf-8")
 
 
-def test_mcs51_build_rejects_half_rom_budget_overflow(tmp_path, monkeypatch):
+def test_mcs51_build_accepts_application_use_of_reserved_headroom(tmp_path, monkeypatch):
     _fake_tool(monkeypatch, 1025)
     compiler = tmp_path / "sdcc.exe"
     compiler.write_bytes(b"")
     source = tmp_path / "app.c"
     source.write_text("int main(void) { return 0; }\n", encoding="ascii")
 
-    with pytest.raises(ValueError, match="reserved application"):
+    result = build.build_mcs51(
+        [source], [], tmp_path / "out",
+        compiler=compiler, contract=_contract(tmp_path / "contract.json"),
+    )
+    assert result.program_bytes == 1025
+
+
+def test_mcs51_build_enforces_explicit_runtime_baseline_budget(tmp_path, monkeypatch):
+    _fake_tool(monkeypatch, 1025)
+    compiler = tmp_path / "sdcc.exe"
+    compiler.write_bytes(b"")
+    source = tmp_path / "app.c"
+    source.write_text("int main(void) { return 0; }\n", encoding="ascii")
+
+    with pytest.raises(ValueError, match="selected program limit"):
         build.build_mcs51(
             [source], [], tmp_path / "out",
             compiler=compiler, contract=_contract(tmp_path / "contract.json"),
+            program_limit=1024,
         )
+
+
+def test_mcs51_build_accepts_legacy_v020_receipt(tmp_path, monkeypatch):
+    _fake_tool(monkeypatch, 700)
+    compiler = tmp_path / "sdcc.exe"
+    compiler.write_bytes(b"")
+    source = tmp_path / "app.c"
+    source.write_text("int main(void) { return 0; }\n", encoding="ascii")
+    receipt = tmp_path / "legacy.json"
+    receipt.write_text(json.dumps({
+        "kernel_data_bytes": 12,
+        "resource_ladder": {"maximum_linked_system_bytes": 1024},
+    }), encoding="utf-8")
+
+    result = build.build_mcs51(
+        [source], [], tmp_path / "out", compiler=compiler, contract=receipt,
+    )
+    assert result.program_bytes == 700
 
 
 def test_sdcc_program_parser_fails_closed():

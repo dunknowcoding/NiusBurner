@@ -129,7 +129,7 @@
         "url": "https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads",
         "note": "Portable: unpack below the configured toolchain root and add bin to PATH for the session."
       },
-      "note": "Carried here for firmware simulators even though Arduino cores exist -- a simulator needs a toolchain it controls and can pin a version of."
+      "note": "Available for standalone firmware, CI, release packaging, and independent verification that require a caller-pinned compiler revision."
     },
     "riscv_none_elf": {
       "family": [

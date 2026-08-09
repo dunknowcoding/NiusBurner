@@ -42,7 +42,7 @@ _work/               gitignored: plans, progress, scratch
 | Consumer | Uses NiusBurner for |
 |---|---|
 | **NiusDisplay** | building and packaging its 8051 / PIC / MSP430 images without putting any of that in the library |
-| **firmware simulators** | turning source into a real firmware image, so what is simulated is what would be flashed |
+| **offline validators** | building the same production image used by packaging and programming |
 | future Arduino libraries | the same, unchanged |
 
 Nothing here depends on those projects. NiusBurner is usable on its own with any
@@ -86,9 +86,10 @@ python -m niusburner flash TARGET out/firmware.bin \
 size-optimized assembly, links for a caller-selected program/IRAM capacity,
 and retains the optimized `.asm` files plus the exact `.map`, `.mem`, image,
 and host-neutral build manifest. A bounded contract receipt can supply the
-complete-system program ceiling and kernel-owned data measurement. The build
-fails closed if the linked image consumes the application reserve; relocatable
-objects and repetitive assembler listings are removed after a successful link.
+final linked-image capacity and kernel-owned data measurement. A caller can
+pass a stricter `--program-limit` when measuring a runtime baseline that must
+preserve application headroom. Relocatable objects and repetitive assembler
+listings are removed after a successful link.
 
 `package` creates a reproducible host-neutral manifest. `flash` never opens a
 USB or programmer transport itself: it delegates exact identity, mutation,

@@ -62,10 +62,15 @@ def _load_contract(path: pathlib.Path | None) -> tuple[int | None, int | None]:
     kernel_data = data.get("kernel_data_bytes")
     ladder = data.get("resource_ladder")
     if (not isinstance(kernel_data, int) or kernel_data < 0 or
-            not isinstance(ladder, dict) or
-            not isinstance(ladder.get("maximum_linked_system_bytes"), int)):
+            not isinstance(ladder, dict)):
         raise ValueError("contract receipt lacks bounded data/program limits")
-    return kernel_data, int(ladder["maximum_linked_system_bytes"])
+    final_limit = ladder.get("maximum_linked_image_bytes")
+    if final_limit is None:
+        # v0.2.0 receipts used this name for the final link ceiling.
+        final_limit = ladder.get("maximum_linked_system_bytes")
+    if not isinstance(final_limit, int) or final_limit <= 0:
+        raise ValueError("contract receipt lacks bounded data/program limits")
+    return kernel_data, final_limit
 
 
 def build_mcs51(
@@ -101,7 +106,7 @@ def build_mcs51(
     if program_limit is None:
         program_limit = receipt_program_limit
     elif receipt_program_limit is not None and program_limit > receipt_program_limit:
-        raise ValueError("explicit program limit weakens the contract receipt")
+        raise ValueError("explicit program limit exceeds the contract image capacity")
     if data_limit is not None and kernel_data is None:
         raise ValueError("--data-limit requires a contract receipt with kernel data")
 
@@ -138,7 +143,7 @@ def build_mcs51(
     if program_bytes > code_size:
         raise ValueError("linked image exceeds the selected device program capacity")
     if program_limit is not None and program_bytes > program_limit:
-        raise ValueError("linked image violates the reserved application program budget")
+        raise ValueError("linked image violates the selected program limit")
     if data_limit is not None and kernel_data is not None and kernel_data > data_limit:
         raise ValueError("kernel-owned data violates the contract limit")
 
