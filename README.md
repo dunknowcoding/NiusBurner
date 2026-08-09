@@ -73,10 +73,22 @@ Everything above is code and documentation, and says so.
 ```bash
 python -m niusburner list
 python -m niusburner detect
+python -m niusburner build-mcs51 \
+  --source kernel.c --source generated_config.c --source app.c \
+  --include include --include generated --output out \
+  --contract generated/contract.json --data-limit 32
 python -m niusburner package TARGET firmware.bin out
 python -m niusburner flash TARGET out/firmware.bin \
   --confirm TARGET --ack-data-loss --state-policy replace
 ```
+
+`build-mcs51` compiles each C translation unit through SDCC's
+size-optimized assembly, links for a caller-selected program/IRAM capacity,
+and retains the optimized `.asm` files plus the exact `.map`, `.mem`, image,
+and host-neutral build manifest. A bounded contract receipt can supply the
+complete-system program ceiling and kernel-owned data measurement. The build
+fails closed if the linked image consumes the application reserve; relocatable
+objects and repetitive assembler listings are removed after a successful link.
 
 `package` creates a reproducible host-neutral manifest. `flash` never opens a
 USB or programmer transport itself: it delegates exact identity, mutation,

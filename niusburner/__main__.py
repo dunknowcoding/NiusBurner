@@ -17,10 +17,11 @@ flash, halfway through erasing a chip, is the worst possible moment.
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import sys
 
-from . import __version__, debugger, registry
+from . import __version__, build, debugger, registry
 from .package import package_image, verify_package
 
 
@@ -106,6 +107,25 @@ def _cmd_package(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_build_mcs51(args: argparse.Namespace) -> int:
+    try:
+        result = build.build_mcs51(
+            args.source, args.include, args.output,
+            compiler=args.compiler, contract=args.contract,
+            code_size=args.code_size, iram_size=args.iram_size,
+            program_limit=args.program_limit, data_limit=args.data_limit,
+            require_version=args.require_version,
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"build failed: {exc}", file=sys.stderr)
+        return 2
+    print(result.manifest)
+    print(f"program: {result.program_bytes} bytes")
+    if result.kernel_data_bytes is not None:
+        print(f"kernel data: {result.kernel_data_bytes} bytes")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         prog="niusburner",
@@ -130,6 +150,24 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("output", type=pathlib.Path)
     p.add_argument("--address", type=lambda value: int(value, 0), default=0)
     p.set_defaults(fn=_cmd_package)
+
+    p = sub.add_parser(
+        "build-mcs51",
+        help="compile freestanding C through size-optimized 8051 assembly")
+    p.add_argument("--source", action="append", type=pathlib.Path,
+                   required=True, help="C source; repeat in link order")
+    p.add_argument("--include", action="append", type=pathlib.Path, default=[],
+                   help="include directory; repeat as needed")
+    p.add_argument("--output", type=pathlib.Path, required=True)
+    p.add_argument("--compiler", type=pathlib.Path)
+    p.add_argument("--contract", type=pathlib.Path,
+                   help="bounded generated receipt supplying program/data limits")
+    p.add_argument("--code-size", type=int, default=2048)
+    p.add_argument("--iram-size", type=int, default=128)
+    p.add_argument("--program-limit", type=int)
+    p.add_argument("--data-limit", type=int)
+    p.add_argument("--require-version")
+    p.set_defaults(fn=_cmd_build_mcs51)
 
     p = sub.add_parser("flash", help="delegate physical programming to niusprog")
     p.add_argument("target")
