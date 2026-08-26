@@ -4,8 +4,9 @@ These directories are firmware for the **MCU you are programming** — the same
 shape as an Arduino sketch: a folder named after the program, with a matching
 `.ino`.
 
-They are not programmer firmware. A Nano sketch that *is* a 12 V programmer
-lives under [`hardware/`](../hardware/).
+They are not programmer firmware. `hardware/*.ino` runs on an **Arduino Nano
+used as a 12 V programmer**, flashed with `arduino-cli`, never with
+`niusburner upload`. See [`hardware/`](../hardware/).
 
 | Sketch | Board | Needs | Command |
 |---|---|---|---|

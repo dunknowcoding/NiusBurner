@@ -43,10 +43,13 @@ tests/               host tests; no hardware required
 
 Two kinds of `.ino` live in this repository and they are not interchangeable:
 
-| Tree | Runs on | Flashed with |
-|---|---|---|
-| `examples/` | AT89S52 (and later parts) | `python -m niusburner upload` |
-| `hardware/` | Arduino Nano (the programmer) | `arduino-cli` |
+| Tree | Runs on | What it is | Flashed with |
+|---|---|---|---|
+| `examples/` | AT89S52 (the chip in the socket) | your sketch | `python -m niusburner upload` |
+| `hardware/` | Arduino Nano (the programmer box) | 12 V parallel programmer firmware | `arduino-cli` onto the **Nano** |
+
+`hardware/nano_at89c2051/nano_at89c2051.ino` is not an AT89C2051 program. The
+2051 has no ISP; the Nano *is* the programmer. Details: [hardware/README.md](hardware/README.md).
 
 ## Status
 
@@ -64,9 +67,12 @@ Two kinds of `.ino` live in this repository and they are not interchangeable:
 
 ## What it is not
 
-**It does not vendor toolchains.** Compilers stay on the machine, under
-`EMBD_TOOLCHAINS` or PATH. `setup` / `detect` say which tool is missing and
-where to get it.
+**It does not vendor toolchains.** `EMBD_TOOLCHAINS` is an **environment
+variable** naming a directory on this machine (default
+`~/.local/share/niusburner/toolchains`). Compilers are never committed here.
+SDCC for AT89S52 is found on PATH / Program Files, not under that variable.
+See [docs/toolchains.md](docs/toolchains.md). `setup` / `detect` say which
+tool is missing and where to get it.
 
 **It does not compile Arduino C++ on SDCC.** SDCC has no C++ mode. A sketch
 that `#include <NiusDisplay.h>` is refused; rewrite it against NiusDuino / the

@@ -25,7 +25,9 @@ checkout next to this repo is optional and detected automatically.
 
 Install SDCC from https://sourceforge.net/projects/sdcc/files/ so `sdcc` is
 on PATH (the Windows installer also lands at `C:\Program Files\SDCC\bin`).
-Then:
+That path is **not** `EMBD_TOOLCHAINS`. `EMBD_TOOLCHAINS` is an environment
+variable for portable vendor trees (XC8, …); default and how to set it are
+in [toolchains.md](toolchains.md).
 
 ```bash
 pip install hidapi

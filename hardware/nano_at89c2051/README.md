@@ -1,7 +1,12 @@
 # AT89C2051 programmer (Arduino Nano)
 
-Firmware that runs **on the Nano**, turning it into a 12 V parallel programmer
-for a chip that has no ISP. This is not a sketch for the AT89C2051 itself.
+This `.ino` is firmware for an **Arduino Nano V3**. After you flash it onto
+the Nano with `arduino-cli`, the Nano becomes a 12 V parallel programmer for
+an AT89C2051 in a ZIF socket.
+
+It is **not** a sketch for the AT89C2051. That chip has no ISP, so you cannot
+`python -m niusburner upload` this file onto it. Target programs live under
+`examples/`. Why a `.ino` lives here at all: [hardware/README.md](../README.md).
 
 | File | What it is |
 |---|---|

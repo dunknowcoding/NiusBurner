@@ -1,7 +1,60 @@
 # Toolchains
 
-Choose a directory outside every repository and expose it as
-`EMBD_TOOLCHAINS`. Nothing installs into a repository, ever.
+`EMBD_TOOLCHAINS` is an **environment variable**, not a folder inside this
+repository. It names a directory *on this machine* where portable compilers
+are unpacked. NiusBurner never vendors a toolchain; it only looks where you
+point.
+
+## Where it resolves
+
+If the variable is **unset**, the default from `niusburner/toolchains.json` is
+used:
+
+```
+~/.local/share/niusburner/toolchains
+```
+
+On Windows that is typically:
+
+```
+C:\Users\<you>\.local\share\niusburner\toolchains
+```
+
+See the value this process will actually use:
+
+```bash
+python -m niusburner list
+```
+
+The first line is `toolchain root: ...`. That path may not exist yet. It is
+created when you put a compiler there, not when you clone this repo.
+
+### Set it (optional)
+
+Pick any directory **outside every git repository**, then:
+
+PowerShell (current user, persists):
+
+```powershell
+[Environment]::SetEnvironmentVariable(
+    "EMBD_TOOLCHAINS", "D:\toolchains", "User")
+```
+
+POSIX:
+
+```bash
+export EMBD_TOOLCHAINS="$HOME/toolchains"
+```
+
+Open a new terminal afterwards. `python -m niusburner list` must print the
+path you set.
+
+### What does *not* live here
+
+**SDCC for AT89S52 does not use this variable.** The Windows installer puts it
+on PATH and/or at `C:\Program Files\SDCC\bin\sdcc.exe`. NiusBurner finds it
+there (or via `SDCC_HOME` / `SDCC`, or `--compiler`). `EMBD_TOOLCHAINS` is
+for tools that are unpacked under a versioned tree (XC8, MSP430-GCC, …).
 
 ## Why nothing is vendored
 
@@ -17,7 +70,7 @@ So the registry describes tools; it never contains them. `test_registry.py`
 enforces that by walking the tree for binaries and by capping the repo size —
 an ignore rule alone would not catch a file committed before the rule existed.
 
-## Layout
+## Layout under the directory `EMBD_TOOLCHAINS` names
 
 ```
 <toolchain-root>/
@@ -59,11 +112,12 @@ be a claim about your machine that nobody checked:
 
 ```bash
 python -m niusburner detect
+python -m niusburner setup --board at89s52
 ```
 
 ## Adding one
 
-1. Install it under `$EMBD_TOOLCHAINS/<family>/<version>/`.
+1. Install it under `%EMBD_TOOLCHAINS%\<family>\<version>\` (or `$EMBD_TOOLCHAINS/...`).
 2. Add an entry to `niusburner/toolchains.json` with a `detect` rule and an
    `install` URL.
 3. Run `detect` and confirm it is found.
