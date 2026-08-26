@@ -59,7 +59,7 @@ Honest labelling, the same vocabulary the sibling projects use:
 | Target | Method | Status |
 |---|---|---|
 | AT89C2051 | Nano-hosted 12 V programmer firmware | `implemented`; physical `niusprog` backend pending |
-| AT89S52 / STC89C52RC | USB-ISP over SPI | `planned` |
+| AT89S52 / STC89C52RC | USB-ISP over SPI | `implemented`; hardware verified pending |
 | STC15W408AS | `stcgal` serial bootloader | `planned` |
 | PIC12F675 / PIC16F877A | PICkit 3 | `planned` |
 | MSP430 | MSP430-GCC + mspdebug | `planned` |

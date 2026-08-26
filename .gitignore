@@ -1,6 +1,7 @@
 # Internal working directory: plans, progress, scratch, build cache.
 # Everything in here is private and pruned regularly.
 _work/
+_backups/
 
 # Toolchains are NEVER vendored. They live below a caller-selected root.
 # If one is ever unpacked here by accident, it must not be committed.

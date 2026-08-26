@@ -12,6 +12,7 @@ license = "Apache-2.0"
 
 [project.scripts]
 niusburner = "niusburner.__main__:main"
+niusprog    = "niusburner.prog:main"
 
 [tool.setuptools.packages.find]
 include = ["niusburner*"]
