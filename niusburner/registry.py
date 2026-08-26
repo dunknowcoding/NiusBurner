@@ -124,6 +124,29 @@ def _probe_glob(rule: dict[str, Any]) -> tuple[bool, str, str, str]:
     return True, chosen, "", extra
 
 
+def _probe_hid(rule: dict[str, Any]) -> tuple[bool, str, str, str]:
+    """Look for a USB HID device by VID/PID. Does not open any other device."""
+    try:
+        vid = int(rule["vid"], 0) if isinstance(rule["vid"], str) else int(rule["vid"])
+        pid = int(rule["pid"], 0) if isinstance(rule["pid"], str) else int(rule["pid"])
+    except (KeyError, TypeError, ValueError):
+        return False, "", "", "hid detect rule needs integer vid and pid"
+    try:
+        import hid
+    except ImportError:
+        return False, "", "", "hidapi is not installed (pip install hidapi)"
+    try:
+        found = hid.enumerate(vid, pid)
+    except Exception as exc:
+        return False, "", "", f"HID enumerate failed: {exc}"
+    if not found:
+        return False, "", "", f"USB HID VID {vid:04X} PID {pid:04X} not found"
+    hit = found[0]
+    product = hit.get("product_string") or f"VID {vid:04X} PID {pid:04X}"
+    maker = hit.get("manufacturer_string") or ""
+    return True, product, maker, ""
+
+
 def probe(entry: dict[str, Any]) -> tuple[bool, str, str, str]:
     rule = entry.get("detect")
     if not rule:
@@ -134,7 +157,9 @@ def probe(entry: dict[str, Any]) -> tuple[bool, str, str, str]:
         return _probe_path(rule)
     if "glob" in rule:
         return _probe_glob(rule)
-    return False, "", "", "detection rule has no cmd, path or glob"
+    if "vid" in rule and "pid" in rule:
+        return _probe_hid(rule)
+    return False, "", "", "detection rule has no cmd, path, glob or hid vid/pid"
 
 
 def scan(registry: dict[str, Any] | None = None) -> list[Found]:

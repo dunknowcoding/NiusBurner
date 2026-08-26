@@ -57,8 +57,10 @@ def test_every_entry_can_be_detected_or_says_why_not():
                 assert entry.get("note") or entry.get("wiring"), (
                     f"{name} has neither a detection rule nor any guidance")
                 continue
-            assert {"cmd", "path", "glob"} & set(rule), (
-                f"{name} detect rule has no cmd, path or glob")
+            keys = set(rule)
+            assert {"cmd", "path", "glob"} & keys or (
+                "vid" in keys and "pid" in keys), (
+                f"{name} detect rule has no cmd, path, glob or hid vid/pid")
 
 
 def test_detection_paths_point_outside_this_repository():
@@ -109,16 +111,15 @@ def test_a_command_that_is_the_wrong_tool_is_rejected():
 
 def test_programmers_for_returns_all_options_not_one():
     """
-    An STC89C52RC is reachable two ways and the right one depends on wiring.
-    Collapsing that to a single answer would be a guess about a bench this
-    code cannot see.
+    An STC89C52RC is listed on both the USB-ISP HID dongle (AT89S SPI, only
+    if that silicon is in the socket) and stcgal (UART bootloader). Collapsing
+    that to a single answer would be a guess about a bench this code cannot see.
     """
     opts = registry.programmers_for("stc89c52rc")
     assert opts, "STC89C52RC should have at least one route"
     names = {o.name for o in opts}
-    assert "usbasp" in names, (
-        "the USB-ISP does program STC89 parts over SPI ISP -- only the STC15 "
-        "family is bootloader-only")
+    assert "usbisp_hid" in names
+    assert "stcgal" in names
 
 
 def test_no_toolchain_binary_is_committed():

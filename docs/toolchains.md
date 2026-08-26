@@ -40,6 +40,7 @@ bisected against the exact compiler that produced it.
 | `cmd` | the tool is on PATH and has `--version` | it **runs**, and is the right tool |
 | `path` | a fixed install location | the file exists |
 | `glob` | vendor installs under a version directory | the file exists; newest wins |
+| `vid` + `pid` | a USB HID programmer | that exact device is enumerated |
 
 `cmd` is preferred wherever possible: it is the only form that separates
 "installed" from "present but broken", and its `match` field catches a PATH

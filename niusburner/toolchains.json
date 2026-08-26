@@ -150,7 +150,6 @@
       "programs": [
         "at89s51",
         "at89s52",
-        "stc89c52rc",
         "avr"
       ],
       "transport": "usb",
@@ -161,7 +160,21 @@
         ],
         "match": "avrdude"
       },
-      "note": "SPI ISP. A crystal MUST be running on the target or ISP never responds -- the commonest failure by a wide margin.",
+      "note": "Genuine USBasp (VID 16C0 / PID 05DC) driven by avrdude. Not the zhifengsoft USBHID dongle.",
+      "wiring": "docs/wiring/usbasp-idc10.md"
+    },
+    "usbisp_hid": {
+      "programs": [
+        "at89s51",
+        "at89s52",
+        "stc89c52rc"
+      ],
+      "transport": "usb",
+      "detect": {
+        "vid": "0x03EB",
+        "pid": "0xC8B4"
+      },
+      "note": "zhifengsoft USBHID (VID 03EB / PID C8B4) over HidUsb. SPI is the AT89S51/S52 protocol; an STC89C52RC in the same socket needs the UART bootloader instead.",
       "wiring": "docs/wiring/usbasp-idc10.md"
     },
     "nano_at89c2051": {
@@ -178,7 +191,8 @@
       "programs": [
         "stc15w408as",
         "stc8",
-        "stc89"
+        "stc89",
+        "stc89c52rc"
       ],
       "transport": "serial",
       "detect": {

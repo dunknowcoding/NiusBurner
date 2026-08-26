@@ -5,8 +5,8 @@ parts are on order.
 
 | Part | Flash | Route | Tool |
 |---|---|---|---|
-| **AT89S52** | 8 KB | SPI ISP | USB-ISP + ProgISP |
-| **STC89C52RC** | 8 KB | SPI ISP *or* serial | USB-ISP + ProgISP, or `stcgal` |
+| **AT89S52** | 8 KB | SPI ISP | USB-ISP HID + `niusprog` |
+| **STC89C52RC** | 8 KB | serial bootloader | `stcgal` (same DIP-40 header does not ACK SPI) |
 | **STC15W408AS** | 8 KB | serial bootloader **only** | `stcgal` + USB-TTL |
 | **AT89C2051** | 2 KB | 12 V parallel | [Nano programmer](#at89c2051--nano-v3-programmer) |
 
@@ -28,9 +28,7 @@ SCK   7  8  GND
 MISO  9  10 GND
 ```
 
-### AT89S52 and STC89C52RC wiring
-
-Both are DIP40 and share the same ISP pins, so one wiring serves both.
+### AT89S52 wiring
 
 | IDC10 | Signal | DIP40 pin | Chip signal |
 |---|---|---|---|
@@ -46,22 +44,22 @@ Both are DIP40 and share the same ISP pins, so one wiring serves both.
 part does not answer the programmer, and the failure is indistinguishable from
 bad wiring.
 
-The STC89C52RC has an internal oscillator option but the RC variants are
-usually run from a crystal too; fit one if the part does not respond.
-
 ### Software
 
 **`avrdude` does not speak the 8051 ISP protocol** — the command bytes differ
-from AVR's. Use **ProgISP**, the Windows tool normally supplied with these
-programmers; it drives the same USB-ISP hardware and knows the AT89S5x and
-STC89C5x algorithms.
+from AVR's.  The AliExpress **zhifengsoft USBHID** dongle (VID `03EB` /
+PID `C8B4`) is driven by `niusprog` over the Windows HidUsb class driver, not
+by avrdude.  Do not install WinUSB on that device via Zadig.
 
-Select the exact part in ProgISP's device list, then: *Erase → Program →
-Verify*. Reading the signature first is worth the second it takes.
+ProgISP, the Windows tool supplied with these programmers, uses the same HID
+path and knows the AT89S5x algorithm.
 
-### If ProgISP will not take the STC89C52RC
+Select the exact part, then: *Erase → Program → Verify*. Reading the signature
+first is worth the second it takes.
 
-Fall back to the serial bootloader, which every STC part has:
+### STC89C52RC on the same header
+
+STC89C52RC silicon does not ACK `AC 53 00 00`.  Use the serial bootloader:
 
 ```bash
 pip install stcgal

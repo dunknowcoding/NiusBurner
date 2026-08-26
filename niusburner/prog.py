@@ -15,6 +15,14 @@ import pathlib
 import sys
 
 
+def _cmd_probe(args: argparse.Namespace) -> int:
+    if args.confirm != args.target:
+        print("refused: --confirm must match target", file=sys.stderr)
+        return 2
+    from niusburner.backends.usbisp_hid import probe
+    return probe(args.target)
+
+
 def _cmd_burn(args: argparse.Namespace) -> int:
     if args.confirm != args.target:
         print("refused: --confirm must match target", file=sys.stderr)
@@ -44,6 +52,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ack-data-loss", action="store_true", required=True)
     p.add_argument("--state-policy", choices=("replace", "restore"), required=True)
     p.set_defaults(fn=_cmd_burn)
+
+    p3 = sub.add_parser("probe")
+    p3.add_argument("target")
+    p3.add_argument("--confirm", required=True)
+    p3.set_defaults(fn=_cmd_probe)
 
     # recover sub-command (stub — restore not yet implemented)
     p2 = sub.add_parser("recover")

@@ -59,14 +59,14 @@ Honest labelling, the same vocabulary the sibling projects use:
 | Target | Method | Status |
 |---|---|---|
 | AT89C2051 | Nano-hosted 12 V programmer firmware | `implemented`; physical `niusprog` backend pending |
-| AT89S52 / STC89C52RC | USB-ISP over SPI | `implemented`; hardware verified pending |
+| AT89S52 / STC89C52RC | USB-ISP over SPI | `implemented`; HID dongle found, SPI ACK on this STC board pending |
 | STC15W408AS | `stcgal` serial bootloader | `planned` |
 | PIC12F675 / PIC16F877A | PICkit 3 | `planned` |
 | MSP430 | MSP430-GCC + mspdebug | `planned` |
 | ARM / RISC-V (portable) | resolved below the configured toolchain root | `planned` |
 
-**No part has been programmed with this yet — no hardware has been connected.**
-Everything above is code and documentation, and says so.
+**USB-ISP HID dongle is on the bench; this STC89C52 board did not ACK SPI.**
+Flash is refused before erase when MISO stays 0.
 
 ## Quick start
 
