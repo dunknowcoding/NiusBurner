@@ -14,7 +14,7 @@ vendor/
 *.exe
 *.msi
 
-# Build artifacts from the compilers this tool drives
+.niusburner/
 *.ihx
 *.hex
 *.bin

@@ -1,0 +1,66 @@
+{
+  "_comment": [
+    "First-class boards for the compile/upload workflow.",
+    "A board is a part plus the memory, compiler flags, and programmer that",
+    "a minimum board of that part actually has -- not the family maximum.",
+    "AT89S52 on a DIP-40 with no external RAM is model-small and xram 0;",
+    "the NiusDisplay graphics demos need SRAM fitted and --xram-size."
+  ],
+  "boards": {
+    "at89s52": {
+      "part": "at89s52",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "usbisp_hid",
+      "status": "verified",
+      "signature": "1E 52 06",
+      "aliases": ["89s52"],
+      "note": "8 KB flash, 256 IRAM, no XRAM on a minimum DIP-40. USB-ISP HID. Segment/TM1637 sketches fit; colour graphics need external SRAM."
+    },
+    "at89s51": {
+      "part": "at89s51",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 4096,
+      "iram_size": 128,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "usbisp_hid",
+      "status": "implemented",
+      "signature": "1E 51 06",
+      "aliases": ["89s51"],
+      "note": "4 KB flash. Same USB-ISP HID route as AT89S52."
+    },
+    "at89c2051": {
+      "part": "at89c2051",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 2048,
+      "iram_size": 128,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "nano_at89c2051",
+      "status": "implemented",
+      "signature": "1E 21",
+      "aliases": ["89c2051"],
+      "note": "2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired."
+    },
+    "stc89c52rc": {
+      "part": "stc89c52rc",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "stcgal",
+      "status": "planned",
+      "aliases": ["stc89c52", "stc89"],
+      "note": "UART bootloader (stcgal), not SPI ISP. Same DIP-40 as AT89S52 is a different protocol."
+    }
+  }
+}

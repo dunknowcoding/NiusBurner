@@ -1,109 +1,85 @@
 # NiusBurner
 
-Build and package firmware for the parts the Arduino IDE cannot reach.
+Compile Arduino-shaped sketches and flash them onto parts the Arduino IDE
+cannot reach.
 
-The Arduino toolchain stops at chips with a C++ compiler and a board package.
-NiusBurner covers image resolution, building, and packaging for 8051, PIC,
-MSP430, DSP, FPGA, ARM, and RISC-V toolchains.
-
-It exists so that **NiusDisplay stays a plain Arduino library**. Everything
-that is not `.h`/`.cpp` under `src/` — programmers, 12 V rails, Intel HEX,
-`stcgal`, ISP wiring — lives here instead. Arduino IDE compatibility is not a
-side effect of that split; it is the reason for it.
-
-## What it is not
-
-**It does not vendor toolchains.** Not one compiler, assembler or programmer
-binary is committed to this repository. Third-party tools have their own
-licences, their own update cadence and their own installers, and a copy pinned
-inside a git repo goes stale silently and redistributes software we have no
-right to redistribute.
-
-Instead NiusBurner **locates** a toolchain below the caller-selected
-`EMBD_TOOLCHAINS` root (or a per-user default) and records the exact version it
-found. If a tool is missing, it says which one
-and how to get it — it never silently substitutes another.
-
-## Layout
-
-```
-niusburner/          the Python package and CLI
-  registry.py        toolchain + programmer discovery
-  toolchains.json    where each tool comes from, and how to detect it
-programmers/         firmware for the DIY programmers we build ourselves
-  nano_at89c2051/    Arduino Nano as a 12 V parallel programmer
-docs/                per-family programming guides and wiring
-tests/               host tests; no hardware required
-_work/               gitignored: plans, progress, scratch
-```
-
-## Who uses it
-
-| Consumer | Uses NiusBurner for |
-|---|---|
-| **NiusDisplay** | building and packaging its 8051 / PIC / MSP430 images without putting any of that in the library |
-| **offline validators** | building the same production image used by packaging and programming |
-| future Arduino libraries | the same, unchanged |
-
-Nothing here depends on those projects. NiusBurner is usable on its own with any
-source tree.
-
-## Status
-
-Honest labelling, the same vocabulary the sibling projects use:
-
-- `verified` — the operation has actually run end to end here
-- `implemented` — code exists and is tested against a host stub, not silicon
-- `planned` — documented, not written
-
-| Target | Method | Status |
-|---|---|---|
-| AT89S52 | USB-ISP HID (zhifengsoft) | `verified` — probe `1E 52 06`, erase/program/verify via CLI |
-| AT89C2051 | Nano-hosted 12 V programmer firmware | `implemented`; physical `niusprog` backend pending |
-| STC89C52RC | UART bootloader (`stcgal`) | `planned` for this repo; SPI ISP is the wrong protocol |
-| STC15W408AS | `stcgal` serial bootloader | `planned` |
-| PIC12F675 / PIC16F877A | PICkit 3 | `planned` |
-| MSP430 | MSP430-GCC + mspdebug | `planned` |
-| ARM / RISC-V (portable) | resolved below the configured toolchain root | `planned` |
-
-**USB-ISP HID talks AT89S52 serial-ISP.** Probe and flash are CLI-only
-(`python -m niusburner probe` / `flash`). Do not open ProgISP for day-to-day use.
+NiusDisplay is a **plain Arduino library**. Programmers, 12 V rails, Intel HEX,
+ISP wiring and SDCC live here so that library can stay installable through
+the Library Manager. NiusBurner never imports NiusDisplay; it finds the tree
+when a sketch names it.
 
 ## Quick start
 
 ```bash
-python -m niusburner list
-python -m niusburner detect
-python -m niusburner build-mcs51 \
-  --source kernel.c --source generated_config.c --source app.c \
-  --include include --include generated --output out \
-  --contract generated/contract.json --data-limit 32
-python -m niusburner package TARGET firmware.bin out
-python -m niusburner probe at89s52 --confirm at89s52
-python -m niusburner flash TARGET out/firmware.ihx \
-  --confirm TARGET --ack-data-loss --state-policy replace
+python -m niusburner setup --board at89s52
+python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
 ```
 
-`build-mcs51` compiles each C translation unit through SDCC's
-size-optimized assembly, links for a caller-selected program/IRAM capacity,
-and retains the optimized `.asm` files plus the exact `.map`, `.mem`, image,
-and host-neutral build manifest. A bounded contract receipt can supply the
-final linked-image capacity and kernel-owned data measurement. A caller can
-pass a stricter `--program-limit` when measuring a runtime baseline that must
-preserve application headroom. Relocatable objects and repetitive assembler
-listings are removed after a successful link.
+That is the whole happy path: install a compiler on this machine, write a
+sketch that looks like Arduino (`setup` / `loop`), one command to compile and
+burn. Details: [docs/workflow.md](docs/workflow.md).
 
-`package` creates a reproducible host-neutral manifest. `flash` never opens a
-USB or programmer transport itself: it delegates exact identity, mutation,
-verification, recovery, and restoration to an external programming
-backend.
+## Layout
+
+```
+examples/            target sketches (the MCU you are flashing)
+hardware/            firmware for programmer appliances we build
+  nano_at89c2051/    Nano as a 12 V parallel programmer — not a target sketch
+docs/
+  workflow.md        the user path
+  families/          per-family programming and wiring
+niusburner/          the Python package
+  __main__.py        CLI
+  workflow.py        compile + upload
+  sketch.py          .ino wrapping; honest C++ refusal
+  display.py         find NiusDisplay, pick C sources
+  boards.py          named parts (flash size, programmer)
+  build.py           SDCC driver
+  flash.py           delegate probe/burn (these chips have no debugger)
+  backends/          USB-ISP HID and later transports
+  runtime/mcs51/     GPIO runtime for sketches that do not use NiusDisplay
+tests/               host tests; no hardware required
+```
+
+Two kinds of `.ino` live in this repository and they are not interchangeable:
+
+| Tree | Runs on | Flashed with |
+|---|---|---|
+| `examples/` | AT89S52 (and later parts) | `python -m niusburner upload` |
+| `hardware/` | Arduino Nano (the programmer) | `arduino-cli` |
+
+## Status
+
+- `verified` — run end to end on the bench
+- `implemented` — tested against a host stub, not silicon
+- `planned` — documented, not written
+
+| Target | Method | Status |
+|---|---|---|
+| AT89S52 | USB-ISP HID (zhifengsoft) | `verified` — probe `1E 52 06`, erase/program/verify |
+| AT89C2051 | Nano-hosted 12 V programmer | `implemented`; physical backend pending |
+| STC89C52RC | UART bootloader (`stcgal`) | `planned`; SPI ISP is the wrong protocol |
+| STC15W408AS | `stcgal` serial bootloader | `planned` |
+| PIC12F675 / PIC16F877A | PICkit 3 | `planned` |
+
+## What it is not
+
+**It does not vendor toolchains.** Compilers stay on the machine, under
+`EMBD_TOOLCHAINS` or PATH. `setup` / `detect` say which tool is missing and
+where to get it.
+
+**It does not compile Arduino C++ on SDCC.** SDCC has no C++ mode. A sketch
+that `#include <NiusDisplay.h>` is refused; rewrite it against NiusDuino / the
+C drivers, or use NiusDisplay's IAR 8051 Arduino core.
 
 ## Guides
 
-- [docs/programming-8051.md](docs/programming-8051.md) — AT89S52, AT89C2051, STC89C52RC, STC15W408AS
-- [docs/programming-pic.md](docs/programming-pic.md) — PIC12F675, PIC16F877A via PICkit 3
-- [docs/toolchains.md](docs/toolchains.md) — what gets installed where, and why nothing lands in a repo
-- [programmers/nano_at89c2051/](programmers/nano_at89c2051/) — building the 12 V programmer
+- [docs/workflow.md](docs/workflow.md) — setup, compile, upload, NiusDisplay
+- [docs/families/8051.md](docs/families/8051.md) — AT89S52, AT89C2051, STC
+- [docs/families/pic.md](docs/families/pic.md) — PIC12F675, PIC16F877A
+- [docs/toolchains.md](docs/toolchains.md) — why nothing is vendored
+- [docs/integration.md](docs/integration.md) — using NiusBurner from another project
+- [hardware/nano_at89c2051/](hardware/nano_at89c2051/) — building the 12 V programmer
 
 ## Licence
 

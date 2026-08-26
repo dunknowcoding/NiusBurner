@@ -58,6 +58,14 @@ def test_every_entry_can_be_detected_or_says_why_not():
                     f"{name} has neither a detection rule nor any guidance")
                 continue
             keys = set(rule)
+            if "any" in keys:
+                assert rule["any"], f"{name} detect.any is empty"
+                for sub in rule["any"]:
+                    subkeys = set(sub)
+                    assert {"cmd", "path", "glob"} & subkeys or (
+                        "vid" in subkeys and "pid" in subkeys), (
+                        f"{name} detect.any entry has no cmd, path, glob or hid")
+                continue
             assert {"cmd", "path", "glob"} & keys or (
                 "vid" in keys and "pid" in keys), (
                 f"{name} detect rule has no cmd, path, glob or hid vid/pid")
@@ -72,15 +80,17 @@ def test_detection_paths_point_outside_this_repository():
     for section in ("compilers", "programmers"):
         for name, entry in reg[section].items():
             rule = entry.get("detect") or {}
-            for key in ("path", "glob"):
-                if key not in rule:
-                    continue
-                value = pathlib.Path(rule[key])
-                assert not value.is_absolute() or ROOT not in value.parents, (
-                    f"{name} expects a tool inside the repository")
-                assert value.is_absolute(), (
-                    f"{name} uses a relative tool path; it would resolve "
-                    "against the working directory")
+            rules = rule.get("any") or [rule]
+            for sub in rules:
+                for key in ("path", "glob"):
+                    if key not in sub:
+                        continue
+                    value = pathlib.Path(sub[key])
+                    assert not value.is_absolute() or ROOT not in value.parents, (
+                        f"{name} expects a tool inside the repository")
+                    assert value.is_absolute(), (
+                        f"{name} uses a relative tool path; it would resolve "
+                        "against the working directory")
 
 
 def test_probing_a_missing_tool_gives_a_reason_not_a_crash():

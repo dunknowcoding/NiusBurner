@@ -1,18 +1,17 @@
 """Delegation boundary for physical programming and recovery.
 
-NiusBurner prepares images and stops there. Everything that touches real
-hardware -- probe identity, device mutation, verification, recovery,
-restoration and USB safety -- belongs to an external programming backend, and
-this module is the whole of the interface to it.
+Copyright 2026 dunknowcoding (NiusRobotLab)
+SPDX-License-Identifier: Apache-2.0
 
-The split is deliberate. Preparing a HEX file is pure computation and safe to
-get wrong; driving 12 V into a part is not, and the two should not live in the
-same process or be reviewed to the same standard.
+These parts have no debug interface. This module is not a debugger; it is
+the only place NiusBurner asks another process to touch silicon.
 
-The backend is named by the NIUSBURNER_BACKEND environment variable, or
-`niusprog` on PATH, or ``python -m niusburner.prog`` if neither is installed.
-NiusBurner itself stays a headless CLI: probe, build, package, and flash
-never open a GUI.
+Preparing a HEX file is pure computation and safe to get wrong; driving 12 V
+into a part is not. Probe identity, mutation, verification, recovery,
+restoration and USB safety therefore belong to an external backend.
+
+The backend is named by NIUSBURNER_BACKEND, or `niusprog` on PATH, or
+``python -m niusburner.prog`` if neither is installed. The CLI stays headless.
 """
 
 from __future__ import annotations

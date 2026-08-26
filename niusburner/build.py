@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -55,6 +56,28 @@ def _sha256(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def find_sdcc() -> pathlib.Path | None:
+    """Locate SDCC on PATH, then in the places the Windows installer uses."""
+    which = shutil.which("sdcc")
+    if which:
+        return pathlib.Path(which)
+    for candidate in (
+        pathlib.Path(r"C:\Program Files\SDCC\bin\sdcc.exe"),
+        pathlib.Path(r"C:\Program Files (x86)\SDCC\bin\sdcc.exe"),
+        pathlib.Path("/usr/bin/sdcc"),
+        pathlib.Path("/usr/local/bin/sdcc"),
+    ):
+        if candidate.is_file():
+            return candidate
+    home = os.environ.get("SDCC_HOME") or os.environ.get("SDCC")
+    if home:
+        for name in ("sdcc.exe", "sdcc"):
+            candidate = pathlib.Path(home) / "bin" / name
+            if candidate.is_file():
+                return candidate
+    return None
+
+
 def _load_contract(path: pathlib.Path | None) -> tuple[int | None, int | None]:
     if path is None:
         return None, None
@@ -85,16 +108,25 @@ def build_mcs51(
     program_limit: int | None = None,
     data_limit: int | None = None,
     require_version: str | None = None,
+    model: str = "small",
+    stack_auto: bool = False,
+    xram_size: int = 0,
+    defines: list[str] | None = None,
 ) -> Mcs51Build:
     """Compile C through optimized assembly and fail closed on exact limits."""
 
     if not sources or code_size <= 0 or iram_size <= 0:
         raise ValueError("sources and positive memory capacities are required")
+    if model not in {"small", "medium", "large"}:
+        raise ValueError("SDCC model must be small, medium or large")
     resolved_sources = [path.resolve(strict=True) for path in sources]
     resolved_includes = [path.resolve(strict=True) for path in includes]
-    compiler_path = compiler or pathlib.Path(shutil.which("sdcc") or "")
-    if not compiler_path or not compiler_path.is_file():
-        raise FileNotFoundError("SDCC is not available; install it or pass --compiler")
+    compiler_path = compiler or find_sdcc()
+    if compiler_path is None or not compiler_path.is_file():
+        raise FileNotFoundError(
+            "SDCC is not available. Install it from https://sourceforge.net/projects/sdcc/files/ "
+            "and re-run `python -m niusburner setup`, or pass --compiler"
+        )
     compiler_path = compiler_path.resolve(strict=True)
     version = _run([str(compiler_path), "--version"], pathlib.Path.cwd()).strip()
     if "SDCC" not in version:
@@ -112,10 +144,16 @@ def build_mcs51(
 
     output.mkdir(parents=True, exist_ok=True)
     flags = [
-        str(compiler_path), "-mmcs51", "--model-small", "--std-c99",
+        str(compiler_path), "-mmcs51", f"--model-{model}", "--std-c99",
         "--opt-code-size", "--iram-size", str(iram_size),
         "--code-size", str(code_size),
     ]
+    if stack_auto:
+        flags.append("--stack-auto")
+    if xram_size > 0:
+        flags.extend(("--xram-size", str(xram_size)))
+    for name in defines or []:
+        flags.append(f"-D{name}")
     for include in resolved_includes:
         flags.extend(("-I", str(include)))
 
@@ -165,6 +203,8 @@ def build_mcs51(
             "family": "mcs51",
             "program_capacity_bytes": code_size,
             "iram_capacity_bytes": iram_size,
+            "xram_capacity_bytes": xram_size,
+            "model": model,
         },
         "limits": {
             "linked_system_program_bytes": program_limit,

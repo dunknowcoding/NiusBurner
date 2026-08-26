@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "niusburner"
-version = "0.2.4"
-description = "Reproducible embedded image packaging with delegated physical recovery"
+version = "0.3.0"
+description = "Compile Arduino-shaped sketches and flash them onto parts the Arduino IDE cannot reach"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -18,7 +18,12 @@ niusprog    = "niusburner.prog:main"
 include = ["niusburner*"]
 
 [tool.setuptools.package-data]
-niusburner = ["toolchains.json"]
+niusburner = [
+    "toolchains.json",
+    "boards.json",
+    "runtime/mcs51/*.c",
+    "runtime/mcs51/*.h",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

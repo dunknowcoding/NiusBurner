@@ -23,11 +23,21 @@
         "pic16"
       ],
       "detect": {
-        "cmd": "sdcc",
-        "args": [
-          "--version"
-        ],
-        "match": "SDCC"
+        "any": [
+          {
+            "cmd": "sdcc",
+            "args": [
+              "--version"
+            ],
+            "match": "SDCC"
+          },
+          {
+            "path": "C:\\Program Files\\SDCC\\bin\\sdcc.exe"
+          },
+          {
+            "path": "C:\\Program Files (x86)\\SDCC\\bin\\sdcc.exe"
+          }
+        ]
       },
       "install": {
         "url": "https://sourceforge.net/projects/sdcc/files/",
@@ -183,9 +193,9 @@
         "at89c4051"
       ],
       "transport": "serial",
-      "firmware": "programmers/nano_at89c2051/",
+      "firmware": "hardware/nano_at89c2051/",
       "note": "The AT89C2051 has NO ISP at all. It needs a 12 V parallel programming sequence, so we build the programmer ourselves on a Nano.",
-      "wiring": "programmers/nano_at89c2051/README.md"
+      "wiring": "hardware/nano_at89c2051/README.md"
     },
     "stcgal": {
       "programs": [
@@ -215,7 +225,7 @@
       ],
       "transport": "usb",
       "note": "Dropped by MPLAB X 6.x. Use MPLAB IPE 5.50 or earlier, or a PICkit 4/5.",
-      "wiring": "docs/programming-pic.md"
+      "wiring": "docs/families/pic.md"
     }
   }
 }

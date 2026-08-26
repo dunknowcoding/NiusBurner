@@ -1,6 +1,6 @@
 """niusprog — physical programming backend invoked by `niusburner flash`.
 
-Accepted sub-commands (as specified by niusburner/debugger.py):
+Accepted sub-commands (as specified by niusburner/flash.py):
   burn <target> <image.ihx> --addr <hex> --confirm <target>
        --ack-data-loss --state-policy replace
 

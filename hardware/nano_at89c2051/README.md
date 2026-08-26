@@ -1,30 +1,22 @@
-# AT89C2051 programmer
+# AT89C2051 programmer (Arduino Nano)
 
-A 12 V parallel programmer hosted on an Arduino Nano V3, for a chip that has
-no ISP of any kind and cannot be reached by a USB-ISP.
+Firmware that runs **on the Nano**, turning it into a 12 V parallel programmer
+for a chip that has no ISP. This is not a sketch for the AT89C2051 itself.
 
 | File | What it is |
 |---|---|
 | `nano_at89c2051.ino` | Nano firmware — 3,972 B, 12% of the board |
-| `flash.py` | Host tool: Intel HEX parsing, erase, write, verify, read back |
 
-**Full wiring, the 12 V rail, the safety rule and the procedure are in
-[docs/hardware/programming-8051.md](../../docs/hardware/programming-8051.md).**
-That guide also covers the AT89S52, STC89C52RC and STC15W408AS, which all use
-different routes.
+Host-side erase/write/verify is `niusprog` / `python -m niusburner flash`,
+not a second Python flasher in this folder. Physical use of this 12 V
+protocol is still pending a `niusprog` backend.
 
-## Quick reference
+**Wiring, the 12 V rail, the safety rule and the procedure:**
+[docs/families/8051.md](../../docs/families/8051.md).
 
 ```bash
 arduino-cli compile -b arduino:avr:nano --upload -p <PORT> nano_at89c2051.ino
-
-niusburner package at89c2051 firmware.ihx out
 ```
-
-Physical use remains blocked until the external programming backend is
-for this exact 12 V programmer protocol. NiusBurner does not carry a second
-host flasher or bypass `niusprog` identity, backup, verification, and restoration
-gates.
 
 > ### ⚠️ A2 and A3 must never be high together
 > A2 switches 12 V onto RST; A3 switches 5 V. Both high connects 12 V to the

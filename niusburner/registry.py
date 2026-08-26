@@ -151,6 +151,15 @@ def probe(entry: dict[str, Any]) -> tuple[bool, str, str, str]:
     rule = entry.get("detect")
     if not rule:
         return False, "", "", "no detection rule; presence cannot be confirmed"
+    if "any" in rule:
+        reasons: list[str] = []
+        for sub in rule["any"]:
+            ok, where, version, reason = probe({"detect": sub})
+            if ok:
+                return ok, where, version, reason
+            if reason:
+                reasons.append(reason)
+        return False, "", "", "; ".join(reasons) or "none of the detect rules matched"
     if "cmd" in rule:
         return _probe_cmd(rule)
     if "path" in rule:

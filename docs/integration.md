@@ -1,75 +1,65 @@
 # Using NiusBurner from another project
 
-NiusBurner has **no dependency on any of its consumers**. It is a standalone
-tool for building and packaging parts the Arduino IDE cannot reach, and it works
-against any source tree.
-
-That direction matters and is deliberate: consumers depend on NiusBurner, never
-the reverse. A tool that knew about the projects using it could not be shipped
-to anyone else, and could not be reasoned about on its own.
+NiusBurner has **no dependency on any of its consumers**. Consumers depend on
+NiusBurner, never the reverse.
 
 ```text
-    source project  -->  NiusBurner  -->  configured toolchain root
+    source project  -->  NiusBurner  -->  compiler on this machine
+                              -->  USB-ISP / other programmer
 ```
 
 ## NiusDisplay
 
 NiusDisplay is a **plain Arduino library** and must stay one. The Arduino IDE
-compiles everything under `src/`, so anything that is not portable C/C++ for the
-target belongs outside it — and in practice, outside the repository.
+compiles everything under `src/`, so programmers, 12 V rails and SDCC live
+here.
 
-That is why the AT89C2051 programmer, the 12 V wiring, the Intel HEX handling
-and the per-family programming guides live here rather than there. A user who
-installs NiusDisplay through the Library Manager gets a display library; a user
-who wants to flash an 8051 gets NiusBurner as well.
-
-The split is by *what the file is*, not by what it is about:
-
-| Stays in NiusDisplay | Moves to NiusBurner |
+| Stays in NiusDisplay | Lives in NiusBurner |
 |---|---|
-| `src/**` — the library the IDE compiles | programmer firmware and host flashers |
-| its own `tests/`, `examples/` | per-family programming and wiring guides |
-| `ports/**` — HAL implementations, source only | toolchain discovery and install |
-| `tools/compile_matrix.py` — verifies *this library* | flashing, chip erase, signature checks |
+| `src/**` — the library the IDE compiles | CLI: `setup`, `compile`, `upload` |
+| `examples/` — Arduino C++ sketches | `examples/` — C-shaped `.ino` for 8051 |
+| `ports/**` — HAL implementations, source only | USB-ISP HID, Nano 12 V firmware |
+| `tools/compile_matrix.py` — verifies *this library* | toolchain discovery, chip erase |
 
-## Reproducible non-Arduino builds
+A user who installs NiusDisplay through the Library Manager gets a display
+library. A user who wants to flash an 8051 also installs NiusBurner:
 
-NiusBurner also resolves **ARM and RISC-V** toolchains even when an Arduino core
-exists. Standalone firmware, CI, release packaging, and independent verification
-need a caller-selected compiler revision rather than whichever tool a board
-package happens to bundle.
+```bash
+python -m niusburner setup --board at89s52
+python -m niusburner upload examples/niusdisplay_tm1637 --board at89s52 --yes
+```
+
+The library is found via `--library`, `NIUSDISPLAY`, a sibling checkout, or
+the Arduino libraries folder. NiusBurner does not import it.
+
+Arduino C++ examples (`#include <NiusDisplay.h>`) stay in NiusDisplay and
+build with arduino-cli on AVR/ESP. They cannot build with SDCC; the 8051
+path is NiusDuino C (see `ports/8051-sdcc` and this repo's
+`examples/niusdisplay_tm1637`).
 
 ## The contract
 
-Two things, both stable:
-
-**A CLI.** `list`, `detect`, `which <part>`, `package`, and delegated `flash`.
-output is added when a consumer needs it, not before.
+**A CLI.** `setup`, `boards`, `compile`, `upload` are the workflow.
+`list` / `detect` / `which` / `package` / `probe` / `flash` remain for
+inventory and for an already-built image.
 
 **A Python API.**
 
 ```python
-from niusburner import registry
+from niusburner import registry, boards, workflow
 
-registry.scan()                     # everything, with why it is missing
-registry.for_family("mcs51")        # compilers that build for a family
-registry.programmers_for("at89s52") # every route to a part, not one
+registry.scan()
+registry.programmers_for("at89s52")
+boards.get_board("at89s52")
+workflow.plan_compile(path, "at89s52")
 ```
 
-`programmers_for` returns **all** options rather than a recommendation. An
-STC89C52RC can be written over SPI ISP with a USB-ISP or through its serial
-bootloader, and which is right depends on how the board is wired — a choice
-that belongs to whoever can see the bench.
+`programmers_for` returns **all** options rather than a recommendation.
 
 ## What NiusBurner will not do
 
-- **Guess.** If a toolchain is missing it says which and where to get it. It
-  never silently substitutes another compiler, because a build that succeeded
-  with the wrong one is worse than a build that failed.
-- **Vendor.** See [toolchains.md](toolchains.md).
-- **Flash without a check.** `detect` is separate from `flash` so that an
-  environment problem surfaces before a chip is half-erased.
-
-NiusBurner never implements a second physical transport stack. `flash`
-delegates to an external programming backend, which owns exact probe identity,
-mutation, verification, recovery, restoration, and USB safety.
+- **Guess** a compiler. Missing tools are named, not substituted.
+- **Vendor** toolchains. See [toolchains.md](toolchains.md).
+- **Erase without an acknowledgement.** `upload` needs `--yes`; `flash` needs
+  `--ack-data-loss` and `--confirm`.
+- **Pretend SDCC compiles C++.** A C++ `.ino` is refused with a rewrite path.
