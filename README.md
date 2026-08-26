@@ -58,15 +58,16 @@ Honest labelling, the same vocabulary the sibling projects use:
 
 | Target | Method | Status |
 |---|---|---|
+| AT89S52 | USB-ISP HID (zhifengsoft) | `verified` — probe `1E 52 06`, erase/program/verify via CLI |
 | AT89C2051 | Nano-hosted 12 V programmer firmware | `implemented`; physical `niusprog` backend pending |
-| AT89S52 / STC89C52RC | USB-ISP over SPI | `implemented`; HID dongle found, SPI ACK on this STC board pending |
+| STC89C52RC | UART bootloader (`stcgal`) | `planned` for this repo; SPI ISP is the wrong protocol |
 | STC15W408AS | `stcgal` serial bootloader | `planned` |
 | PIC12F675 / PIC16F877A | PICkit 3 | `planned` |
 | MSP430 | MSP430-GCC + mspdebug | `planned` |
 | ARM / RISC-V (portable) | resolved below the configured toolchain root | `planned` |
 
-**USB-ISP HID dongle is on the bench; this STC89C52 board did not ACK SPI.**
-Flash is refused before erase when MISO stays 0.
+**USB-ISP HID talks AT89S52 serial-ISP.** Probe and flash are CLI-only
+(`python -m niusburner probe` / `flash`). Do not open ProgISP for day-to-day use.
 
 ## Quick start
 
@@ -78,7 +79,8 @@ python -m niusburner build-mcs51 \
   --include include --include generated --output out \
   --contract generated/contract.json --data-limit 32
 python -m niusburner package TARGET firmware.bin out
-python -m niusburner flash TARGET out/firmware.bin \
+python -m niusburner probe at89s52 --confirm at89s52
+python -m niusburner flash TARGET out/firmware.ihx \
   --confirm TARGET --ack-data-loss --state-policy replace
 ```
 

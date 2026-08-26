@@ -1,11 +1,10 @@
 # Programming the 8051 parts
 
-Four chips, three different routes. None of this is hardware-verified — the
-parts are on order.
+Four chips, three different routes.
 
 | Part | Flash | Route | Tool |
 |---|---|---|---|
-| **AT89S52** | 8 KB | SPI ISP | USB-ISP HID + `niusprog` |
+| **AT89S52** | 8 KB | SPI ISP | USB-ISP HID + `python -m niusburner` |
 | **STC89C52RC** | 8 KB | serial bootloader | `stcgal` (same DIP-40 header does not ACK SPI) |
 | **STC15W408AS** | 8 KB | serial bootloader **only** | `stcgal` + USB-TTL |
 | **AT89C2051** | 2 KB | 12 V parallel | [Nano programmer](#at89c2051--nano-v3-programmer) |
@@ -46,16 +45,20 @@ bad wiring.
 
 ### Software
 
-**`avrdude` does not speak the 8051 ISP protocol** — the command bytes differ
-from AVR's.  The AliExpress **zhifengsoft USBHID** dongle (VID `03EB` /
-PID `C8B4`) is driven by `niusprog` over the Windows HidUsb class driver, not
-by avrdude.  Do not install WinUSB on that device via Zadig.
+Headless CLI only — no ProgISP GUI is required at runtime:
 
-ProgISP, the Windows tool supplied with these programmers, uses the same HID
-path and knows the AT89S5x algorithm.
+```bash
+python -m niusburner detect
+python -m niusburner probe at89s52 --confirm at89s52
+python -m niusburner build-mcs51 --source examples/at89s52_blink.c \
+  --output out --code-size 8192 --iram-size 256
+python -m niusburner flash at89s52 out/firmware.ihx \
+  --confirm at89s52 --ack-data-loss --state-policy replace
+```
 
-Select the exact part, then: *Erase → Program → Verify*. Reading the signature
-first is worth the second it takes.
+Expected signature: `1E 52 06`. `avrdude` does not speak this 8051 ISP
+framing. The dongle (VID `03EB` / PID `C8B4`) stays on **HidUsb**; do not
+install WinUSB via Zadig.
 
 ### STC89C52RC on the same header
 

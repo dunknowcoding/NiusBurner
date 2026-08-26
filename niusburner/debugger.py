@@ -9,9 +9,10 @@ The split is deliberate. Preparing a HEX file is pure computation and safe to
 get wrong; driving 12 V into a part is not, and the two should not live in the
 same process or be reviewed to the same standard.
 
-The backend is named by the NIUSBURNER_BACKEND environment variable, or found
-on PATH. It is not hardcoded: which programmer is correct depends on the bench,
-and a tool that assumes one is a tool that fights the user who has another.
+The backend is named by the NIUSBURNER_BACKEND environment variable, or
+`niusprog` on PATH, or ``python -m niusburner.prog`` if neither is installed.
+NiusBurner itself stays a headless CLI: probe, build, package, and flash
+never open a GUI.
 """
 
 from __future__ import annotations
@@ -20,29 +21,32 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 
 
 #: Overridable so a site can point at whatever backend it actually uses.
 BACKEND_ENV = "NIUSBURNER_BACKEND"
 
 
-def resolve_backend() -> str:
-    """Locate the external programming backend, or explain what is missing."""
+def resolve_backend() -> list[str]:
+    """Locate the programming backend as a command prefix.
+
+    Prefers NIUSBURNER_BACKEND / niusprog on PATH. If neither is installed,
+    falls back to ``python -m niusburner.prog`` so the CLI is self-contained.
+    """
     configured = os.environ.get(BACKEND_ENV)
     if configured:
         path = pathlib.Path(configured).expanduser()
         if path.is_file():
-            return str(path)
+            return [str(path)]
         raise FileNotFoundError(
             f"{BACKEND_ENV} is set to {configured!r}, which is not an existing "
             "executable")
     name = os.environ.get("NIUSBURNER_BACKEND_NAME", "niusprog")
     found = shutil.which(name) or shutil.which(name + ".cmd")
-    if not found:
-        raise FileNotFoundError(
-            f"no programming backend found: {name!r} is not on PATH. "
-            f"Set {BACKEND_ENV} to the executable that drives your programmer.")
-    return found
+    if found:
+        return [found]
+    return [sys.executable, "-m", "niusburner.prog"]
 
 
 def burn_command(*, target: str, image: pathlib.Path, confirm: str,
@@ -55,7 +59,7 @@ def burn_command(*, target: str, image: pathlib.Path, confirm: str,
     if address < 0:
         raise ValueError("address must be non-negative")
     image = image.resolve(strict=True)
-    command = [resolve_backend()]
+    command = list(resolve_backend())
     if config is not None:
         command += ["--config", str(config.resolve(strict=True))]
     if state_policy == "replace":
@@ -69,6 +73,17 @@ def burn_command(*, target: str, image: pathlib.Path, confirm: str,
                     "--ack-data-loss", "--state-policy", "restore",
                     "--backup", str(image)]
     return command
+
+
+def probe_command(*, target: str, confirm: str) -> list[str]:
+    if not target or confirm != target:
+        raise ValueError("confirm must exactly match target")
+    return list(resolve_backend()) + ["probe", target, "--confirm", confirm]
+
+
+def probe(*, target: str, confirm: str) -> int:
+    return subprocess.run(probe_command(target=target, confirm=confirm),
+                          check=False).returncode
 
 
 def burn(**kwargs) -> int:

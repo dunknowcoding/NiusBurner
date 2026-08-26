@@ -174,7 +174,7 @@
         "vid": "0x03EB",
         "pid": "0xC8B4"
       },
-      "note": "zhifengsoft USBHID (VID 03EB / PID C8B4) over HidUsb. SPI is the AT89S51/S52 protocol; an STC89C52RC in the same socket needs the UART bootloader instead.",
+      "note": "zhifengsoft USBHID (VID 03EB / PID C8B4) over HidUsb. AT89S51/S52 serial-ISP. Headless: python -m niusburner probe|flash. Do not install WinUSB.",
       "wiring": "docs/wiring/usbasp-idc10.md"
     },
     "nano_at89c2051": {

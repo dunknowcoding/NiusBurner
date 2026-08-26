@@ -6,7 +6,8 @@ SPDX-License-Identifier: Apache-2.0
     python -m niusburner list                 what the registry knows about
     python -m niusburner detect               probe for what is really here
     python -m niusburner which <part>         how could I program this chip
-    python -m niusburner flash <part> ...     do it
+    python -m niusburner probe <part> ...     read signature, no erase
+    python -m niusburner flash <part> ...     erase, program, verify
 
 `detect` and `flash` are kept apart deliberately. Most failures on these parts
 are environmental -- a compiler that was never installed, a programmer with no
@@ -82,6 +83,14 @@ def _cmd_which(args: argparse.Namespace) -> int:
             print(f"    not usable yet: {f.reason}")
         print()
     return 0
+
+
+def _cmd_probe(args: argparse.Namespace) -> int:
+    try:
+        return debugger.probe(target=args.target, confirm=args.confirm)
+    except ValueError as exc:
+        print(f"refused: {exc}", file=sys.stderr)
+        return 2
 
 
 def _cmd_flash(args: argparse.Namespace) -> int:
@@ -169,7 +178,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--require-version")
     p.set_defaults(fn=_cmd_build_mcs51)
 
-    p = sub.add_parser("flash", help="delegate physical programming to niusprog")
+    p = sub.add_parser("probe", help="read the chip signature; no erase")
+    p.add_argument("target")
+    p.add_argument("--confirm", required=True)
+    p.set_defaults(fn=_cmd_probe)
+
+    p = sub.add_parser("flash", help="erase, program and verify via niusprog")
     p.add_argument("target")
     p.add_argument("image", type=pathlib.Path)
     p.add_argument("--confirm", required=True)
