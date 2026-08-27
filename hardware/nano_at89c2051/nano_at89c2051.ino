@@ -176,7 +176,7 @@ static uint8_t hexVal(char c);
 /*
  * Deliberately line-based text rather than a binary protocol. It can be driven
  * from a serial terminal by hand when something is wrong, which matters a lot
- * for a part with no debug interface whatsoever.
+ * on a part that reports nothing else.
  */
 
 static void cmdSignature(void) {

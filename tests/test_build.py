@@ -21,6 +21,10 @@ def _fake_tool(monkeypatch, program_bytes: int):
     def fake_run(command: list[str], cwd: pathlib.Path) -> str:
         if "--version" in command:
             return "SDCC 4.5.0 #15242\n"
+        if "sdas" in pathlib.Path(command[0]).name.lower():
+            rel = command[-2]
+            (cwd / rel).write_text("object", encoding="ascii")
+            return ""
         output = command[command.index("-o") + 1]
         if "-c" in command:
             (cwd / output).write_text("object", encoding="ascii")
@@ -115,3 +119,22 @@ def test_sdcc_program_parser_fails_closed():
         "ROM/EPROM/FLASH 0x0000 0x01ff 512 2048") == 512
     with pytest.raises(ValueError, match="exact program-byte"):
         build.parse_sdcc_program_bytes("ambiguous report")
+
+
+def test_mcs51_build_assembles_user_s(tmp_path, monkeypatch):
+    _fake_tool(monkeypatch, 200)
+    compiler = tmp_path / "sdcc.exe"
+    compiler.write_bytes(b"")
+    (tmp_path / "sdas8051.exe").write_bytes(b"")
+    c_src = tmp_path / "app.c"
+    c_src.write_text(
+        "void helper(void);\nint main(void) { helper(); return 0; }\n",
+        encoding="ascii")
+    asm = tmp_path / "helper.S"
+    asm.write_text(".globl _helper\n_helper:\n        ret\n", encoding="ascii")
+    result = build.build_mcs51(
+        [c_src, asm], [], tmp_path / "out", compiler=compiler)
+    assert result.program_bytes == 200
+    names = [s["name"] for s in json.loads(
+        result.manifest.read_text(encoding="utf-8"))["sources"]]
+    assert "helper.S" in names or "helper.s" in names

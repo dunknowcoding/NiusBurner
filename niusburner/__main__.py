@@ -5,8 +5,11 @@ SPDX-License-Identifier: Apache-2.0
 
     python -m niusburner setup                what to install on this machine
     python -m niusburner boards               parts this tool knows how to flash
+    python -m niusburner lower   <sketch>     BASIC Arduino C++ → C (no compile)
     python -m niusburner compile <sketch> --board at89s52
     python -m niusburner upload  <sketch> --board at89s52 --yes
+    python -m niusburner upload  <sketch> --board at89s52 --yes --port COM31 --expect "NB TM1637"
+    python -m niusburner monitor --port COM31 --baud 9600
 
 Low-level commands (`build-mcs51`, `probe`, `flash`) stay available. The
 commands above are the workflow: a sketch, a board, one compile, one flash.
@@ -137,6 +140,18 @@ def _cmd_setup(args: argparse.Namespace) -> int:
             "pass --library or set NIUSDISPLAY",
         )
 
+    print("\nArduino IDE")
+    try:
+        from . import ide as ide_mod
+        dest = ide_mod.install_arduino_platform(
+            pathlib.Path(args.sketchbook) if args.sketchbook else None)
+        _print_check(True, "board package", str(dest))
+        print("           Tools → Board → NiusBurner 8051 (SDCC) → AT89S52")
+        print("           Verify = SDCC; Upload = USB-ISP (erases the chip)")
+        print("           .S tabs and SDCC __asm are assembled with sdas8051, not avr-as")
+    except FileNotFoundError as exc:
+        _print_check(False, "board package", str(exc))
+
     print()
     if board:
         print(f"board {board.id}: {board.note}")
@@ -187,6 +202,8 @@ def _print_plan(plan: workflow.CompilePlan) -> None:
     print(f"board     {board.id}  ({board.code_size} B flash, {board.iram_size} B IRAM, "
           f"{board.programmer})")
     print(f"sketch    {plan.sketch.path}")
+    if plan.sketch.lowered:
+        print("lowered   BASIC Arduino C++ -> C")
     print(f"runtime   {plan.runtime}"
           + (f"  ({plan.library})" if plan.library else ""))
     print(f"sources   {len(plan.sources)} translation units")
@@ -200,6 +217,7 @@ def _plan_from_args(args: argparse.Namespace) -> workflow.CompilePlan:
         args.sketch,
         args.board,
         library=args.library,
+        mounts=args.mount,
         xram_size=args.xram_size,
         defines=args.define,
         output=args.output,
@@ -241,13 +259,31 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         )
         return 2
 
+    port = getattr(args, "port", None)
     try:
+        # With a monitor to attach, hold the part in reset until the port is
+        # open -- a sketch banner is gone within milliseconds of the release.
         rc = workflow.upload_image(
-            plan, result.image, skip_probe=args.skip_probe)
+            plan, result.image, skip_probe=args.skip_probe,
+            hold_reset=bool(port))
     except (OSError, ValueError) as exc:
         print(f"upload failed: {exc}", file=sys.stderr)
         return 2
-    return rc
+    if rc != 0:
+        return rc
+    if not port:
+        return 0
+    from . import monitor as monitor_mod
+    baud = args.baud
+    if baud is None:
+        baud = monitor_mod.uart_baud_from_sketch(plan.sketch.text) or 115200
+    return monitor_mod.monitor(
+        port,
+        baud,
+        seconds=args.seconds if args.seconds is not None else 4.0,
+        expect=args.expect,
+        on_open=lambda: workflow.reset_board(plan),
+    )
 
 
 def _cmd_probe(args: argparse.Namespace) -> int:
@@ -267,6 +303,22 @@ def _cmd_flash(args: argparse.Namespace) -> int:
     except (FileNotFoundError, ValueError) as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
+
+
+def _cmd_lower(args: argparse.Namespace) -> int:
+    from . import cxxlower
+    argv = [str(args.sketch)]
+    if args.output is not None:
+        argv.extend(["-o", str(args.output)])
+    for mount in args.mount or []:
+        argv.extend(["--mount", str(mount)])
+    return cxxlower.main(argv)
+
+
+def _cmd_monitor(args: argparse.Namespace) -> int:
+    from . import monitor as monitor_mod
+    return monitor_mod.monitor(
+        args.port, args.baud, seconds=args.seconds, expect=args.expect)
 
 
 def _cmd_package(args: argparse.Namespace) -> int:
@@ -307,6 +359,8 @@ def _add_sketch_flags(parser: argparse.ArgumentParser) -> None:
                         help="target board (see `niusburner boards`)")
     parser.add_argument("--library", type=pathlib.Path,
                         help="NiusDisplay root, if the sketch uses it")
+    parser.add_argument("--mount", action="append", type=pathlib.Path, default=[],
+                        help="library root with niusburner/adapter.json; repeatable")
     parser.add_argument("--output", type=pathlib.Path,
                         help="build directory (default: <sketch>/.niusburner/<board>)")
     parser.add_argument("--compiler", type=pathlib.Path)
@@ -330,12 +384,26 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("setup", help="what to install so upload can run here")
     p.add_argument("--board", help="check the tools that board needs")
     p.add_argument("--library", type=pathlib.Path)
+    p.add_argument("--sketchbook", type=pathlib.Path,
+                   help="Arduino sketchbook to install the 8051 board package into")
     p.add_argument("--strict", action="store_true",
                    help="exit non-zero if a required tool is missing")
     p.set_defaults(fn=_cmd_setup)
 
     sub.add_parser("boards", help="parts this tool can compile (and flash)").set_defaults(
         fn=_cmd_boards)
+
+    p = sub.add_parser(
+        "lower",
+        help="rewrite BASIC Arduino C++ to C that SDCC can compile",
+    )
+    p.add_argument("sketch", type=pathlib.Path,
+                   help="`.ino`, `.c`, or a sketch directory")
+    p.add_argument("-o", "--output", type=pathlib.Path,
+                   help="write C to this file (default: stdout)")
+    p.add_argument("--mount", action="append", type=pathlib.Path, default=[],
+                   help="library root with niusburner/adapter.json; repeatable")
+    p.set_defaults(fn=_cmd_lower)
 
     p = sub.add_parser("compile", help="build a sketch for a board; do not flash")
     _add_sketch_flags(p)
@@ -347,7 +415,38 @@ def main(argv: list[str] | None = None) -> int:
                    help="acknowledge that the chip will be erased")
     p.add_argument("--skip-probe", action="store_true",
                    help="do not read the signature before erase")
+    p.add_argument(
+        "--port",
+        help="after a verified flash, read UART on this CH341 port (COM31)",
+    )
+    p.add_argument(
+        "--baud",
+        type=int,
+        default=None,
+        help="UART baud after flash (default: Serial.begin in the sketch, else 115200)",
+    )
+    p.add_argument("--seconds", type=float, default=4.0,
+                   help="UART listen seconds after flash (default 4)")
+    p.add_argument(
+        "--expect",
+        help="fail unless this ASCII substring appears on the UART",
+    )
     p.set_defaults(fn=_cmd_upload)
+
+    p = sub.add_parser(
+        "monitor",
+        help="read the AT89S52 UART (CH341); not the USB-ISP HID dongle",
+    )
+    p.add_argument("--port", required=True,
+                   help="host COM port of the CH341 (this bench: COM31)")
+    p.add_argument("--baud", type=int, default=9600)
+    p.add_argument("--seconds", type=float,
+                   help="exit after this many seconds (default: until Ctrl+C)")
+    p.add_argument(
+        "--expect",
+        help="fail unless this ASCII substring appears (use after a verified ISP flash)",
+    )
+    p.set_defaults(fn=_cmd_monitor)
 
     sub.add_parser("list", help="what the registry knows about").set_defaults(fn=_cmd_list)
 

@@ -78,6 +78,78 @@ def find_sdcc() -> pathlib.Path | None:
     return None
 
 
+_ASM_SUFFIXES = {".s", ".asm"}
+_PREPROCESS = re.compile(
+    r"(?m)^\s*#\s*(include|define|if|ifdef|ifndef|endif|undef|pragma)\b"
+)
+
+
+def find_sdas8051(compiler: pathlib.Path | None = None) -> pathlib.Path | None:
+    """Locate SDCC's MCS-51 assembler next to sdcc, then on PATH."""
+    sdcc = compiler or find_sdcc()
+    names = ("sdas8051.exe", "sdas8051")
+    if sdcc is not None:
+        for name in names:
+            candidate = sdcc.parent / name
+            if candidate.is_file():
+                return candidate
+    which = shutil.which("sdas8051")
+    return pathlib.Path(which) if which else None
+
+
+def find_sdcpp(compiler: pathlib.Path | None = None) -> pathlib.Path | None:
+    sdcc = compiler or find_sdcc()
+    names = ("sdcpp.exe", "sdcpp")
+    if sdcc is not None:
+        for name in names:
+            candidate = sdcc.parent / name
+            if candidate.is_file():
+                return candidate
+    which = shutil.which("sdcpp")
+    return pathlib.Path(which) if which else None
+
+
+def _is_asm_source(path: pathlib.Path) -> bool:
+    return path.suffix.lower() in _ASM_SUFFIXES
+
+
+def _assemble_mcs51(
+    source: pathlib.Path,
+    obj: str,
+    output: pathlib.Path,
+    *,
+    compiler: pathlib.Path,
+    includes: list[pathlib.Path],
+    defines: list[str],
+) -> pathlib.Path:
+    assembler = find_sdas8051(compiler)
+    if assembler is None or not assembler.is_file():
+        raise FileNotFoundError(
+            "sdas8051 is not next to SDCC. Re-install SDCC from "
+            "https://sourceforge.net/projects/sdcc/files/"
+        )
+    src = source
+    text = source.read_text(encoding="utf-8", errors="replace")
+    if _PREPROCESS.search(text):
+        cpp = find_sdcpp(compiler)
+        if cpp is None or not cpp.is_file():
+            raise FileNotFoundError(
+                f"{source.name} uses the C preprocessor; sdcpp was not found next to SDCC"
+            )
+        pp = output / (pathlib.Path(obj).stem + ".pp.asm")
+        cmd = [str(cpp), "-P", "-o", str(pp)]
+        for name in defines:
+            cmd.append(f"-D{name}")
+        for include in includes:
+            cmd.extend(("-I", str(include)))
+        cmd.append(str(source))
+        _run(cmd, output)
+        src = pp
+    # sdas8051 -plosgffw <rel> <asm>  (output is the first file, no -o).
+    _run([str(assembler), "-plosgffw", obj, str(src)], output)
+    return src
+
+
 def _load_contract(path: pathlib.Path | None) -> tuple[int | None, int | None]:
     if path is None:
         return None, None
@@ -147,11 +219,10 @@ def build_mcs51(
         str(compiler_path), "-mmcs51", f"--model-{model}", "--std-c99",
         "--opt-code-size", "--iram-size", str(iram_size),
         "--code-size", str(code_size),
+        "--xram-size", str(xram_size),
     ]
     if stack_auto:
         flags.append("--stack-auto")
-    if xram_size > 0:
-        flags.extend(("--xram-size", str(xram_size)))
     for name in defines or []:
         flags.append(f"-D{name}")
     for include in resolved_includes:
@@ -162,12 +233,22 @@ def build_mcs51(
     for index, source in enumerate(resolved_sources):
         stem = f"unit_{index:02d}_{source.stem}"
         obj = f"{stem}.rel"
-        _run([*flags, "-c", str(source), "-o", obj], output)
-        assembly = output / f"{stem}.asm"
-        if not assembly.is_file():
-            raise ValueError(f"SDCC did not retain optimized assembly for {source.name}")
+        if _is_asm_source(source):
+            kept = _assemble_mcs51(
+                source, obj, output,
+                compiler=compiler_path,
+                includes=resolved_includes,
+                defines=defines or [],
+            )
+            assemblies.append(kept)
+        else:
+            _run([*flags, "-c", str(source), "-o", obj], output)
+            assembly = output / f"{stem}.asm"
+            if not assembly.is_file():
+                raise ValueError(
+                    f"SDCC did not retain optimized assembly for {source.name}")
+            assemblies.append(assembly)
         objects.append(obj)
-        assemblies.append(assembly)
 
     _run([*flags, *objects, "-o", "firmware.ihx"], output)
     image = output / "firmware.ihx"

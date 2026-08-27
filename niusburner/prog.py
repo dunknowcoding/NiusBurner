@@ -35,7 +35,15 @@ def _cmd_burn(args: argparse.Namespace) -> int:
 
     # Programmer selection is automatic for now (only one backend supported).
     from niusburner.backends.usbisp_hid import flash
-    return flash(image, args.target)
+    return flash(image, args.target, run=not args.hold_reset)
+
+
+def _cmd_reset(args: argparse.Namespace) -> int:
+    if args.confirm != args.target:
+        print("refused: --confirm must match target", file=sys.stderr)
+        return 2
+    from niusburner.backends.usbisp_hid import reset
+    return reset(args.target)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -51,7 +59,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--confirm", required=True)
     p.add_argument("--ack-data-loss", action="store_true", required=True)
     p.add_argument("--state-policy", choices=("replace", "restore"), required=True)
+    p.add_argument("--hold-reset", action="store_true",
+                   help="leave the part in reset so a caller can attach to "
+                        "its UART before the first instruction runs")
     p.set_defaults(fn=_cmd_burn)
+
+    p4 = sub.add_parser("reset")
+    p4.add_argument("target")
+    p4.add_argument("--confirm", required=True)
+    p4.set_defaults(fn=_cmd_reset)
 
     p3 = sub.add_parser("probe")
     p3.add_argument("target")

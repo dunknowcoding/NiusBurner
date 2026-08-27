@@ -3,8 +3,7 @@
 Copyright 2026 dunknowcoding (NiusRobotLab)
 SPDX-License-Identifier: Apache-2.0
 
-These parts have no debug interface. This module is not a debugger; it is
-the only place NiusBurner asks another process to touch silicon.
+This is the only place NiusBurner asks another process to touch silicon.
 
 Preparing a HEX file is pure computation and safe to get wrong; driving 12 V
 into a part is not. Probe identity, mutation, verification, recovery,
@@ -50,7 +49,8 @@ def resolve_backend() -> list[str]:
 
 def burn_command(*, target: str, image: pathlib.Path, confirm: str,
                  state_policy: str, address: int = 0,
-                 config: pathlib.Path | None = None) -> list[str]:
+                 config: pathlib.Path | None = None,
+                 hold_reset: bool = False) -> list[str]:
     if not target or confirm != target:
         raise ValueError("confirm must exactly match target")
     if state_policy not in {"replace", "restore"}:
@@ -65,6 +65,8 @@ def burn_command(*, target: str, image: pathlib.Path, confirm: str,
         command += ["burn", target, str(image), "--addr", hex(address),
                     "--confirm", target, "--ack-data-loss",
                     "--state-policy", "replace"]
+        if hold_reset:
+            command += ["--hold-reset"]
     else:
         if address:
             raise ValueError("restore uses a complete backup and no load address")
@@ -72,6 +74,17 @@ def burn_command(*, target: str, image: pathlib.Path, confirm: str,
                     "--ack-data-loss", "--state-policy", "restore",
                     "--backup", str(image)]
     return command
+
+
+def reset_command(*, target: str, confirm: str) -> list[str]:
+    if not target or confirm != target:
+        raise ValueError("confirm must exactly match target")
+    return list(resolve_backend()) + ["reset", target, "--confirm", confirm]
+
+
+def reset(*, target: str, confirm: str) -> int:
+    return subprocess.run(reset_command(target=target, confirm=confirm),
+                          check=False).returncode
 
 
 def probe_command(*, target: str, confirm: str) -> list[str]:

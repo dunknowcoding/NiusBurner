@@ -35,7 +35,7 @@ niusburner/          the Python package
   display.py         find NiusDisplay, pick C sources
   boards.py          named parts (flash size, programmer)
   build.py           SDCC driver
-  flash.py           delegate probe/burn (these chips have no debugger)
+  flash.py           delegate probe/burn to the programmer backend
   backends/          USB-ISP HID and later transports
   runtime/mcs51/     GPIO runtime for sketches that do not use NiusDisplay
 tests/               host tests; no hardware required
@@ -59,7 +59,7 @@ Two kinds of `.ino` live in this repository and they are not interchangeable:
 
 | Target | Method | Status |
 |---|---|---|
-| AT89S52 | USB-ISP HID (zhifengsoft) | `verified` — probe `1E 52 06`, erase/program/verify |
+| AT89S52 | USB-ISP HID | `verified` — probe `1E 52 06`, erase/program/verify/run |
 | AT89C2051 | Nano-hosted 12 V programmer | `implemented`; physical backend pending |
 | STC89C52RC | UART bootloader (`stcgal`) | `planned`; SPI ISP is the wrong protocol |
 | STC15W408AS | `stcgal` serial bootloader | `planned` |

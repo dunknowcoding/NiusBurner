@@ -3,13 +3,11 @@
 Copyright 2026 dunknowcoding (NiusRobotLab)
 SPDX-License-Identifier: Apache-2.0
 
-Arduino concatenates `.ino` files into C++. SDCC has no C++ mode, so this
-module is honest about that: a sketch that uses classes, `Serial`, or
-`NiusDisplay.h` is refused with a pointer to the C API (NiusDuino) rather
-than being fed to a compiler that cannot parse it.
-
-A sketch that is already C -- `setup()`/`loop()`, optional Arduino GPIO
-names -- is wrapped and compiled. That is the NiusDisplay Tier 3 contract.
+Arduino concatenates `.ino` files into C++. SDCC has no C++ mode. A sketch
+that is already C -- `setup()`/`loop()`, optional Arduino GPIO names -- is
+wrapped and compiled. BASIC Arduino C++ (NiusSegment, F(), Serial.method)
+is rewritten to C by `cxxlower` before SDCC sees it. Sibling `.S` / `.asm`
+is assembled with sdas8051. Real C++ (classes, templates, String) is refused.
 """
 
 from __future__ import annotations
@@ -23,6 +21,7 @@ RUNTIME_MCS51 = HERE / "runtime" / "mcs51"
 
 _COMMENT_LINE = re.compile(r"//.*?$", re.M)
 _COMMENT_BLOCK = re.compile(r"/\*.*?\*/", re.S)
+_ASM_BLOCK = re.compile(r"__asm(?:__)?[\s\S]*?__endasm(?:__)?\s*;?", re.I)
 _INCLUDE = re.compile(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]', re.M)
 _MAIN = re.compile(r"\b(?:void|int)\s+main\s*\(")
 _SETUP = re.compile(r"\bvoid\s+setup\s*\(")
@@ -32,6 +31,8 @@ _LOOP = re.compile(r"\bvoid\s+loop\s*\(")
 _CXX_PATTERNS = (
     re.compile(r"\bNiusDisplay\.h\b"),
     re.compile(r"\bNiusSegment\b"),
+    re.compile(r"\bNiusCharLCD\b"),
+    re.compile(r"\bNiusMatrix\b"),
     re.compile(r"\bNiusTFT\b"),
     re.compile(r"\bNiusOLED\b"),
     re.compile(r"\bclass\s+\w+"),
@@ -54,13 +55,18 @@ class Sketch:
     text: str
     includes: tuple[str, ...]
     extra_c: tuple[Path, ...] = ()
+    extra_asm: tuple[Path, ...] = ()
+    extra_includes: tuple[Path, ...] = ()
+    extra_defines: tuple[str, ...] = ()
     has_main: bool = False
     has_setup_loop: bool = False
     from_directory: bool = False
+    lowered: bool = False
 
 
 def _strip_comments(text: str) -> str:
     text = _COMMENT_BLOCK.sub(" ", text)
+    text = _ASM_BLOCK.sub(" ", text)
     return _COMMENT_LINE.sub(" ", text)
 
 
@@ -74,16 +80,16 @@ def cxx_reason(text: str) -> str | None:
     return None
 
 
-def cxx_error(sketch: Sketch, hit: str) -> ValueError:
+def cxx_error(sketch: Sketch, hit: str, detail: str | None = None) -> ValueError:
+    extra = f" {detail}" if detail else ""
     return ValueError(
-        f"{sketch.path.name} is an Arduino C++ sketch ({hit!r}). "
-        "SDCC has no C++ compiler, so this file cannot be built for an 8051.\n"
-        "  - Rewrite it as C that reads like a sketch: #include \"NiusDuino.h\", "
-        "setup()/loop(), and the C driver headers (nd_tm1637.h, nd_ssd1306.h, ...).\n"
-        "  - Or keep the C++ .ino and use the IAR 8051 Arduino core in NiusDisplay "
-        "(cores/mcs51-iar) with arduino-cli.\n"
-        "  - A GPIO blink without NiusDisplay can stay an .ino if it only uses "
-        "pinMode/digitalWrite/delay."
+        f"{sketch.path.name} uses C++ that SDCC cannot compile ({hit!r}).{extra}\n"
+        "SDCC has no C++ compiler. `python -m niusburner lower` rewrites a BASIC "
+        "subset (NiusSegment, F(), Serial on the 8051 UART) into C.\n"
+        "  - NiusTFT / NiusOLED / String / class / Print / float cannot be lowered, "
+        "and colour/OLED also need XRAM on a minimum AT89S52.\n"
+        "  - Assembly uses sdas8051 (`.S` / `.asm` or SDCC `__asm`); not AVR GNU as.\n"
+        "  - Or keep the C++ .ino on AVR/ESP, or use NiusDisplay's IAR 8051 core."
     )
 
 
@@ -145,11 +151,22 @@ def resolve_sketch(path: Path) -> Sketch:
     # Sibling .c files belong to a sketch directory, not to a lone file in a
     # port tree (ports/8051-sdcc holds several demos next to each other).
     extra_c: tuple[Path, ...] = ()
+    extra_asm: tuple[Path, ...] = ()
     if from_directory or kind == "ino":
         extra_c = tuple(
             p for p in sorted(directory.glob("*.c"))
             if p.resolve() != primary.resolve()
         )
+        seen: set[Path] = set()
+        asm: list[Path] = []
+        for pat in ("*.S", "*.s", "*.asm"):
+            for path in sorted(directory.glob(pat)):
+                resolved = path.resolve()
+                if resolved == primary.resolve() or resolved in seen:
+                    continue
+                seen.add(resolved)
+                asm.append(path)
+        extra_asm = tuple(asm)
     includes = tuple(_INCLUDE.findall(text))
     stripped = _strip_comments(text)
     return Sketch(
@@ -159,6 +176,7 @@ def resolve_sketch(path: Path) -> Sketch:
         text=text,
         includes=includes,
         extra_c=extra_c,
+        extra_asm=extra_asm,
         has_main=bool(_MAIN.search(stripped)),
         has_setup_loop=bool(_SETUP.search(stripped) and _LOOP.search(stripped)),
         from_directory=from_directory,

@@ -35,6 +35,7 @@ class Board:
     signature: str
     note: str
     aliases: tuple[str, ...] = ()
+    f_cpu: int = 11059200
 
     @property
     def flashable(self) -> bool:
@@ -65,6 +66,7 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             signature=str(entry.get("signature", "")),
             note=str(entry.get("note", "")),
             aliases=tuple(entry.get("aliases") or ()),
+            f_cpu=int(entry.get("f_cpu", 11059200)),
         )
     return boards
 

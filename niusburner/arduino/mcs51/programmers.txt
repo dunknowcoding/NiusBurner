@@ -1,0 +1,13 @@
+# USB-ISP is a programmer, not a serial port.
+#
+# Copyright 2026 dunknowcoding (NiusRobotLab)
+# SPDX-License-Identifier: Apache-2.0
+#
+# Sketch → Upload Using Programmer after selecting this entry. The same
+# tool also handles the Upload button (boards.txt upload.tool=niusburner).
+
+niusburner.name=NiusBurner USB-ISP (HID)
+niusburner.communication=usb
+niusburner.protocol=hid
+niusburner.program.tool=niusburner
+niusburner.program.extra_params=

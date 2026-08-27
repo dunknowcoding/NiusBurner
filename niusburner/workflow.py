@@ -10,8 +10,10 @@ This is the user-facing workflow. Layers below it stay separate on purpose:
     flash / backends            how to program silicon
 
 `build-mcs51` remains the low-level compiler driver. This module chooses the
-board, wraps an .ino, finds NiusDisplay when the sketch needs it, and refuses
-combinations that cannot work (C++ on SDCC, graphics on a part with no XRAM).
+board, wraps an .ino, finds NiusDisplay when the sketch needs it, lowers
+BASIC Arduino C++ to C via mounted adapters, assembles sibling `.S` files,
+and refuses combinations that cannot work (real C++ on SDCC, graphics on a
+part with no XRAM).
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import boards as boards_mod
-from . import build, display as display_mod, flash, sketch as sketch_mod
+from . import build, cxxlower, display as display_mod, flash, sketch as sketch_mod
 from .boards import Board
 from .build import Mcs51Build
 from .display import DisplayLib
@@ -28,6 +30,37 @@ from .sketch import RUNTIME_MCS51, Sketch
 
 RUNTIME_HEADER = "nius_sketch.h"
 RUNTIME_C = RUNTIME_MCS51 / "nius_sketch.c"
+SERIAL_C = RUNTIME_MCS51 / "nius_serial.c"
+
+
+def _with_sketch_dir(sk: Sketch, includes: list[Path]) -> list[Path]:
+    """Put the sketch directory on the include path.
+
+    An .ino is wrapped into <output>/.niusburner/<board>/sketch.c, so a
+    quoted #include in the sketch resolves against the generated file, not
+    against the folder the header actually sits in. Arduino puts the sketch
+    folder on the include path; so does this.
+    """
+    root = sk.directory.resolve()
+    if root not in {path.resolve() for path in includes}:
+        includes.append(sk.directory)
+    return includes
+
+
+def _link_serial(
+    sk: Sketch,
+    sources: tuple[Path, ...],
+    includes: tuple[Path, ...],
+) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
+    if "nius_serial_" not in sk.text:
+        return sources, includes
+    src = list(sources)
+    inc = list(includes)
+    if SERIAL_C.resolve() not in {path.resolve() for path in src}:
+        src.append(SERIAL_C)
+    if RUNTIME_MCS51.resolve() not in {path.resolve() for path in inc}:
+        inc.append(RUNTIME_MCS51)
+    return tuple(src), tuple(inc)
 
 
 @dataclass(frozen=True)
@@ -54,6 +87,7 @@ def plan_compile(
     board_name: str,
     *,
     library: Path | None = None,
+    mounts: list[Path] | None = None,
     xram_size: int | None = None,
     defines: list[str] | None = None,
     output: Path | None = None,
@@ -66,10 +100,15 @@ def plan_compile(
         )
     sk = sketch_mod.resolve_sketch(sketch_path)
     out = (output or default_output(sk, board)).resolve()
+    mount_list = list(mounts or [])
+    if library is not None:
+        mount_list.append(library)
 
-    cxx = sketch_mod.cxx_reason(sk.text)
-    if cxx:
-        raise sketch_mod.cxx_error(sk, cxx)
+    if sketch_mod.cxx_reason(sk.text):
+        try:
+            sk = cxxlower.lower_sketch(sk, mounts=mount_list or None)
+        except cxxlower.CxxLowerError as exc:
+            raise sketch_mod.cxx_error(sk, exc.hit, exc.detail) from exc
 
     extra_defines = tuple(defines or ())
     ram = board.xram_size if xram_size is None else xram_size
@@ -108,7 +147,7 @@ def _plan_with_display(
         generated = output / "sketch.c"
         sketch_mod.wrap_ino(sk, generated, runtime_header="NiusDuino.h")
         sketch_unit = generated
-    sources = (sketch_unit, *sk.extra_c, *lib.sources)
+    sources = (sketch_unit, *sk.extra_c, *sk.extra_asm, *lib.sources)
     seen: set[Path] = set()
     unique: list[Path] = []
     for path in sources:
@@ -117,12 +156,18 @@ def _plan_with_display(
             continue
         seen.add(resolved)
         unique.append(path)
-    defines = tuple(dict.fromkeys((*lib.defines, *extra_defines)))
+    defines = tuple(dict.fromkeys((*lib.defines, *sk.extra_defines, *extra_defines)))
+    includes = list(lib.includes)
+    for path in sk.extra_includes:
+        if path not in includes:
+            includes.append(path)
+    includes = _with_sketch_dir(sk, includes)
+    sources, includes_t = _link_serial(sk, tuple(unique), tuple(includes))
     return CompilePlan(
         board=board,
         sketch=sk,
-        sources=tuple(unique),
-        includes=lib.includes,
+        sources=sources,
+        includes=includes_t,
         defines=defines,
         model=model,
         stack_auto=True,
@@ -147,7 +192,7 @@ def _plan_without_display(
     runtime = "freestanding"
 
     if sk.has_main:
-        sources = [sk.path, *sk.extra_c]
+        sources = [sk.path, *sk.extra_c, *sk.extra_asm]
     elif sk.kind == "ino" or sk.has_setup_loop:
         if sk.kind == "ino" and not sk.has_setup_loop:
             raise ValueError(
@@ -158,9 +203,9 @@ def _plan_without_display(
         if sk.kind == "ino":
             generated = output / "sketch.c"
             sketch_mod.wrap_ino(sk, generated, runtime_header=RUNTIME_HEADER)
-            sources = [generated, *sk.extra_c, RUNTIME_C]
+            sources = [generated, *sk.extra_c, *sk.extra_asm, RUNTIME_C]
         else:
-            sources = [sk.path, *sk.extra_c, RUNTIME_C]
+            sources = [sk.path, *sk.extra_c, *sk.extra_asm, RUNTIME_C]
         defines = ("ND_NIUS_SKETCH_MAIN", *extra_defines)
         runtime = "sketch"
         includes = [RUNTIME_MCS51]
@@ -169,11 +214,13 @@ def _plan_without_display(
             f"{sk.path.name} has neither main() nor setup()/loop()"
         )
 
+    includes = _with_sketch_dir(sk, includes)
+    sources_t, includes_t = _link_serial(sk, tuple(sources), tuple(includes))
     return CompilePlan(
         board=board,
         sketch=sk,
-        sources=tuple(sources),
-        includes=tuple(includes),
+        sources=sources_t,
+        includes=includes_t,
         defines=defines,
         model=board.model,
         stack_auto=False,
@@ -194,6 +241,11 @@ def compile_plan(
     if plan.generated is not None:
         header = "NiusDuino.h" if plan.runtime == "niusdisplay" else RUNTIME_HEADER
         sketch_mod.wrap_ino(plan.sketch, plan.generated, runtime_header=header)
+    defines = list(plan.defines)
+    if plan.board.family == "mcs51" and plan.board.f_cpu:
+        osc = f"NIUS_FOSC={plan.board.f_cpu}UL"
+        if osc not in defines:
+            defines.append(osc)
     return build.build_mcs51(
         list(plan.sources),
         list(plan.includes),
@@ -204,11 +256,20 @@ def compile_plan(
         model=plan.model,
         stack_auto=plan.stack_auto,
         xram_size=plan.xram_size,
-        defines=list(plan.defines),
+        defines=defines,
     )
 
 
-def upload_image(plan: CompilePlan, image: Path, *, skip_probe: bool = False) -> int:
+def upload_image(plan: CompilePlan, image: Path, *, skip_probe: bool = False,
+                 hold_reset: bool = False) -> int:
+    """Program *image* onto the planned board.
+
+    With *hold_reset* the part is left in reset when programming finishes, so
+    the caller can open the UART before `reset_board` starts it. Anything the
+    sketch prints in its first milliseconds is otherwise lost while Windows
+    is still opening the COM port.
+    """
+
     board = plan.board
     if not board.flashable:
         raise ValueError(
@@ -225,4 +286,12 @@ def upload_image(plan: CompilePlan, image: Path, *, skip_probe: bool = False) ->
         image=image,
         confirm=board.part,
         state_policy="replace",
+        hold_reset=hold_reset,
     )
+
+
+def reset_board(plan: CompilePlan) -> None:
+    """Take the board out of reset. Raises so a monitor hook can report it."""
+    rc = flash.reset(target=plan.board.part, confirm=plan.board.part)
+    if rc != 0:
+        raise RuntimeError(f"reset failed with exit status {rc}")

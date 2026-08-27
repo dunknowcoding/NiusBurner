@@ -28,4 +28,10 @@ unsigned long millis(void);
 void setup(void);
 void loop(void);
 
+#ifdef __SDCC
+#include <8052.h>
+#endif
+
+#include "nius_serial.h"
+
 #endif /* NIUS_SKETCH_H */

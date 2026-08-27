@@ -15,8 +15,8 @@ programmer, that is why, and no amount of driver reinstalling will fix it.
 Three options:
 
 1. **MPLAB IPE** from an older MPLAB X (5.35 is the usual choice) — production
-   programming only, no debugging.
-2. **MPLAB X 5.35**, which keeps both programming and debugging.
+   programming.
+2. **MPLAB X 5.35**, the last release that drives a PICkit 3.
 3. **Replace it with a PICkit 4 or 5**, which current MPLAB X supports.
 
 Command-line programming with `ipecmd` from a 5.35 install:
@@ -74,16 +74,6 @@ xc8-cc -mcpu=16F877A -DND_TINY=1 ...
 **Not yet measured.** The 8051 build came to 24 KB under `ND_TINY`, and if XC8
 lands anywhere near that this part is also too small. The measurement is
 tracked as an open task; do not assume it fits.
-
-### Debugging
-
-The PIC16F877A supports in-circuit debugging over ICSP with MPLAB X 5.35 and a
-PICkit 3 — **real breakpoints and single-stepping**, which none of the 8051
-parts can offer. If a display driver misbehaves on hardware, this is by far the
-best part in the collection to reproduce it on.
-
-Debugging consumes some RAM and a few program words, and RB6/RB7 become
-unavailable while a debug session is live.
 
 ---
 

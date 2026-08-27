@@ -172,7 +172,7 @@
         ],
         "match": "avrdude"
       },
-      "note": "Genuine USBasp (VID 16C0 / PID 05DC) driven by avrdude. Not the zhifengsoft USBHID dongle.",
+      "note": "Genuine USBasp (VID 16C0 / PID 05DC) driven by avrdude. Not the USB-ISP HID programmer (03EB / C8B4).",
       "wiring": "docs/wiring/usbasp-idc10.md"
     },
     "usbisp_hid": {
@@ -186,7 +186,7 @@
         "vid": "0x03EB",
         "pid": "0xC8B4"
       },
-      "note": "zhifengsoft USBHID (VID 03EB / PID C8B4) over HidUsb. AT89S51/S52 serial-ISP. Headless: python -m niusburner probe|flash. Do not install WinUSB.",
+      "note": "USB-ISP HID programmer (VID 03EB / PID C8B4) over HidUsb. AT89S51/S52 serial-ISP. Headless: python -m niusburner probe|flash. Do not install WinUSB.",
       "wiring": "docs/wiring/usbasp-idc10.md"
     },
     "nano_at89c2051": {

@@ -15,6 +15,7 @@
       "iram_size": 256,
       "xram_size": 0,
       "model": "small",
+      "f_cpu": 11059200,
       "programmer": "usbisp_hid",
       "status": "verified",
       "signature": "1E 52 06",

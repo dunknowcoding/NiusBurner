@@ -1,0 +1,192 @@
+{
+  "name": "NiusDisplay",
+  "description": "Mount a NiusDisplay checkout (this folder, a sibling tree, or Arduino libraries/NiusDisplay) so NiusBurner can lower BASIC Arduino C++ to the portable C core. Other libraries follow the same layout: <Lib>/niusburner/adapter.json.",
+  "match_includes": ["NiusDisplay.h"],
+  "drop_includes": ["NiusDisplay.h"],
+  "bare_include_headers": ["NiusDuino.h"],
+  "refuse": [
+    {
+      "token": "NiusTFT",
+      "detail": "NiusTFT is not lowered (Print/gfx C++). Colour panels also need XRAM a minimum AT89S52 does not have."
+    },
+    {
+      "token": "NiusOLED",
+      "detail": "NiusOLED is not lowered (Print/gfx C++). SSD1306 graphics need a framebuffer and more than 8 KB of flash."
+    },
+    {
+      "token": "NiusTouch",
+      "detail": "NiusTouch is not lowered (C++ facade, and touch paths need XRAM)."
+    },
+    {
+      "token": "NiusSurface",
+      "detail": "NiusSurface is not lowered (virtual Print/gfx C++)."
+    }
+  ],
+  "classes": {
+    "NiusSegment": {
+      "headers": ["NiusDuino.h", "nd_tm1637.h"],
+      "stems": ["nd_tm1637"],
+      "needs_xram": false,
+      "defines": ["ND_TINY=1", "ND_HAL_BUSES=0"],
+      "c_decl": "static nd_tm1637 {name};",
+      "ctor": {
+        "min_args": 2,
+        "max_args": 3,
+        "fields": ["clk", "dio", "digits"],
+        "defaults": {"digits": "4"},
+        "help": "NiusSegment(clk, dio, digits=4)"
+      },
+      "methods": {
+        "begin": {
+          "args": 0,
+          "emit": "(nd_tm1637_init(&{name}, {clk}, {dio}, {digits}) == ND_OK)"
+        },
+        "clear": {
+          "args": 0,
+          "emit": "nd_tm1637_clear(&{name})"
+        },
+        "setLevel": {
+          "args": 1,
+          "emit": "nd_tm1637_brightness(&{name}, {0})"
+        },
+        "setBrightness": {
+          "args": 1,
+          "emit": "nd_tm1637_brightness(&{name}, (unsigned char)(({0}) >> 5))"
+        },
+        "display": {
+          "args": 1,
+          "emit": "nd_tm1637_display_on(&{name}, {0})"
+        },
+        "showTime": {
+          "min_args": 2,
+          "max_args": 3,
+          "trailing": ["1"],
+          "emit": "nd_tm1637_show_time(&{name}, {0}, {1}, {2})"
+        },
+        "showInt": {
+          "min_args": 1,
+          "max_args": 3,
+          "pad": "0",
+          "emit": "nd_tm1637_show_i16(&{name}, {0}, {1}, {2})"
+        },
+        "showRaw": {
+          "args": 2,
+          "emit": "nd_tm1637_write_raw(&{name}, {0}, {1})"
+        },
+        "ready": {
+          "refuse": "NiusSegment.ready() is not lowered; use the value of begin()"
+        }
+      }
+    },
+    "NiusCharLCD": {
+      "headers": ["NiusDuino.h", "nd_hd44780.h", "nd_nb_charlcd.h"],
+      "stems": ["nd_hd44780"],
+      "bind": ["nd_nb_charlcd.c"],
+      "needs_xram": false,
+      "defines": ["ND_TINY=1", "ND_HAL_SPI=0", "ND_HAL_PAR=0"],
+      "c_decl": "static nd_bus {name}_bus; static nd_hd44780 {name};",
+      "ctor": {
+        "min_args": 2,
+        "max_args": 3,
+        "fields": ["cols", "rows", "addr"],
+        "defaults": {"addr": "0x27"},
+        "help": "NiusCharLCD(cols, rows, addr=0x27) I2C backpack; 8051 SCL=P1.0 SDA=P1.1"
+      },
+      "methods": {
+        "begin": {
+          "args": 0,
+          "emit": "(nd_nb_charlcd_begin_i2c(&{name}, &{name}_bus, {cols}, {rows}, {addr}) == ND_OK)"
+        },
+        "clear": {
+          "args": 0,
+          "emit": "nd_hd44780_clear(&{name})"
+        },
+        "home": {
+          "args": 0,
+          "emit": "nd_hd44780_home(&{name})"
+        },
+        "setCursor": {
+          "args": 2,
+          "emit": "nd_hd44780_set_cursor(&{name}, {0}, {1})"
+        },
+        "display": {
+          "args": 1,
+          "emit": "nd_hd44780_display(&{name}, {0})"
+        },
+        "cursor": {
+          "args": 1,
+          "emit": "nd_hd44780_cursor(&{name}, {0})"
+        },
+        "blink": {
+          "args": 1,
+          "emit": "nd_hd44780_blink(&{name}, {0})"
+        },
+        "backlight": {
+          "args": 1,
+          "emit": "nd_hd44780_backlight(&{name}, {0})"
+        },
+        "setBrightness": {
+          "args": 1,
+          "emit": "nd_hd44780_backlight(&{name}, {0})"
+        },
+        "createChar": {
+          "args": 2,
+          "emit": "nd_hd44780_create_char(&{name}, {0}, (ND_ROM nd_u8 *)({1}))"
+        },
+        "write": {
+          "args": 1,
+          "emit": "nd_hd44780_write_char(&{name}, (unsigned char)({0}))"
+        },
+        "print": {
+          "min_args": 1,
+          "max_args": 1,
+          "emit": "nd_hd44780_print(&{name}, {0})",
+          "emit_char": "nd_hd44780_write_char(&{name}, (unsigned char)({0}))"
+        },
+        "ready": {
+          "refuse": "NiusCharLCD.ready() is not lowered; use the value of begin()"
+        }
+      }
+    },
+    "NiusMatrix": {
+      "headers": ["NiusDuino.h", "nd_nb_matrix.h"],
+      "stems": [],
+      "bind": ["nd_nb_matrix.c"],
+      "needs_xram": false,
+      "defines": ["ND_TINY=1", "ND_HAL_I2C=0", "ND_HAL_PAR=0"],
+      "c_decl": "static nd_nb_matrix {name};",
+      "ctor": {
+        "min_args": 2,
+        "max_args": 3,
+        "fields": ["devices", "cs", "wiring"],
+        "defaults": {"wiring": "1"},
+        "help": "NiusMatrix(devices, cs, wiring=FC16). 8051 SPI: SCK=P1.3 MOSI=P1.4. No gfx/print."
+      },
+      "methods": {
+        "begin": {
+          "args": 0,
+          "emit": "(nd_nb_matrix_begin(&{name}, {devices}, {cs}, {wiring}) == ND_OK)"
+        },
+        "setIntensity": {
+          "args": 1,
+          "emit": "nd_nb_matrix_intensity(&{name}, {0})"
+        },
+        "setBrightness": {
+          "args": 1,
+          "emit": "nd_nb_matrix_intensity(&{name}, (unsigned char)(({0}) >> 4))"
+        },
+        "testAll": {
+          "args": 1,
+          "emit": "nd_nb_matrix_test(&{name}, {0})"
+        },
+        "sleep": {
+          "args": 1,
+          "emit": "nd_nb_matrix_sleep(&{name}, {0})"
+        },
+        "ready": {
+          "refuse": "NiusMatrix.ready() is not lowered; use the value of begin()"
+        }
+      }
+    }
+  }
+}

@@ -1,8 +1,11 @@
 """
-USB-ISP HID backend — zhifengsoft VID 03EB / PID C8B4.
+USB-ISP HID backend for the AT89S51/S52 serial programming protocol.
 
-Uses the Windows HID class driver (HidUsb) — same driver as ProgISP.
-Do not replace HidUsb with WinUSB via Zadig.
+Copyright 2026 dunknowcoding (NiusRobotLab)
+SPDX-License-Identifier: Apache-2.0
+
+Device: USB VID 03EB / PID C8B4, driven through the Windows HID class
+driver (HidUsb). Do not replace HidUsb with WinUSB via Zadig.
 
 HID report descriptor (read from the device)
 --------------------------------------------
@@ -11,10 +14,12 @@ HID report descriptor (read from the device)
   FR3 FEATURE  127 data bytes page-read buffer
   FR4 FEATURE  15 data bytes  unused here
 
-ProgISP 1.72 HID sequence (captured 2026-08-26, AT89S52 signature read)
-----------------------------------------------------------------------
-  SET FR1 8 bytes. Report id is always 0x01. Never pad to 136; never SET
-  FR2 with zeros — that USB-resets the dongle.
+Command frames
+--------------
+FR1 is one command register: a SET loads it and the GET executes it and
+returns the result, so two SETs in a row execute once, with the second
+payload. Report id is always 0x01. Never pad to 136; never SET FR2 with
+zeros -- that USB-resets the device.
 
   0x0F  identify     01 0F 01 00 00 00 02 00
   0x0D  connect      01 0D 00 01 20 A0 40 C0
@@ -23,12 +28,19 @@ ProgISP 1.72 HID sequence (captured 2026-08-26, AT89S52 signature read)
   GET FR1 8 bytes    first 4 bytes are SPI RX; payload is byte [3]
   0x0B  disconnect   01 0B 01 00 00 00 00 00
 
+0x0D byte1 is the RST level and byte2 is target VCC. The AT89S52 resets on
+a HIGH level, so the whole programming session runs with byte1 = 1 and the
+part held in reset; byte1 = 0 is the falling edge that starts user code.
+0x0B is not that edge -- it tri-states the header, and the pull-up then
+parks RST between the two AT89S52 thresholds, which neither resets nor runs
+the part. `release_to_run` therefore ends a session with 0x0D, not 0x0B.
+
 AT89S51/S52 serial-ISP
 ----------------------
   Enable  : TX AC 53 00 00  RX[3] == 0x69
   Erase   : TX AC 80 00 00  wait >= 510 ms
   Sig[i]  : TX 28 0i 00 00  RX[3] = signature byte i
-  Rd byte : TX 20 hi lo 00  RX[3] = program memory
+  Rd byte : TX 20 hi lo 00  RX[3] = program memory, RX[1] echoes 0x20
   Wr byte : TX 40 hi lo data wait >= 1.5 ms
 """
 
@@ -45,12 +57,18 @@ _WRITE_MS = 5
 _FR1_LEN = 8
 _AT89S52_SIG = (0x1E, 0x52, 0x06)
 
+# 0x0D payload tails. The four clock bytes make the programmer drive XTAL1;
+# a board with its own crystal must leave them at zero to run.
+_CLOCK = (0x20, 0xA0, 0x40, 0xC0)
+_NOCLK = (0x00, 0x00, 0x00, 0x00)
+
 
 def _spi_rx(raw: list[int]) -> list[int]:
     """Pull 4 SPI RX bytes out of a Feature Report 1 GET.
 
-    ProgISP reads 8 bytes with no extra report-id prefix; hidapi on Windows
-    may insert a leading 0x01. Trailing 0x60 0xFF bytes are stale SRAM.
+    The device returns 8 bytes with no extra report-id prefix; hidapi on
+    Windows may insert a leading 0x01. Trailing 0x60 0xFF bytes are stale
+    SRAM.
     """
     if not raw:
         return [0, 0, 0, 0]
@@ -77,6 +95,15 @@ def _parse_ihx(path: pathlib.Path) -> dict[int, int]:
         elif rec_type == 0x01:
             break
     return data
+
+
+def _bytes_to_program(data: dict[int, int]) -> dict[int, int]:
+    """Drop the bytes a chip erase already left at 0xFF.
+
+    Byte-at-a-time ISP costs about 5 ms per write, so padding an 8 KB part
+    with 0xFF would spend most of a minute writing the erased value back.
+    """
+    return {addr: value for addr, value in data.items() if value != 0xFF}
 
 
 class _Programmer:
@@ -106,11 +133,6 @@ class _Programmer:
 
     def close(self) -> None:
         try:
-            if self._connected:
-                self.disconnect()
-        except Exception:
-            pass
-        try:
             self._dev.close()
         except Exception:
             pass
@@ -132,33 +154,93 @@ class _Programmer:
         raw = self._dev.get_feature_report(0x01, _FR1_LEN)
         return _spi_rx(list(raw) if raw else [])
 
+    def _exec(self, payload7: list[int], settle_ms: float = 5) -> list[int]:
+        """SET a command into FR1, then GET — which is what runs it.
+
+        The dongle treats FR1 as one command register: a SET only loads it,
+        and the GET is the trigger. Two SETs in a row therefore execute once,
+        with the second payload. Measured on silicon: SET 40 hi lo data with
+        no GET leaves the byte at 0xFF, and SET AC 80 00 00 with no GET does
+        not erase however long you wait.
+        """
+        self._fr1(payload7)
+        time.sleep(settle_ms / 1000)
+        return self._fr1_get()
+
+    def _spi_fire(self, b0: int, b1: int, b2: int, b3: int,
+                  settle_ms: float = _WRITE_MS) -> None:
+        """Run one SPI transaction and throw the reply away.
+
+        Erase and byte-write have nothing to say on MISO, but the GET still
+        has to happen — it is the execute trigger, not just a read.
+        """
+        self._exec([0x0E, b0, b1, b2, b3, 0x00, 0x04], settle_ms=settle_ms)
+
     def identify(self) -> None:
-        self._fr1([0x0F, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00])
-        time.sleep(0.02)
         try:
-            self._fr1_get()
+            self._exec([0x0F, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00], settle_ms=20)
         except OSError:
             pass
 
-    def connect(self) -> None:
-        """Enable target VCC and clock, then hold AT89S52 RST high."""
-        self._fr1([0x0D, 0x00, 0x01, 0x20, 0xA0, 0x40, 0xC0])
-        time.sleep(0.02)
-        self._fr1([0x0D, 0x01, 0x01, 0x20, 0xA0, 0x40, 0xC0])
-        time.sleep(0.05)
+    def connect(self, clock: bool = True) -> None:
+        """Enable target VCC and hold AT89S52 RST high (programming level)."""
+        tail = list(_CLOCK if clock else _NOCLK)
+        self._exec([0x0D, 0x00, 0x01, *tail], settle_ms=20)
+        self._exec([0x0D, 0x01, 0x01, *tail], settle_ms=50)
         self._connected = True
 
     def disconnect(self) -> None:
-        self._fr1([0x0B, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00])
+        """Tri-state the ISP header. Not a way to start user code."""
+        self._exec([0x0B, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00], settle_ms=20)
         self._connected = False
-        time.sleep(0.02)
+
+    def auto_reset(self, hold_ms: int = 60, settle_ms: int = 150) -> None:
+        """Drive one RST high-to-low edge so the CPU fetches from 0x0000.
+
+        AT89S52 RST is active HIGH and needs two machine cycles of it, so the
+        falling edge is what ends reset. The clock bytes are zeroed first:
+        otherwise the programmer keeps driving XTAL1 and fights the board
+        crystal once the part is running.
+
+        Both frames go through `_exec`. A bare SET only loads the command
+        register, so a release sent that way never runs: RST stays at the
+        programming level and the part never leaves reset.
+
+        0x0B is deliberately absent. Tri-stating the header leaves RST on the
+        programmer's pull-up, at a level inside the AT89S52 undefined band.
+        """
+        self._exec([0x0D, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00],
+                   settle_ms=hold_ms)
+        self._exec([0x0D, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00],
+                   settle_ms=settle_ms)
+        self._connected = False
+
+    def release_to_run(self) -> None:
+        """End an ISP session in user mode, with target VCC still supplied."""
+        self.auto_reset()
 
     def spi(self, b0: int, b1: int, b2: int, b3: int,
             wait_ms: int = 5) -> list[int]:
         """Execute one 4-byte SPI transaction; return 4 RX bytes."""
-        self._fr1([0x0E, b0, b1, b2, b3, 0x00, 0x04])
+        self._spi_fire(b0, b1, b2, b3)
         time.sleep(wait_ms / 1000)
         return self._fr1_get()
+
+    def spi_echoed(self, b0: int, b1: int, b2: int, b3: int,
+                   wait_ms: int = 5, retries: int = 4) -> list[int]:
+        """`spi`, but only accept a frame whose RX[1] echoes the command.
+
+        The target shifts each TX byte back out on MISO one byte later, so
+        RX[1] is a check on the whole frame: when it is not the command the
+        GET raced the transfer and RX[3] is some other transaction's data.
+        """
+        rx = [0, 0, 0, 0]
+        for attempt in range(retries):
+            rx = self.spi(b0, b1, b2, b3, wait_ms=wait_ms)
+            if rx[1] == b0:
+                return rx
+            time.sleep(0.002 * (attempt + 1))
+        return rx
 
     def enter_isp(self, retries: int = 8) -> None:
         """Identify, connect (VCC+clock+RST), enable programming for 0x69."""
@@ -181,27 +263,78 @@ class _Programmer:
 
     def read_signature(self) -> tuple[int, int, int]:
         return (
-            self.spi(0x28, 0, 0, 0)[3],
-            self.spi(0x28, 1, 0, 0)[3],
-            self.spi(0x28, 2, 0, 0)[3],
+            self.spi_echoed(0x28, 0, 0, 0)[3],
+            self.spi_echoed(0x28, 1, 0, 0)[3],
+            self.spi_echoed(0x28, 2, 0, 0)[3],
         )
 
-    def chip_erase(self) -> None:
-        self.spi(0xAC, 0x80, 0x00, 0x00, wait_ms=_ERASE_MS)
-        # Erase drops programming-enable; pulse RST and send AC 53 again.
-        self.enter_isp()
+    def read_lock_bits(self) -> int:
+        """Byte 4 of the read-lock-bits frame; LB1..LB3 are bits 2..4."""
+        return self.spi_echoed(0x24, 0x00, 0x00, 0x00)[3]
+
+    def chip_erase(self, timeout_s: float = 12.0) -> None:
+        """Erase, then wait until the array really reads blank.
+
+        The datasheet puts tERASE at 500 ms. This bench needs several times
+        that, and a short erase does not merely leave a few bytes behind —
+        every byte keeps its high nibble, and repeating the short erase never
+        finishes the job. So the wait grows until a sample of the array is
+        0xFF, instead of trusting one fixed delay.
+        """
+        wait = _ERASE_MS / 1000
+        deadline = time.monotonic() + timeout_s
+        while True:
+            for _ in range(2):
+                self._spi_fire(0xAC, 0x80, 0x00, 0x00, settle_ms=5)
+                time.sleep(wait)
+            # Erase drops programming-enable; pulse RST and send AC 53 again.
+            self.enter_isp()
+            if self.blank_check(samples=8) is None:
+                return
+            if time.monotonic() >= deadline:
+                raise RuntimeError(
+                    f"chip erase did not blank the array within {timeout_s:.0f} s")
+            wait = min(wait * 2.5, 4.0)
 
     def read_byte(self, addr: int) -> int:
-        return self.spi(0x20, addr >> 8, addr & 0xFF, 0x00)[3]
+        return self.spi_echoed(0x20, addr >> 8, addr & 0xFF, 0x00)[3]
+
+    def read_block(self, addr: int, length: int) -> list[int]:
+        return [self.read_byte(addr + i) for i in range(length)]
+
+    def blank_check(self, code_size: int = 8192,
+                    samples: int = 64) -> int | None:
+        """First sampled address chip erase did not leave at 0xFF, else None."""
+        step = max(1, code_size // samples)
+        for addr in range(0, code_size, step):
+            if self.read_byte(addr) != 0xFF:
+                return addr
+        return None
 
     def write_byte(self, addr: int, data: int) -> None:
-        self.spi(0x40, addr >> 8, addr & 0xFF, data, wait_ms=_WRITE_MS)
+        self._spi_fire(0x40, addr >> 8, addr & 0xFF, data)
+        time.sleep(_WRITE_MS / 1000)
         if data == 0xFF:
             return
         for _ in range(20):
             if self.read_byte(addr) == data:
                 return
             time.sleep(0.001)
+
+    def write_image(self, data: dict[int, int]) -> int:
+        payload = _bytes_to_program(data)
+        for addr in sorted(payload):
+            self.write_byte(addr, payload[addr])
+        return len(payload)
+
+    def verify_image(self, data: dict[int, int]) -> list[tuple[int, int, int]]:
+        """[(addr, expected, actual)] for every byte that did not match."""
+        bad: list[tuple[int, int, int]] = []
+        for addr, expected in sorted(data.items()):
+            actual = self.read_byte(addr)
+            if actual != expected:
+                bad.append((addr, expected, actual))
+        return bad
 
 
 def _programmer_or_report() -> _Programmer | int:
@@ -233,6 +366,7 @@ def probe(target: str) -> int:
             else:
                 print("Probe OK — ISP session is live (chip not erased).")
                 print("warning: signature is not the AT89S52 1E 52 06")
+            prog.release_to_run()
     except FileNotFoundError as exc:
         print(f"error: {exc}")
         return 1
@@ -242,8 +376,31 @@ def probe(target: str) -> int:
     return 0
 
 
-def flash(image: pathlib.Path, target: str) -> int:
-    """Erase, program and verify *image* (.ihx) on the target. Returns 0 on success."""
+def reset(target: str) -> int:
+    """Pulse RST and leave the part running. No erase, no ISP session left."""
+    prog = _programmer_or_report()
+    if isinstance(prog, int):
+        return prog
+    try:
+        with prog:
+            prog.auto_reset()
+    except FileNotFoundError as exc:
+        print(f"error: {exc}")
+        return 1
+    except OSError as exc:
+        print(f"error: HID I/O failed: {exc}")
+        return 1
+    print(f"reset  {target} released from reset")
+    return 0
+
+
+def flash(image: pathlib.Path, target: str, run: bool = True) -> int:
+    """Erase, program and verify *image* (.ihx). Returns 0 on success.
+
+    With *run* false the part is left held in reset, so a caller can attach
+    to its UART before the first instruction executes. That startup output
+    is otherwise gone by the time a serial port finishes opening.
+    """
     print(f"Programmer  VID {_VID:04X} / PID {_PID:04X}  ({target})")
 
     prog = _programmer_or_report()
@@ -265,30 +422,42 @@ def flash(image: pathlib.Path, target: str) -> int:
                 print("error: signature is not AT89S52 (1E 52 06); refusing erase")
                 return 1
 
-            print("Erasing ...")
-            prog.chip_erase()
-
             data = _parse_ihx(image)
             if not data:
                 print("error: image is empty or not valid Intel HEX")
                 return 1
 
-            print(f"Programming {len(data)} bytes ...")
-            for addr in sorted(data):
-                prog.write_byte(addr, data[addr])
+            print("Erasing ...")
+            prog.chip_erase()
+            dirty = prog.blank_check()
+            if dirty is not None:
+                print(f"error: chip erase left 0x{dirty:04X} programmed")
+                return 1
+
+            print(f"Programming {len(_bytes_to_program(data))} bytes ...")
+            prog.write_image(data)
 
             print("Verifying ...")
-            errors = 0
-            for addr, expected in sorted(data.items()):
-                actual = prog.read_byte(addr)
-                if actual != expected:
-                    print(f"  0x{addr:04X}: wrote 0x{expected:02X}, read 0x{actual:02X}")
-                    errors += 1
-            if errors:
-                print(f"  {errors} verify error(s)")
+            # The first reads after the last write can still catch that write
+            # cycle; throw them away before the verify pass counts errors.
+            for _ in range(3):
+                prog.read_byte(0x0000)
+            bad = prog.verify_image(data)
+            for addr, expected, actual in bad[:16]:
+                print(f"  0x{addr:04X}: wrote 0x{expected:02X}, read 0x{actual:02X}")
+            if bad:
+                print(f"  {len(bad)} verify error(s)")
                 return 1
 
             print("Done - ISP complete.")
+            if not run:
+                print("Target held in reset - waiting for an explicit reset.")
+                return 0
+            prog.release_to_run()
+            print("Reset released - user code running, VCC still supplied.")
+            print("If nothing appears on the UART, check that EA (pin 31) is "
+                  "tied to VCC: with EA low the CPU fetches from external "
+                  "memory and never runs the flash you just verified.")
     except FileNotFoundError as exc:
         print(f"error: {exc}")
         return 1

@@ -31,7 +31,7 @@ arduino-cli compile -b arduino:avr:nano --upload -p <PORT> nano_at89c2051.ino
 ## Serial protocol
 
 Line-based text, so it can be driven from a terminal by hand when something is
-wrong. On a part with no debug interface that matters.
+wrong. On these parts that matters.
 
 | Command | Effect |
 |---|---|
