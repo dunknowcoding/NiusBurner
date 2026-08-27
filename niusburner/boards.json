@@ -19,8 +19,19 @@
       "programmer": "usbisp_hid",
       "status": "verified",
       "signature": "1E 52 06",
-      "aliases": ["89s52"],
-      "note": "8 KB flash, 256 IRAM, no XRAM on a minimum DIP-40. USB-ISP HID. Segment/TM1637 sketches fit; colour graphics need external SRAM."
+      "aliases": [
+        "89s52"
+      ],
+      "note": "8 KB flash, 256 IRAM, no XRAM on a minimum DIP-40. USB-ISP HID. Segment/TM1637 sketches fit; colour graphics need external SRAM.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
     },
     "at89s51": {
       "part": "at89s51",
@@ -33,8 +44,19 @@
       "programmer": "usbisp_hid",
       "status": "implemented",
       "signature": "1E 51 06",
-      "aliases": ["89s51"],
-      "note": "4 KB flash. Same USB-ISP HID route as AT89S52."
+      "aliases": [
+        "89s51"
+      ],
+      "note": "4 KB flash. Same USB-ISP HID route as AT89S52.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
     },
     "at89c2051": {
       "part": "at89c2051",
@@ -47,8 +69,19 @@
       "programmer": "nano_at89c2051",
       "status": "implemented",
       "signature": "1E 21",
-      "aliases": ["89c2051"],
-      "note": "2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired."
+      "aliases": [
+        "89c2051"
+      ],
+      "note": "2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
     },
     "stc89c52rc": {
       "part": "stc89c52rc",
@@ -60,8 +93,31 @@
       "model": "small",
       "programmer": "stcgal",
       "status": "planned",
-      "aliases": ["stc89c52", "stc89"],
-      "note": "UART bootloader (stcgal), not SPI ISP. Same DIP-40 as AT89S52 is a different protocol."
+      "aliases": [
+        "stc89c52",
+        "stc89"
+      ],
+      "note": "UART bootloader (stcgal), not SPI ISP. Same DIP-40 as AT89S52 is a different protocol.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
     }
-  }
+  },
+  "_peripherals": [
+    "Per-board peripheral capability, consulted by the C++ -> C translator.",
+    "  hardware  the silicon has the peripheral",
+    "  software  no peripheral, but NiusBurner ships a bit-banged runtime",
+    "  none      neither; the translator refuses APIs that need it rather",
+    "            than emitting something that silently changes timing",
+    "A classic 8051 has no TWI, no SPI unit, no PWM and no ADC. Two-wire and",
+    "three-wire buses are bit-banged, which is why they are 'software'; PWM",
+    "and ADC cannot be faked without stealing a timer or an external part, so",
+    "they stay 'none'."
+  ]
 }

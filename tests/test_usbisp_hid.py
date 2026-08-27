@@ -67,7 +67,9 @@ def test_erase_and_write_fire_then_wait():
     flash_src = inspect.getsource(hid_flash)
     assert "range(3)" in flash_src
     assert "release_to_run" in flash_src
-    after_done = flash_src.split("Done - ISP complete")[-1]
+    # Everything after the verify pass: the session must end by running the
+    # part, not by tri-stating the header.
+    after_done = flash_src.split("did not verify")[-1]
     assert "release_to_run" in after_done
     assert "disconnect" not in after_done
     # The bench failure this points at was not the reset at all: EA tied low

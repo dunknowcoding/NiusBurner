@@ -12,15 +12,20 @@
 # files are sdas8051 (ASXXXX), not AVR GNU as.
 
 name=NiusBurner 8051 (SDCC)
-version=0.4.0
+version=0.5.0
 
 # All recipes go through tools/nb_host — Arduino on Windows cannot use `echo`.
 # python.path is written by setup so the interpreter that has niusburner is used.
 # Verify compiles the whole sketch folder (C, BASIC C++, and .S / __asm) via
 # SDCC + sdas8051. recipe.S.o is a dummy because prebuild already assembled.
 
-recipe.hooks.prebuild.1.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" compile "{build.source.path}" "{build.path}" "{build.nb_board}"
-recipe.hooks.prebuild.1.pattern="{runtime.platform.path}/tools/nb_host" compile "{build.source.path}" "{build.path}" "{build.nb_board}"
+# Board menu choices ride along as extra arguments. Anything the IDE does
+# not define expands to an empty string, which the host reads as "default".
+build.nb_optimize=size
+build.nb_debug=none
+build.nb_compiler=auto
+recipe.hooks.prebuild.1.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" compile "{build.source.path}" "{build.path}" "{build.nb_board}" "{build.nb_optimize}" "{build.nb_debug}" "{build.nb_compiler}"
+recipe.hooks.prebuild.1.pattern="{runtime.platform.path}/tools/nb_host" compile "{build.source.path}" "{build.path}" "{build.nb_board}" "{build.nb_optimize}" "{build.nb_debug}" "{build.nb_compiler}"
 
 preproc.includes.flags=
 recipe.preproc.includes=
@@ -55,9 +60,10 @@ tools.niusburner.cmd.windows={runtime.platform.path}/tools/nb_host.bat
 tools.niusburner.cmd={runtime.platform.path}/tools/nb_host
 tools.niusburner.upload.params.verbose=
 tools.niusburner.upload.params.quiet=
-tools.niusburner.upload.pattern.windows="{cmd.windows}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}"
-tools.niusburner.upload.pattern="{cmd}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}"
+tools.niusburner.upload.pattern.windows="{cmd.windows}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}" "usbisp_hid"
+tools.niusburner.upload.pattern="{cmd}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}" "usbisp_hid"
 tools.niusburner.program.params.verbose=
 tools.niusburner.program.params.quiet=
-tools.niusburner.program.pattern.windows="{cmd.windows}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}"
-tools.niusburner.program.pattern="{cmd}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}"
+program.nb_programmer=usbisp_hid
+tools.niusburner.program.pattern.windows="{cmd.windows}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}" "{program.nb_programmer}"
+tools.niusburner.program.pattern="{cmd}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}" "{program.nb_programmer}"

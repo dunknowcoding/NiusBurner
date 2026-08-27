@@ -25,6 +25,26 @@ import sys
 #: Overridable so a site can point at whatever backend it actually uses.
 BACKEND_ENV = "NIUSBURNER_BACKEND"
 
+_PACKAGE_ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+
+def child_env() -> dict[str, str]:
+    """Environment for the backend process.
+
+    The fallback backend is `python -m niusburner.prog`, and the caller may
+    have reached this module through a sys.path entry rather than an install
+    -- the Arduino IDE does exactly that. A child process does not inherit
+    sys.path, so the package root is handed over in PYTHONPATH.
+    """
+    env = dict(os.environ)
+    root = str(_PACKAGE_ROOT)
+    existing = env.get("PYTHONPATH", "")
+    parts = [p for p in existing.split(os.pathsep) if p]
+    if root not in parts:
+        parts.insert(0, root)
+    env["PYTHONPATH"] = os.pathsep.join(parts)
+    return env
+
 
 def resolve_backend() -> list[str]:
     """Locate the programming backend as a command prefix.
@@ -84,7 +104,7 @@ def reset_command(*, target: str, confirm: str) -> list[str]:
 
 def reset(*, target: str, confirm: str) -> int:
     return subprocess.run(reset_command(target=target, confirm=confirm),
-                          check=False).returncode
+                          check=False, env=child_env()).returncode
 
 
 def probe_command(*, target: str, confirm: str) -> list[str]:
@@ -95,8 +115,9 @@ def probe_command(*, target: str, confirm: str) -> list[str]:
 
 def probe(*, target: str, confirm: str) -> int:
     return subprocess.run(probe_command(target=target, confirm=confirm),
-                          check=False).returncode
+                          check=False, env=child_env()).returncode
 
 
 def burn(**kwargs) -> int:
-    return subprocess.run(burn_command(**kwargs), check=False).returncode
+    return subprocess.run(burn_command(**kwargs), check=False,
+                          env=child_env()).returncode

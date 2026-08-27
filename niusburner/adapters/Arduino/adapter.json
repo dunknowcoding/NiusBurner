@@ -1,0 +1,115 @@
+{
+  "name": "Arduino",
+  "description": "API-level Arduino C++ -> C. adapter.json says how each C++ facade lowers; mcs51/ holds the C that backs it. Wire and SPI are bit-banged, which is why they are offered at all: a classic 8051 has no TWI and no SPI unit, but its quasi-bidirectional port pins can drive both. Anything needing silicon the part does not have is refused here rather than faked.",
+  "match_includes": ["Wire.h", "SPI.h"],
+  "drop_includes": ["Wire.h", "SPI.h"],
+  "refuse": [
+    {
+      "token": "SPISettings",
+      "detail": "SPISettings is a C++ object. Use SPI.setBitOrder / SPI.setDataMode / SPI.setClockDivider, which lower to the software SPI master."
+    },
+    {
+      "token": "TwoWire",
+      "detail": "TwoWire is the C++ class behind Wire. Use the Wire instance; a second I2C bus needs a second pin pair, set with -DNIUS_I2C_SCL_BIT / -DNIUS_I2C_SDA_BIT."
+    },
+    {
+      "token": "Servo",
+      "detail": "Servo needs timer-driven PWM. On a part with no PWM unit that means an interrupt in the middle of every bit-banged bus transfer, so it is refused rather than silently retimed."
+    },
+    {
+      "token": "SoftwareSerial",
+      "detail": "SoftwareSerial is a C++ class and its receive path needs a pin-change interrupt. Use the hardware UART through Serial."
+    }
+  ],
+  "globals": {
+    "Wire": {
+      "requires": ["gpio", "i2c"],
+      "headers": ["nius_wire.h"],
+      "help": "Wire lowers to the bit-banged I2C master in adapters/Arduino/mcs51/nius_wire.c. Master only, 7-bit addresses. Default pins SCL=P1.0 SDA=P1.1.",
+      "methods": {
+        "begin": {
+          "args": 0,
+          "help": "Wire.begin() only. Wire.begin(address) is I2C slave mode, which the software master does not implement.",
+          "emit": "nius_wire_begin()"
+        },
+        "setClock": {
+          "args": 1,
+          "emit": "nius_wire_set_clock((unsigned long)({0}))"
+        },
+        "beginTransmission": {
+          "args": 1,
+          "emit": "nius_wire_begin_transmission((unsigned char)({0}))"
+        },
+        "write": {
+          "args": 1,
+          "help": "Wire.write(byte) only. The buffer forms write(buf, len) and write(string) are not lowered; loop over the bytes.",
+          "emit": "nius_wire_write((unsigned char)({0}))"
+        },
+        "endTransmission": {
+          "args": 0,
+          "help": "Wire.endTransmission() only. The sendStop=false form leaves the bus held for a repeated start, which the software master does not implement.",
+          "emit": "nius_wire_end_transmission()"
+        },
+        "requestFrom": {
+          "args": 2,
+          "emit": "nius_wire_request_from((unsigned char)({0}), (unsigned char)({1}))"
+        },
+        "available": {
+          "args": 0,
+          "emit": "nius_wire_available()"
+        },
+        "read": {
+          "args": 0,
+          "emit": "nius_wire_read()"
+        },
+        "onReceive": {
+          "refuse": "Wire.onReceive() is I2C slave mode; the software master has no receive interrupt."
+        },
+        "onRequest": {
+          "refuse": "Wire.onRequest() is I2C slave mode; the software master has no receive interrupt."
+        }
+      }
+    },
+    "SPI": {
+      "requires": ["gpio", "spi"],
+      "headers": ["nius_spi.h"],
+      "help": "SPI lowers to the bit-banged master in adapters/Arduino/mcs51/nius_spi.c. All four modes, both bit orders, no chip select -- drive CS yourself with digitalWrite. Default pins SCK=P1.3 MOSI=P1.4 MISO=P1.2.",
+      "methods": {
+        "begin": {
+          "args": 0,
+          "emit": "nius_spi_begin()"
+        },
+        "end": {
+          "args": 0,
+          "emit": "nius_spi_end()"
+        },
+        "transfer": {
+          "args": 1,
+          "help": "SPI.transfer(byte) only. The buffer form transfer(buf, len) is not lowered; loop over the bytes.",
+          "emit": "nius_spi_transfer((unsigned char)({0}))"
+        },
+        "setBitOrder": {
+          "args": 1,
+          "emit": "nius_spi_set_bit_order((unsigned char)({0}))"
+        },
+        "setDataMode": {
+          "args": 1,
+          "emit": "nius_spi_set_data_mode((unsigned char)({0}))"
+        },
+        "setClockDivider": {
+          "args": 1,
+          "emit": "nius_spi_set_clock_divider((unsigned char)({0}))"
+        },
+        "beginTransaction": {
+          "refuse": "SPI.beginTransaction(SPISettings(...)) takes a C++ object. Set the three properties directly with setBitOrder / setDataMode / setClockDivider."
+        },
+        "endTransaction": {
+          "refuse": "SPI.endTransaction() pairs with beginTransaction, which is not lowered."
+        },
+        "usingInterrupt": {
+          "refuse": "SPI.usingInterrupt() masks an interrupt around a transfer. The software master is not interrupt-driven, so there is nothing to mask."
+        }
+      }
+    }
+  }
+}

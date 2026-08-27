@@ -25,22 +25,104 @@ BANNER = (
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 # Library-specific tokens (NiusTFT, …) live in adapter.json, not here.
+#
+# Everything listed here is C++ whose meaning C cannot carry. It is refused
+# rather than approximated, because an approximation of a destructor or an
+# overload is a silent behaviour change. Syntax that C simply rejects --
+# default arguments, references, overloads -- is left to SDCC, which reports
+# it with a line number.
 _HARD = (
     re.compile(r"\bclass\s+\w+"),
     re.compile(r"\btemplate\s*<"),
     re.compile(r"\bnamespace\s+\w+"),
     re.compile(r"\bnew\s+\w+"),
+    re.compile(r"\bdelete\s*(\[\s*\])?\s+\w+"),
     re.compile(r"\bString\s+\w+"),
     re.compile(r"\b(public|private|protected)\s*:"),
-    re.compile(r"\b(virtual|override|typename|constexpr)\b"),
+    re.compile(r"\b(virtual|override|typename|constexpr|explicit|friend|mutable)\b"),
+    re.compile(r"\b(static_cast|dynamic_cast|reinterpret_cast|const_cast)\s*<"),
+    re.compile(r"\benum\s+class\b"),
+    re.compile(r"\boperator\b"),
+    re.compile(r"\b(try|catch|throw)\b"),
+    re.compile(r"\busing\s+namespace\b"),
+    re.compile(r"\bauto\s+\w+\s*="),
+    re.compile(r"\bthis\s*->"),
+    # `int &x` cannot be an expression -- a type name followed by & is a
+    # reference declaration, and C has no references.
+    re.compile(
+        r"\b(?:void|char|short|int|long|float|double|unsigned|signed|bool|"
+        r"boolean|u?int(?:8|16|32|64)_t|size_t)\s*&\s*\w"
+    ),
     re.compile(r"::"),
 )
 
-_UNSUPPORTED_HEADERS = {
-    "wire.h",
-    "spi.h",
-    "softwareserial.h",
-    "hardwareSerial.h",
+#: Arduino headers whose facade needs a peripheral. If the board can drive it,
+#: hardware or bit-banged, the matching adapter lowers the calls; if it cannot,
+#: the include is refused here with the reason.
+_HEADER_FEATURE = {
+    "wire.h": "i2c",
+    "spi.h": "spi",
+    "eeprom.h": "eeprom",
+    "servo.h": "pwm",
+}
+
+#: Headers refused whatever the board is, with the reason.
+_HEADER_REFUSED = {
+    "softwareserial.h": (
+        "SoftwareSerial is a C++ class and its receive path needs a "
+        "pin-change interrupt. Use the hardware UART through Serial."
+    ),
+    "hardwareserial.h": (
+        "HardwareSerial is the AVR core's C++ class. Serial is already "
+        "lowered onto this part's UART; the header is not needed."
+    ),
+    "avr/io.h": (
+        "avr/io.h is AVR register naming. On an 8051 the SFRs come from "
+        "<8052.h>, which the sketch runtime already includes."
+    ),
+    "avr/interrupt.h": (
+        "avr/interrupt.h is AVR-specific. SDCC spells an 8051 interrupt "
+        "handler `void isr(void) __interrupt(n)`."
+    ),
+    "avr/pgmspace.h": (
+        "avr/pgmspace.h is AVR flash addressing. SDCC uses the __code "
+        "storage class, and F(\"...\") already lowers to a plain literal."
+    ),
+}
+
+#: Arduino calls that need a peripheral the part may not have.
+_CALL_FEATURE = {
+    "analogWrite": "pwm",
+    "analogRead": "adc",
+    "analogReference": "adc",
+    "tone": "pwm",
+    "noTone": "pwm",
+}
+
+#: Arduino calls refused whatever the board is, with the reason.
+_CALL_REFUSED = {
+    "attachInterrupt": (
+        "attachInterrupt() installs a C++-style handler through a vector "
+        "table this runtime does not build. SDCC spells it directly: "
+        "`void on_int0(void) __interrupt(0) { ... }`."
+    ),
+    "detachInterrupt": (
+        "detachInterrupt() pairs with attachInterrupt(), which is not "
+        "lowered. Clear the enable bit instead: EX0 = 0."
+    ),
+    "micros": (
+        "micros() needs a free-running microsecond timebase. This runtime "
+        "counts milliseconds inside delay() and has no timer running, so "
+        "micros() would return a number that never advances."
+    ),
+    "pulseIn": (
+        "pulseIn() measures against a microsecond timebase this runtime "
+        "does not have. Time the pin with a timer of your own."
+    ),
+    "yield": (
+        "yield() is the Arduino core's cooperative hook. There is no "
+        "scheduler here; the call would do nothing."
+    ),
 }
 
 _TYPE_WORDS = (
@@ -77,23 +159,78 @@ def _skip_quoted(text: str, i: int) -> int:
     return n
 
 
+#: Assembly spellings this translator steps over without reading. Every
+#: rewrite pass walks the source through `_skip_non_code`, so anything listed
+#: here reaches the C output byte for byte -- the one guarantee that lets a
+#: sketch hand-write a timing loop or a port sequence and keep it.
+_ASM_BLOCKS = (("__asm", "__endasm"), ("_asm", "_endasm"))
+_ASM_CALLS = ("__asm__", "asm")
+_ASM_QUALIFIERS = ("volatile", "__volatile__", "goto", "const")
+
+
+def _skip_asm_call(text: str, i: int, keyword: str) -> int | None:
+    """Index after `asm [volatile] ( ... )`, or None if this is not one."""
+    n = len(text)
+    j = i + len(keyword)
+    while True:
+        while j < n and text[j].isspace():
+            j += 1
+        for qualifier in _ASM_QUALIFIERS:
+            if _at_word(text, j, qualifier):
+                j += len(qualifier)
+                break
+        else:
+            break
+    if j < n and text[j] == "(":
+        return _matching_close(text, j) + 1
+    return None
+
+
+def _at_include(text: str, i: int) -> bool:
+    """True at the `#` of an `#include` line.
+
+    Include lines are not expressions: `#include <Wire.h>` contains the token
+    `Wire.h`, which a method-call scanner would otherwise read as `Wire`
+    followed by a member access. Other directives are left alone, because a
+    `#define` body is real code and does need the type rewrites.
+    """
+    if text[i] != "#":
+        return False
+    start = text.rfind("\n", 0, i) + 1
+    if text[start:i].strip():
+        return False
+    j = i + 1
+    while j < len(text) and text[j] in " \t":
+        j += 1
+    return text.startswith("include", j)
+
+
 def _skip_non_code(text: str, i: int) -> int:
     n = len(text)
     while i < n:
+        if _at_include(text, i):
+            nl = text.find("\n", i)
+            return n if nl < 0 else nl + 1
         if text.startswith("//", i):
             nl = text.find("\n", i)
             return n if nl < 0 else nl + 1
         if text.startswith("/*", i):
             end = text.find("*/", i + 2)
             return n if end < 0 else end + 2
-        if text.startswith("__asm", i) and (i + 5 == n or not _is_ident_char(text[i + 5])):
-            end = text.find("__endasm", i + 5)
-            if end < 0:
-                return n
-            end += len("__endasm")
-            if end < n and text[end] == ";":
-                end += 1
-            return end
+        for opener, closer in _ASM_BLOCKS:
+            if _at_word(text, i, opener):
+                end = text.find(closer, i + len(opener))
+                if end < 0:
+                    return n
+                end += len(closer)
+                if end < n and text[end] == ";":
+                    end += 1
+                return end
+        for keyword in _ASM_CALLS:
+            if _at_word(text, i, keyword):
+                end = _skip_asm_call(text, i, keyword)
+                if end is not None:
+                    return end
         if text[i] in "'\"":
             return _skip_quoted(text, i)
         return i
@@ -197,12 +334,23 @@ def _code_words(text: str) -> str:
 
 
 def _hard_reason(text: str) -> str | None:
+    """The first piece of real C++ in *text*, as it is written.
+
+    The earliest match wins, and the longest one at that position breaks a
+    tie, so `enum class E` is reported as `enum class` rather than `class E`
+    and `template <class T>` as `template <`. Reporting the wrong half of a
+    construct sends people looking in the wrong place.
+    """
     body = _code_words(text)
+    best: tuple[int, int, str] | None = None
     for pattern in _HARD:
         match = pattern.search(body)
-        if match:
-            return match.group(0)
-    return None
+        if not match:
+            continue
+        found = (match.start(), -len(match.group(0)), match.group(0))
+        if best is None or found[:2] < best[:2]:
+            best = found
+    return best[2] if best else None
 
 
 def _lower_f(text: str) -> str:
@@ -370,14 +518,158 @@ def _lower_setup_loop(text: str) -> str:
     return text
 
 
-def _check_headers(text: str) -> None:
+#: Why a missing peripheral is refused rather than emulated. Each of these is
+#: a fact about the silicon, so the message says what is actually wrong
+#: instead of "unsupported".
+_FEATURE_WHY = {
+    "pwm": (
+        "Faking it needs a timer interrupt firing through code that also "
+        "bit-bangs its buses, which retimes every transfer in the sketch."
+    ),
+    "adc": (
+        "There is no analogue input on this part at all. A reading has to "
+        "come from an external converter, read over I2C or SPI."
+    ),
+    "i2c": (
+        "Two-wire signalling needs port pins that can be released to a "
+        "pull-up, which this part does not have."
+    ),
+    "spi": (
+        "Three-wire signalling needs three usable port pins, which this "
+        "part does not have free."
+    ),
+    "eeprom": (
+        "There is no byte-erasable data memory here; the flash array erases "
+        "whole, so a single-byte write is not something to emulate."
+    ),
+    "uart": "This part has no serial port.",
+    "gpio": "This part has no general-purpose port pins.",
+}
+
+
+def _feature_refusal(what: str, feature: str, board) -> str:
+    """Why *what* cannot be lowered for *board*, in the board's own terms."""
+    if board is None:
+        return (
+            f"{what} needs {feature}. Pass --board so NiusBurner can say "
+            "whether this part has it."
+        )
+    if board.provides(feature):
+        return (
+            f"{board.id} does provide {feature} "
+            f"({board.capability(feature)}), but NiusBurner has no lowering "
+            f"for {what} on it yet."
+        )
+    why = _FEATURE_WHY.get(feature, "")
+    return (
+        f"{what} needs {feature}, and {board.id} has none. {why} "
+        "It is refused rather than approximated, because an approximation "
+        "here changes when the rest of the sketch runs. "
+        "`python -m niusburner boards --features` lists what each board has."
+    ).replace("  ", " ")
+
+
+def _check_headers(text: str, board=None) -> None:
     for inc in _INCLUDE.findall(text):
         name = Path(inc).name.lower()
-        if name in _UNSUPPORTED_HEADERS:
-            raise CxxLowerError(
-                inc,
-                f"{inc} is an Arduino C++ library; there is no 8051 port here",
-            )
+        lower_inc = inc.lower().replace("\\", "/")
+        for refused, detail in _HEADER_REFUSED.items():
+            if name == refused or lower_inc.endswith(refused):
+                raise CxxLowerError(inc, detail)
+        feature = _HEADER_FEATURE.get(name)
+        if feature and (board is None or not board.provides(feature)):
+            raise CxxLowerError(inc, _feature_refusal(inc, feature, board))
+
+
+def _check_calls(text: str, board=None) -> None:
+    """Refuse Arduino calls whose peripheral this part does not have."""
+    n = len(text)
+    i = 0
+    while i < n:
+        jumped = _skip_non_code(text, i)
+        if jumped != i:
+            i = jumped
+            continue
+        match = _IDENT.match(text, i)
+        if not match:
+            i += 1
+            continue
+        name = match.group(0)
+        j = match.end()
+        while j < n and text[j].isspace():
+            j += 1
+        if j < n and text[j] == "(":
+            if name in _CALL_REFUSED:
+                raise CxxLowerError(name, _CALL_REFUSED[name])
+            feature = _CALL_FEATURE.get(name)
+            if feature:
+                raise CxxLowerError(
+                    name, _feature_refusal(f"{name}()", feature, board))
+        i = match.end()
+
+
+_TAGGED = ("struct", "union", "enum")
+
+
+def _lower_struct_tags(text: str) -> str:
+    """Give every tagged type a typedef of the same name.
+
+    C++ lets `struct Point { int x; }; Point p;` name the type without the
+    tag; C does not. Emitting `typedef struct Point Point;` after the
+    definition makes the C++ spelling legal C without touching the sketch's
+    own declarations, so the layout, the field order and every use site stay
+    exactly as written.
+    """
+    inserts: list[tuple[int, int, str]] = []
+    n = len(text)
+    i = 0
+    while i < n:
+        jumped = _skip_non_code(text, i)
+        if jumped != i:
+            i = jumped
+            continue
+        keyword = None
+        for word in _TAGGED:
+            if _at_word(text, i, word):
+                keyword = word
+                break
+        if keyword is None:
+            i += 1
+            continue
+        if text[:i].rstrip().endswith("typedef"):
+            i += len(keyword)
+            continue
+        j = i + len(keyword)
+        while j < n and text[j].isspace():
+            j += 1
+        match = _IDENT.match(text, j)
+        if not match:
+            i += len(keyword)
+            continue
+        tag = match.group(0)
+        j = match.end()
+        while j < n and text[j].isspace():
+            j += 1
+        if j >= n or text[j] != "{":
+            # A forward declaration or a use, not a definition.
+            i = match.end()
+            continue
+        close = _matching_close(text, j)
+        end = close + 1
+        while end < n and text[end] != ";":
+            end += 1
+        if end >= n:
+            i = close + 1
+            continue
+        already = re.search(
+            rf"\btypedef\s+{keyword}\s+{re.escape(tag)}\s+{re.escape(tag)}\s*;",
+            text,
+        )
+        if not already:
+            inserts.append((end + 1, end + 1,
+                            f"\ntypedef {keyword} {tag} {tag};"))
+        i = end + 1
+    return _apply(text, inserts)
 
 
 def lower_with_info(
@@ -385,8 +677,14 @@ def lower_with_info(
     *,
     mounts: list[Path] | None = None,
     adapters: list | None = None,
+    board=None,
 ) -> tuple[str, object]:
-    """Return (C text, adapter RewriteInfo)."""
+    """Return (C text, adapter RewriteInfo).
+
+    *board* is a `boards.Board`. It decides which peripherals exist, so the
+    same sketch can lower on a part that can bit-bang a bus and be refused,
+    with the reason, on one that cannot.
+    """
     from . import adapter as adapter_mod
 
     hard = _hard_reason(text)
@@ -396,7 +694,8 @@ def lower_with_info(
             "this is real C++, not the BASIC facade "
             "(no class/template/String/namespace/::)",
         )
-    _check_headers(text)
+    _check_headers(text, board)
+    _check_calls(text, board)
     had_serial = bool(re.search(r"\bSerial\b", _code_words(text)))
     out = _lower_f(text)
     out = _lower_serial(out)
@@ -408,9 +707,11 @@ def lower_with_info(
         )
     out = _replace_words(out, (("true", "1"), ("false", "0")))
     out = _replace_words(out, _TYPE_WORDS)
+    out = _lower_struct_tags(out)
     loaded = adapters if adapters is not None else adapter_mod.load_adapters(mounts)
     try:
-        out, info = adapter_mod.rewrite(out, loaded, host=sys.modules[__name__])
+        out, info = adapter_mod.rewrite(
+            out, loaded, host=sys.modules[__name__], board=board)
     except adapter_mod.AdapterError as exc:
         raise CxxLowerError(exc.hit, exc.detail) from exc
     out = _INC_ARDUINO.sub("", out)
@@ -433,9 +734,11 @@ def lower_text(
     *,
     mounts: list[Path] | None = None,
     adapters: list | None = None,
+    board=None,
 ) -> str:
     """Return C that SDCC can compile, or raise CxxLowerError."""
-    out, _info = lower_with_info(text, mounts=mounts, adapters=adapters)
+    out, _info = lower_with_info(
+        text, mounts=mounts, adapters=adapters, board=board)
     return out
 
 
@@ -444,9 +747,11 @@ def lower_sketch(
     *,
     mounts: list[Path] | None = None,
     adapters: list | None = None,
+    board=None,
 ) -> Sketch:
     """Return a Sketch whose text is C. Raises CxxLowerError if not BASIC."""
-    new_text, info = lower_with_info(sk.text, mounts=mounts, adapters=adapters)
+    new_text, info = lower_with_info(
+        sk.text, mounts=mounts, adapters=adapters, board=board)
     includes = tuple(_INCLUDE.findall(new_text))
     stripped = _strip_comments(new_text)
     from .sketch import _MAIN, _SETUP, _LOOP
@@ -499,13 +804,20 @@ def main(argv: list[str] | None = None) -> int:
         "--mount", action="append", type=Path, default=[],
         help="library root with niusburner/adapter.json; repeatable",
     )
+    parser.add_argument(
+        "--board", default="at89s52",
+        help="target board, so a refusal can say which peripheral is missing",
+    )
     args = parser.parse_args(argv)
     try:
+        from .boards import get_board
+
+        board = get_board(args.board)
         sk = resolve_sketch(args.sketch)
         if cxx_reason(sk.text) is None:
             text = sk.text
         else:
-            text = lower_text(sk.text, mounts=args.mount or None)
+            text = lower_text(sk.text, mounts=args.mount or None, board=board)
     except CxxLowerError as exc:
         print(f"lower failed ({exc.hit!r}): {exc.detail}", file=sys.stderr)
         return 2

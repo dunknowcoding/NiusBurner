@@ -1,0 +1,233 @@
+"""The translator's contract: what it keeps, what it refuses, what it links.
+
+Copyright 2026 dunknowcoding (NiusRobotLab)
+SPDX-License-Identifier: Apache-2.0
+"""
+
+from __future__ import annotations
+
+from dataclasses import replace
+
+import pytest
+
+from niusburner import boards, cxxlower, sketch as sketch_mod, workflow
+from niusburner.adapter import AdapterError, _render
+from niusburner.cxxlower import CxxLowerError
+
+AT89S52 = boards.get_board("at89s52")
+
+
+def lower(text: str, board=AT89S52) -> str:
+    return cxxlower.lower_text(text, board=board)
+
+
+# --------------------------------------------------------------- assembly ---
+
+@pytest.mark.parametrize("block", [
+    "__asm\n    nop\n    mov a, #0x55\n__endasm;",
+    "_asm\n    nop\n_endasm;",
+    'asm("nop");',
+    '__asm__ volatile ("nop");',
+])
+def test_assembly_reaches_the_output_byte_for_byte(block):
+    """Every rewrite pass steps over assembly; nothing in it may change."""
+    src = f"void setup(){{ Serial.begin(9600); }}\nvoid loop(){{ {block} }}\n"
+    assert block in lower(src)
+
+
+def test_type_words_are_not_rewritten_inside_assembly():
+    """`bool` inside an asm block is an operand, not a C type."""
+    src = (
+        "void setup(){}\n"
+        "void loop(){ __asm\n"
+        "  ; bool true false uint8_t\n"
+        "  nop\n"
+        "__endasm; }\n"
+    )
+    out = lower(src)
+    assert "; bool true false uint8_t" in out
+    assert "unsigned char true" not in out
+
+
+def test_registers_are_left_alone():
+    src = (
+        "void setup(){ P1 = 0xFF; TMOD = (TMOD & 0x0F) | 0x20; }\n"
+        "void loop(){ if (!(P3 & 0x10)) { P1_0 = 0; } }\n"
+    )
+    out = lower(src)
+    assert "P1 = 0xFF;" in out
+    assert "TMOD = (TMOD & 0x0F) | 0x20;" in out
+    assert "P3 & 0x10" in out
+    assert "P1_0 = 0;" in out
+
+
+# ------------------------------------------------------------- structures ---
+
+def test_struct_tag_gets_a_typedef_so_the_cxx_spelling_is_legal_c():
+    out = lower(
+        "struct P { int x; };\nvoid setup(){ P p; p.x = 1; }\nvoid loop(){}\n")
+    assert "typedef struct P P;" in out
+    assert "struct P { int x; };" in out
+
+
+def test_existing_typedef_is_not_duplicated():
+    src = "typedef struct P { int x; } P;\nvoid setup(){}\nvoid loop(){}\n"
+    assert lower(src).count("typedef") == 1
+
+
+def test_enum_tag_also_gets_one():
+    out = lower(
+        "enum C { A, B };\nvoid setup(){ C c = A; (void)c; }\nvoid loop(){}\n")
+    assert "typedef enum C C;" in out
+
+
+# --------------------------------------------------------------- refusals ---
+
+@pytest.mark.parametrize("src, token", [
+    ("class Foo { public: int x; };\nvoid setup(){}\nvoid loop(){}\n", "class"),
+    ("template <class T> T f(T a){return a;}\nvoid setup(){}\nvoid loop(){}\n",
+     "template"),
+    ("void setup(){ int a = static_cast<int>(1); }\nvoid loop(){}\n",
+     "static_cast"),
+    ("enum class E { A };\nvoid setup(){}\nvoid loop(){}\n", "enum class"),
+    ("void f(int &x){ x = 1; }\nvoid setup(){}\nvoid loop(){}\n", "&"),
+    ("void setup(){ throw 1; }\nvoid loop(){}\n", "throw"),
+    ("void setup(){ auto x = 1; (void)x; }\nvoid loop(){}\n", "auto"),
+])
+def test_real_cxx_is_refused(src, token):
+    with pytest.raises(CxxLowerError) as exc:
+        lower(src)
+    assert token in exc.value.hit
+
+
+@pytest.mark.parametrize("call, feature", [
+    ("analogWrite(3, 128);", "pwm"),
+    ("analogRead(0);", "adc"),
+    ("tone(3, 440);", "pwm"),
+])
+def test_calls_needing_absent_peripherals_are_refused_by_name(call, feature):
+    with pytest.raises(CxxLowerError) as exc:
+        lower(f"void setup(){{}}\nvoid loop(){{ {call} }}\n")
+    message = str(exc.value)
+    assert feature in message
+    assert "at89s52" in message
+    # The message must say what is actually wrong, not just "unsupported".
+    assert "boards --features" in message
+
+
+def test_micros_is_refused_rather_than_returning_a_frozen_number():
+    with pytest.raises(CxxLowerError) as exc:
+        lower("void setup(){}\nvoid loop(){ micros(); }\n")
+    assert "timebase" in str(exc.value)
+
+
+def test_avr_headers_are_refused_with_the_8051_spelling():
+    with pytest.raises(CxxLowerError) as exc:
+        lower("#include <avr/interrupt.h>\nvoid setup(){}\nvoid loop(){}\n")
+    assert "__interrupt" in str(exc.value)
+
+
+# ----------------------------------------------------------- capabilities ---
+
+def test_wire_lowers_on_a_board_that_can_bit_bang_it():
+    src = (
+        "#include <Wire.h>\n"
+        "void setup(){ Wire.begin(); Wire.beginTransmission(0x27);"
+        " Wire.write(0); Wire.endTransmission(); }\n"
+        "void loop(){}\n"
+    )
+    out = lower(src)
+    assert "nius_wire_begin()" in out
+    assert "nius_wire_begin_transmission((unsigned char)(0x27))" in out
+    assert "Wire" not in out.replace("nius_wire", "")
+
+
+def test_spi_lowers_and_keeps_the_arduino_constants():
+    src = (
+        "#include <SPI.h>\n"
+        "void setup(){ SPI.begin(); SPI.setDataMode(SPI_MODE0); }\n"
+        "void loop(){ SPI.transfer(0xA5); }\n"
+    )
+    out = lower(src)
+    assert "nius_spi_begin()" in out
+    assert "nius_spi_set_data_mode((unsigned char)(SPI_MODE0))" in out
+    assert "nius_spi_transfer((unsigned char)(0xA5))" in out
+
+
+def test_wire_is_refused_on_a_board_with_no_i2c():
+    no_i2c = replace(
+        AT89S52, peripherals=(("gpio", "hardware"), ("i2c", "none")))
+    with pytest.raises(CxxLowerError) as exc:
+        lower("#include <Wire.h>\nvoid setup(){}\nvoid loop(){}\n", board=no_i2c)
+    assert "i2c" in str(exc.value)
+
+
+def test_spi_transaction_object_is_refused_with_the_alternative():
+    src = (
+        "#include <SPI.h>\n"
+        "void setup(){ SPI.beginTransaction(SPISettings(1, MSBFIRST, 0)); }\n"
+        "void loop(){}\n"
+    )
+    with pytest.raises(CxxLowerError) as exc:
+        lower(src)
+    assert "setDataMode" in str(exc.value)
+
+
+def test_wire_buffer_write_is_refused_rather_than_guessed():
+    src = (
+        "#include <Wire.h>\n"
+        "void setup(){ Wire.begin(); Wire.write(buf, 4); }\n"
+        "void loop(){}\n"
+    )
+    with pytest.raises(CxxLowerError) as exc:
+        lower(src)
+    assert "loop over the bytes" in str(exc.value)
+
+
+# ------------------------------------------------------------ side effects --
+
+def test_an_argument_used_twice_must_not_have_side_effects():
+    with pytest.raises(AdapterError) as exc:
+        _render("f({0}, {0})", "obj", ["i++"], {})
+    assert "evaluated" in str(exc.value)
+    # A plain expression is safe to repeat.
+    assert _render("f({0}, {0})", "obj", ["a + b"], {}) == "f(a + b, a + b)"
+
+
+# ----------------------------------------------------------------- linking --
+
+def test_only_the_runtime_units_a_sketch_calls_are_linked(tmp_path):
+    """SDCC links whole modules, so an unused unit is dead flash."""
+    folder = tmp_path / "bare"
+    folder.mkdir()
+    (folder / "bare.ino").write_text(
+        "void setup(){ pinMode(0, OUTPUT); }\n"
+        "void loop(){ digitalWrite(0, HIGH); }\n",
+        encoding="ascii")
+    plan = workflow.plan_compile(folder, "at89s52", output=tmp_path / "out")
+    names = {p.name for p in plan.sources}
+    assert "nius_sketch.c" in names
+    for unused in ("nius_serial.c", "nius_wire.c", "nius_spi.c", "nius_extra.c"):
+        assert unused not in names
+
+
+def test_calling_map_pulls_in_the_extras_unit(tmp_path):
+    folder = tmp_path / "mapper"
+    folder.mkdir()
+    (folder / "mapper.ino").write_text(
+        "void setup(){}\n"
+        "void loop(){ int v = map(1, 0, 10, 0, 100); (void)v; }\n",
+        encoding="ascii")
+    plan = workflow.plan_compile(folder, "at89s52", output=tmp_path / "out")
+    assert "nius_extra.c" in {p.name for p in plan.sources}
+
+
+def test_a_loose_ino_does_not_absorb_its_neighbours(tmp_path):
+    """Arduino concatenates a sketch *folder*, not whatever sits beside a file."""
+    (tmp_path / "mine.ino").write_text(
+        "void setup(){}\nvoid loop(){}\n", encoding="ascii")
+    (tmp_path / "someone_else.ino").write_text(
+        "class NotMine { public: int x; };\n", encoding="ascii")
+
+    sk = sketch_mod.resolve_sketch(tmp_path / "mine.ino")
+    assert "NotMine" not in sk.text

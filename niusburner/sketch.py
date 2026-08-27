@@ -17,7 +17,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 HERE = Path(__file__).parent
-RUNTIME_MCS51 = HERE / "runtime" / "mcs51"
+ADAPTERS = HERE / "adapters"
+#: Arduino API translated to C, per target family. `adapters/<Library>/<family>`
+#: is where every C++ facade this tool lowers keeps its C support code.
+ARDUINO_MCS51 = ADAPTERS / "Arduino" / "mcs51"
 
 _COMMENT_LINE = re.compile(r"//.*?$", re.M)
 _COMMENT_BLOCK = re.compile(r"/\*.*?\*/", re.S)
@@ -142,17 +145,23 @@ def resolve_sketch(path: Path) -> Sketch:
         raise ValueError(f"expected a .ino or .c sketch, got {primary.name}")
 
     if suffix == ".ino":
-        text = _concat_ino(directory, primary)
         kind = "ino"
     else:
-        text = _read(primary)
         kind = "c"
 
-    # Sibling .c files belong to a sketch directory, not to a lone file in a
-    # port tree (ports/8051-sdcc holds several demos next to each other).
+    # Arduino concatenates the .ino files of a *sketch folder*: the folder is
+    # the sketch, and it is named after it. A path to a loose .ino sitting
+    # beside unrelated ones is not that, and pulling its neighbours in would
+    # compile code the caller never named -- so a loose file stays alone.
+    is_sketch_folder = from_directory or primary.stem == directory.name
+    if kind == "ino" and is_sketch_folder:
+        text = _concat_ino(directory, primary)
+    else:
+        text = _read(primary)
+
     extra_c: tuple[Path, ...] = ()
     extra_asm: tuple[Path, ...] = ()
-    if from_directory or kind == "ino":
+    if is_sketch_folder:
         extra_c = tuple(
             p for p in sorted(directory.glob("*.c"))
             if p.resolve() != primary.resolve()

@@ -18,6 +18,7 @@ part with no XRAM).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,11 +27,21 @@ from . import build, cxxlower, display as display_mod, flash, sketch as sketch_m
 from .boards import Board
 from .build import Mcs51Build
 from .display import DisplayLib
-from .sketch import RUNTIME_MCS51, Sketch
+from .sketch import ARDUINO_MCS51, Sketch
 
 RUNTIME_HEADER = "nius_sketch.h"
-RUNTIME_C = RUNTIME_MCS51 / "nius_sketch.c"
-SERIAL_C = RUNTIME_MCS51 / "nius_serial.c"
+RUNTIME_C = ARDUINO_MCS51 / "nius_sketch.c"
+
+#: Arduino facades that lower to a C unit in adapters/Arduino/mcs51. A unit is
+#: linked only when the lowered text actually calls into it, so a sketch that
+#: never touches a bus does not pay for one.
+RUNTIME_UNITS = (
+    (("nius_serial_",), "nius_serial.c"),
+    (("nius_wire_",), "nius_wire.c"),
+    (("nius_spi_",), "nius_spi.c"),
+    (("map", "shiftOut", "shiftIn", "random", "randomSeed", "randomRange"),
+     "nius_extra.c"),
+)
 
 
 def _with_sketch_dir(sk: Sketch, includes: list[Path]) -> list[Path]:
@@ -47,19 +58,35 @@ def _with_sketch_dir(sk: Sketch, includes: list[Path]) -> list[Path]:
     return includes
 
 
-def _link_serial(
+def _link_runtime(
     sk: Sketch,
     sources: tuple[Path, ...],
     includes: tuple[Path, ...],
 ) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
-    if "nius_serial_" not in sk.text:
+    """Add the Arduino API units the lowered sketch actually calls."""
+    def names(token: str) -> bool:
+        # A token ending in `_` is a prefix (nius_serial_begin, ...); anything
+        # else is a whole identifier, so a sketch variable called `mapping`
+        # does not drag in map().
+        pattern = r"\b" + token if token.endswith("_") else r"\b" + token + r"\b"
+        return bool(re.search(pattern, sk.text))
+
+    wanted = [
+        ARDUINO_MCS51 / unit
+        for tokens, unit in RUNTIME_UNITS
+        if any(names(token) for token in tokens)
+    ]
+    if not wanted:
         return sources, includes
     src = list(sources)
     inc = list(includes)
-    if SERIAL_C.resolve() not in {path.resolve() for path in src}:
-        src.append(SERIAL_C)
-    if RUNTIME_MCS51.resolve() not in {path.resolve() for path in inc}:
-        inc.append(RUNTIME_MCS51)
+    seen = {path.resolve() for path in src}
+    for path in wanted:
+        if path.resolve() not in seen:
+            src.append(path)
+            seen.add(path.resolve())
+    if ARDUINO_MCS51.resolve() not in {path.resolve() for path in inc}:
+        inc.append(ARDUINO_MCS51)
     return tuple(src), tuple(inc)
 
 
@@ -106,7 +133,8 @@ def plan_compile(
 
     if sketch_mod.cxx_reason(sk.text):
         try:
-            sk = cxxlower.lower_sketch(sk, mounts=mount_list or None)
+            sk = cxxlower.lower_sketch(
+                sk, mounts=mount_list or None, board=board)
         except cxxlower.CxxLowerError as exc:
             raise sketch_mod.cxx_error(sk, exc.hit, exc.detail) from exc
 
@@ -162,7 +190,7 @@ def _plan_with_display(
         if path not in includes:
             includes.append(path)
     includes = _with_sketch_dir(sk, includes)
-    sources, includes_t = _link_serial(sk, tuple(unique), tuple(includes))
+    sources, includes_t = _link_runtime(sk, tuple(unique), tuple(includes))
     return CompilePlan(
         board=board,
         sketch=sk,
@@ -208,14 +236,14 @@ def _plan_without_display(
             sources = [sk.path, *sk.extra_c, *sk.extra_asm, RUNTIME_C]
         defines = ("ND_NIUS_SKETCH_MAIN", *extra_defines)
         runtime = "sketch"
-        includes = [RUNTIME_MCS51]
+        includes = [ARDUINO_MCS51]
     else:
         raise ValueError(
             f"{sk.path.name} has neither main() nor setup()/loop()"
         )
 
     includes = _with_sketch_dir(sk, includes)
-    sources_t, includes_t = _link_serial(sk, tuple(sources), tuple(includes))
+    sources_t, includes_t = _link_runtime(sk, tuple(sources), tuple(includes))
     return CompilePlan(
         board=board,
         sketch=sk,
@@ -236,6 +264,8 @@ def compile_plan(
     output: Path,
     *,
     compiler: Path | None = None,
+    optimize: str = "size",
+    debug_symbols: bool = False,
 ) -> Mcs51Build:
     output.mkdir(parents=True, exist_ok=True)
     if plan.generated is not None:
@@ -257,6 +287,8 @@ def compile_plan(
         stack_auto=plan.stack_auto,
         xram_size=plan.xram_size,
         defines=defines,
+        optimize=optimize,
+        debug_symbols=debug_symbols,
     )
 
 

@@ -16,6 +16,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+#: Peripherals the translator asks about before lowering an Arduino API that
+#: needs one. Order is the order `niusburner boards --features` prints them.
+FEATURES = ("gpio", "uart", "i2c", "spi", "pwm", "adc", "eeprom")
+
+#: What a capability value means. A board that only bit-bangs a bus still
+#: counts as providing it -- the point of the distinction is documentation
+#: and error messages, not gating.
+HARDWARE = "hardware"
+SOFTWARE = "software"
+NONE = "none"
+
 HERE = Path(__file__).parent
 BOARDS_PATH = HERE / "boards.json"
 
@@ -36,11 +47,23 @@ class Board:
     note: str
     aliases: tuple[str, ...] = ()
     f_cpu: int = 11059200
+    peripherals: tuple[tuple[str, str], ...] = ()
 
     @property
     def flashable(self) -> bool:
         """True when `upload` can erase and program this board itself."""
         return self.status == "verified" and self.programmer == "usbisp_hid"
+
+    def capability(self, feature: str) -> str:
+        """"hardware", "software" or "none" for one peripheral."""
+        for name, value in self.peripherals:
+            if name == feature:
+                return value
+        return NONE
+
+    def provides(self, feature: str) -> bool:
+        """True when the board can run this feature at all, bit-banged or not."""
+        return self.capability(feature) in (HARDWARE, SOFTWARE)
 
 
 def load_catalog(path: Path | None = None) -> dict[str, Any]:
@@ -67,6 +90,10 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             note=str(entry.get("note", "")),
             aliases=tuple(entry.get("aliases") or ()),
             f_cpu=int(entry.get("f_cpu", 11059200)),
+            peripherals=tuple(
+                (str(k), str(v))
+                for k, v in (entry.get("peripherals") or {}).items()
+            ),
         )
     return boards
 

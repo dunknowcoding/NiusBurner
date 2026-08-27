@@ -285,7 +285,7 @@ def test_example_serial_is_lowered_and_links_uart():
 
 def test_serial_timer2_reload_matches_at89s52_datasheet():
     """9600 is Timer 1 TH1=0xFD; 115200 is Timer 2 Fosc/32."""
-    src = (ROOT / "niusburner" / "runtime" / "mcs51" / "nius_serial.c").read_text(
+    src = (ROOT / "niusburner" / "adapters" / "Arduino" / "mcs51" / "nius_serial.c").read_text(
         encoding="utf-8")
     assert "32UL * 115200UL" in src
     assert "16UL * baud" not in src

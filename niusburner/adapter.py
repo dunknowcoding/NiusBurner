@@ -65,6 +65,12 @@ class LibraryAdapter:
         classes = self.data.get("classes") or {}
         return tuple(classes.keys())
 
+    @property
+    def global_names(self) -> tuple[str, ...]:
+        """Objects that exist without a constructor, the way Wire and SPI do."""
+        globals_ = self.data.get("globals") or {}
+        return tuple(globals_.keys())
+
     def applies(self, text: str) -> bool:
         from .cxxlower import _code_words
 
@@ -182,19 +188,42 @@ def _bind_file(adapter: LibraryAdapter, name: str) -> Path | None:
     if adapter.bundled:
         candidates = [adapter.root / rel]
     else:
+        # A mounted library may not carry the C support itself, so the
+        # bundled copy is the fallback. Match the folder by name without
+        # assuming a case, because `adapters/NiusDisplay` resolves on Windows
+        # whatever case is asked for and on Linux only the exact one.
         candidates = [adapter.root / "niusburner" / rel, adapter.root / rel]
-        bundled = BUNDLED / adapter.name.lower() / rel
-        candidates.append(bundled)
+        wanted = adapter.name.lower()
+        if BUNDLED.is_dir():
+            for child in BUNDLED.iterdir():
+                if child.is_dir() and child.name.lower() == wanted:
+                    candidates.append(child / rel)
     for path in candidates:
         if path.is_file():
             return path
     return None
 
 
+_SIDE_EFFECT = re.compile(r"\+\+|--|\(|=[^=]|(?<![=!<>])=$")
+
+
+def _is_reusable(expr: str) -> bool:
+    """True when substituting *expr* twice cannot change what the code does.
+
+    Anything with a call, an assignment or an increment is evaluated for its
+    effects as well as its value, so pasting it into a template twice would
+    run it twice. That is a silent behaviour change, which is exactly what
+    this translator must not do.
+    """
+    return not _SIDE_EFFECT.search(expr.strip())
+
+
 def _render(template: str, name: str, args: list[str], fields: dict[str, str]) -> str:
     mapping = {"name": name, **fields}
     for index, arg in enumerate(args):
         mapping[str(index)] = arg
+
+    used: dict[str, int] = {}
 
     def repl(match: re.Match[str]) -> str:
         key = match.group(1)
@@ -203,7 +232,16 @@ def _render(template: str, name: str, args: list[str], fields: dict[str, str]) -
                 name,
                 f"adapter template {template!r} needs {{{key}}} but it is not set",
             )
-        return mapping[key]
+        used[key] = used.get(key, 0) + 1
+        value = mapping[key]
+        if used[key] > 1 and not _is_reusable(value):
+            raise AdapterError(
+                name,
+                f"{value!r} would be evaluated {used[key]} times: this call "
+                "expands to a form that uses the argument more than once. "
+                "Assign it to a variable first.",
+            )
+        return value
 
     return re.sub(r"\{([A-Za-z0-9_]+)\}", repl, template)
 
@@ -211,16 +249,21 @@ def _render(template: str, name: str, args: list[str], fields: dict[str, str]) -
 def _method_args(method: str, spec: dict[str, Any], args: list[str]) -> list[str]:
     if spec.get("refuse"):
         raise AdapterError(method, str(spec["refuse"]))
+    help_text = spec.get("help")
     args = list(args)
     if "args" in spec:
         want = int(spec["args"])
         if len(args) != want:
-            raise AdapterError(method, f"{method}() takes {want} argument(s)")
+            raise AdapterError(
+                method,
+                help_text or f"{method}() takes {want} argument(s)")
         return args
     min_args = int(spec.get("min_args", 0))
     max_args = int(spec.get("max_args", min_args))
     if not (min_args <= len(args) <= max_args):
-        raise AdapterError(method, f"{method}() takes {min_args}..{max_args} arguments")
+        raise AdapterError(
+            method,
+            help_text or f"{method}() takes {min_args}..{max_args} arguments")
     if "pad" in spec:
         while len(args) < max_args:
             args.append(str(spec["pad"]))
@@ -374,7 +417,42 @@ def _drop_includes(text: str, names: list[str]) -> str:
     return text
 
 
-def rewrite(text: str, adapters: list[LibraryAdapter], host: Any) -> tuple[str, RewriteInfo]:
+def _check_requires(obj: BoundObject, board: Any) -> None:
+    """Refuse a facade the board has no way to drive.
+
+    A bit-banged bus counts as provided: the capability table exists to
+    separate "this part cannot do it at all" from "this part does it in
+    software", not to insist on a hardware peripheral.
+    """
+    if board is None:
+        return
+    for feature in obj.spec.get("requires") or []:
+        if board.provides(str(feature)):
+            continue
+        raise AdapterError(
+            obj.cls,
+            f"{obj.cls} needs {feature}, and {board.id} has none. "
+            "`python -m niusburner boards --features` lists what each board "
+            "provides; a feature shown as 'software' is bit-banged and works.",
+        )
+
+
+def _globals_in(text: str, adapter: LibraryAdapter, host: Any) -> list[BoundObject]:
+    """Pre-declared objects such as Wire and SPI that appear in *text*."""
+    body = host._code_words(text)
+    found: list[BoundObject] = []
+    for name, spec in (adapter.data.get("globals") or {}).items():
+        if re.search(rf"\b{re.escape(name)}\b", body):
+            found.append(BoundObject(name, name, {}, spec, adapter.name))
+    return found
+
+
+def rewrite(
+    text: str,
+    adapters: list[LibraryAdapter],
+    host: Any,
+    board: Any = None,
+) -> tuple[str, RewriteInfo]:
     """Lower mounted library facades in *text*. *host* is the cxxlower module."""
     from .cxxlower import _code_words
 
@@ -391,6 +469,9 @@ def rewrite(text: str, adapters: list[LibraryAdapter], host: Any) -> tuple[str, 
     for adapter in used:
         out, more = _lower_ctors(out, adapter, host)
         objects.extend(more)
+        objects.extend(_globals_in(out, adapter, host))
+    for obj in objects:
+        _check_requires(obj, board)
     out = _lower_methods(out, objects, host)
 
     headers: list[str] = []
@@ -434,9 +515,14 @@ def rewrite(text: str, adapters: list[LibraryAdapter], host: Any) -> tuple[str, 
 
     code = host._code_words(out)
     for adapter in used:
-        for name in adapter.class_names:
+        for name in (*adapter.class_names, *adapter.global_names):
             if re.search(rf"\b{re.escape(name)}\b", code):
-                raise AdapterError(name, f"could not rewrite every {name} use")
+                raise AdapterError(
+                    name,
+                    f"could not rewrite every {name} use. Only "
+                    f"{name}.method(...) calls are lowered -- taking its "
+                    "address, aliasing it, or passing it on is not.",
+                )
 
     by_adapter = {item.name: item for item in used}
     for obj in objects:

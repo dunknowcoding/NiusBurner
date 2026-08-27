@@ -21,8 +21,13 @@ include = ["niusburner*"]
 niusburner = [
     "toolchains.json",
     "boards.json",
-    "runtime/mcs51/*.c",
-    "runtime/mcs51/*.h",
+    "adapters/*/adapter.json",
+    "adapters/*/mcs51/*.c",
+    "adapters/*/mcs51/*.h",
+    "arduino/mcs51/*.txt",
+    "arduino/mcs51/cores/niusburner/*",
+    "arduino/mcs51/variants/standard/*",
+    "arduino/mcs51/tools/*",
 ]
 
 [tool.pytest.ini_options]

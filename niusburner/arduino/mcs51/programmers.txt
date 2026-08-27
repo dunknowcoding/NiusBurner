@@ -1,13 +1,29 @@
-# USB-ISP is a programmer, not a serial port.
+# Tools > Programmer. USB-ISP is a programmer, not a serial port.
 #
 # Copyright 2026 dunknowcoding (NiusRobotLab)
 # SPDX-License-Identifier: Apache-2.0
 #
-# Sketch → Upload Using Programmer after selecting this entry. The same
-# tool also handles the Upload button (boards.txt upload.tool=niusburner).
+# The first entry is the default and is the one verified on hardware. Both
+# the Upload button and Sketch > Upload Using Programmer go through the same
+# tool; the entry selected here decides which transport it drives.
 
-niusburner.name=NiusBurner USB-ISP (HID)
-niusburner.communication=usb
-niusburner.protocol=hid
-niusburner.program.tool=niusburner
-niusburner.program.extra_params=
+usbisp_hid.name=USB-ISP HID (03EB:C8B4) - default
+usbisp_hid.communication=usb
+usbisp_hid.protocol=hid
+usbisp_hid.program.tool=niusburner
+usbisp_hid.program.extra_params=
+usbisp_hid.program.nb_programmer=usbisp_hid
+
+usbasp.name=USBasp (16C0:05DC, avrdude)
+usbasp.communication=usb
+usbasp.protocol=usbasp
+usbasp.program.tool=niusburner
+usbasp.program.extra_params=
+usbasp.program.nb_programmer=usbasp
+
+nano_at89c2051.name=Arduino Nano 12 V parallel programmer (AT89C2051)
+nano_at89c2051.communication=serial
+nano_at89c2051.protocol=nano
+nano_at89c2051.program.tool=niusburner
+nano_at89c2051.program.extra_params=
+nano_at89c2051.program.nb_programmer=nano_at89c2051

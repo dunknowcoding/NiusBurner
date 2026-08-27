@@ -18,6 +18,7 @@ from pathlib import Path
 
 from . import display as display_mod
 from . import flash, workflow
+from .progress import banner, error, note
 
 HERE = Path(__file__).parent
 PLATFORM_SRC = HERE / "arduino" / "mcs51"
@@ -51,8 +52,15 @@ def install_arduino_platform(sketchbook: Path | None = None) -> Path:
     dest = platform_dest(book)
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(PLATFORM_SRC, dest, dirs_exist_ok=True)
-    (dest / "tools" / "python.path").write_text(
+    tools = dest / "tools"
+    tools.mkdir(parents=True, exist_ok=True)
+    # The IDE runs nb_host from the sketchbook, so record both halves of what
+    # it needs there: which interpreter, and where the package lives when it
+    # is not pip-installed on that interpreter.
+    (tools / "python.path").write_text(
         str(Path(sys.executable).resolve()), encoding="utf-8", newline="\n")
+    (tools / "niusburner.path").write_text(
+        str(HERE.parent.resolve()), encoding="utf-8", newline="\n")
     return dest
 
 
@@ -61,20 +69,62 @@ def _touch(path: Path, data: bytes = b"") -> None:
     path.write_bytes(data)
 
 
-def cmd_compile(sketch: Path, build_path: Path, board: str) -> int:
+#: Board-menu values arrive as strings and may be empty when the IDE has no
+#: value for them. Empty always means the documented default.
+def _menu(value: str | None, allowed: tuple[str, ...], default: str) -> str:
+    text = (value or "").strip().lower()
+    return text if text in allowed else default
+
+
+def resolve_compiler(choice: str) -> Path | None:
+    """SDCC for this build: the configured path, or auto-detection.
+
+    "auto" is the default and looks on PATH first, then the usual install
+    directories. "configured" uses the path recorded by
+    `niusburner setup --sdcc <path>`, and says so if there is not one.
+    """
+    from . import config
+
+    if _menu(choice, ("auto", "configured"), "auto") == "configured":
+        recorded = config.sdcc_path()
+        if recorded is None:
+            raise ValueError(
+                "the board menu asks for the configured compiler, but none is "
+                "recorded. Run `python -m niusburner setup --sdcc "
+                "<path to sdcc>` or switch Tools > Compiler back to "
+                "Auto-detect.")
+        return recorded
+    return None
+
+
+def cmd_compile(sketch: Path, build_path: Path, board: str,
+                optimize: str = "size", debug: str = "none",
+                compiler_choice: str = "auto") -> int:
     out = build_path / "niusburner"
+    optimize = _menu(optimize, ("size", "speed", "none"), "size")
+    debug_symbols = _menu(debug, ("none", "symbols"), "none") == "symbols"
+    banner(f"NiusBurner: compiling for {board}")
     try:
+        compiler = resolve_compiler(compiler_choice)
         plan = workflow.plan_compile(sketch, board, output=out)
-        result = workflow.compile_plan(plan, out)
+        result = workflow.compile_plan(
+            plan, out, compiler=compiler,
+            optimize=optimize, debug_symbols=debug_symbols)
     except (OSError, ValueError, KeyError) as exc:
-        print(f"niusburner: {exc}", file=sys.stderr)
+        error(str(exc))
         return 1
     shutil.copy2(result.image, build_path / "firmware.ihx")
+    spec = plan.board
+    note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
+         + (", debug symbols" if debug_symbols else ""))
+    note(f"flash {result.program_bytes}/{spec.code_size} B"
+         f"  ({100 * result.program_bytes / spec.code_size:.1f}%)"
+         f"   iram {result.iram_bytes}/{spec.iram_size} B")
     print(f"Sketch uses {result.program_bytes} bytes of program storage space.")
     return 0
 
 
-def cmd_flash(image: Path, board: str) -> int:
+def cmd_flash(image: Path, board: str, programmer: str = "") -> int:
     # The IDE Upload button is the erase acknowledgement. Flash the HEX
     # produced during Verify; upload.pattern does not receive the sketch path.
     from . import boards as boards_mod
@@ -83,15 +133,21 @@ def cmd_flash(image: Path, board: str) -> int:
     except KeyError as exc:
         print(f"niusburner: {exc}", file=sys.stderr)
         return 1
+    wanted = (programmer or spec.programmer).strip() or spec.programmer
+    if wanted != spec.programmer:
+        error(
+            f"Tools > Programmer is set to {wanted}, but {spec.id} is "
+            f"programmed with {spec.programmer}. Pick that entry, or a board "
+            "that uses the programmer you have.")
+        return 1
     if not spec.flashable:
-        print(
-            f"niusburner: compile succeeded, but this IDE board cannot flash "
-            f"{spec.id} yet (programmer {spec.programmer}).",
-            file=sys.stderr,
-        )
+        error(
+            f"the sketch compiled, but this board cannot be flashed from the "
+            f"Upload button yet: {spec.id} is programmed with "
+            f"{spec.programmer} ({spec.status}). See docs/families/8051.md.")
         return 1
     if not image.is_file():
-        print(f"niusburner: image not found: {image}", file=sys.stderr)
+        error(f"image not found: {image}. Did Verify succeed?")
         return 1
     try:
         rc = flash.probe(target=spec.part, confirm=spec.part)
@@ -102,7 +158,7 @@ def cmd_flash(image: Path, board: str) -> int:
             state_policy="replace",
         )
     except (OSError, ValueError) as exc:
-        print(f"niusburner: {exc}", file=sys.stderr)
+        error(str(exc))
         return 1
 
 
@@ -149,7 +205,11 @@ def arduino_main(argv: list[str]) -> int:
     rest = argv[1:]
     try:
         if cmd == "compile":
-            return cmd_compile(Path(rest[0]), Path(rest[1]), rest[2])
+            return cmd_compile(
+                Path(rest[0]), Path(rest[1]), rest[2],
+                optimize=rest[3] if len(rest) > 3 else "size",
+                debug=rest[4] if len(rest) > 4 else "none",
+                compiler_choice=rest[5] if len(rest) > 5 else "auto")
         if cmd == "preproc":
             return cmd_preproc(Path(rest[0]), Path(rest[1]))
         if cmd == "dummy-o":
@@ -163,7 +223,9 @@ def arduino_main(argv: list[str]) -> int:
         if cmd == "size":
             return cmd_size(Path(rest[0]))
         if cmd == "flash":
-            return cmd_flash(Path(rest[0]), rest[1])
+            return cmd_flash(
+                Path(rest[0]), rest[1],
+                programmer=rest[2] if len(rest) > 2 else "")
     except (IndexError, ValueError) as exc:
         print(f"niusburner: bad Arduino recipe arguments: {exc}", file=sys.stderr)
         return 2

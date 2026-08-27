@@ -47,6 +47,10 @@ python -m niusburner upload  examples/at89s52_blink --board at89s52 --yes
 `--board` fills in flash size, IRAM, compiler flags and programmer. Run
 `python -m niusburner boards` for the list.
 
+For the Arduino IDE, see [arduino-ide.md](arduino-ide.md). For exactly what
+the C++ to C translation covers and refuses, see
+[translation.md](translation.md).
+
 ## What a sketch is allowed to be
 
 | Kind | Example | SDCC |

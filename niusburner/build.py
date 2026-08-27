@@ -28,6 +28,11 @@ class Mcs51Build:
     manifest: pathlib.Path
     program_bytes: int
     kernel_data_bytes: int | None
+    iram_bytes: int = 0
+    stack_bytes: int = 0
+    xram_bytes: int = 0
+    optimize: str = "size"
+    symbols: tuple[pathlib.Path, ...] = ()
 
 
 def _run(command: list[str], cwd: pathlib.Path) -> str:
@@ -40,6 +45,42 @@ def _run(command: list[str], cwd: pathlib.Path) -> str:
             f"tool exited {completed.returncode}: {pathlib.Path(command[0]).name}\n"
             f"{completed.stdout or ''}")
     return completed.stdout or ""
+
+
+#: How the SDCC front end is asked to spend its effort. "size" is the default
+#: because these parts run out of flash long before they run out of cycles;
+#: "none" exists so a build can keep statement order recognisable.
+OPTIMIZE_FLAGS = {
+    "size": ("--opt-code-size", "--fomit-frame-pointer",
+             "--max-allocs-per-node", "25000"),
+    "speed": ("--opt-code-speed", "--fomit-frame-pointer",
+              "--max-allocs-per-node", "25000"),
+    "none": (),
+}
+
+
+def parse_sdcc_iram(memory_report: str) -> tuple[int, int]:
+    """(bytes of internal RAM allocated, bytes left for the stack).
+
+    SDCC prints the stack base, and everything below it is allocated data,
+    register banks and bit space. That is the number worth watching on a part
+    with 256 bytes of internal RAM in total.
+    """
+    match = re.search(
+        r"Stack starts at:\s*0x([0-9A-Fa-f]+).*?with\s+(\d+)\s+bytes available",
+        memory_report,
+        re.S,
+    )
+    if not match:
+        return 0, 0
+    return int(match.group(1), 16), int(match.group(2))
+
+
+def parse_sdcc_xram_bytes(memory_report: str) -> int:
+    match = re.search(
+        r"EXTERNAL RAM\s+(?:0x[0-9A-Fa-f]+\s+0x[0-9A-Fa-f]+\s+)?(\d+)",
+        memory_report)
+    return int(match.group(1)) if match else 0
 
 
 def parse_sdcc_program_bytes(memory_report: str) -> int:
@@ -57,7 +98,17 @@ def _sha256(path: pathlib.Path) -> str:
 
 
 def find_sdcc() -> pathlib.Path | None:
-    """Locate SDCC on PATH, then in the places the Windows installer uses."""
+    """Locate SDCC: the recorded path, then PATH, then the usual installs.
+
+    The recorded path wins because it is the only one a person chose on
+    purpose; everything after it is a guess, in decreasing order of how good
+    a guess it is.
+    """
+    from . import config
+
+    recorded = config.sdcc_path()
+    if recorded is not None:
+        return recorded
     which = shutil.which("sdcc")
     if which:
         return pathlib.Path(which)
@@ -75,6 +126,12 @@ def find_sdcc() -> pathlib.Path | None:
             candidate = pathlib.Path(home) / "bin" / name
             if candidate.is_file():
                 return candidate
+    root = config.toolchain_root()
+    if root is not None:
+        for name in ("sdcc.exe", "sdcc"):
+            for candidate in sorted(root.glob(f"*/bin/{name}")) +                     sorted(root.glob(f"sdcc*/{name}")):
+                if candidate.is_file():
+                    return candidate
     return None
 
 
@@ -184,13 +241,25 @@ def build_mcs51(
     stack_auto: bool = False,
     xram_size: int = 0,
     defines: list[str] | None = None,
+    optimize: str = "size",
+    debug_symbols: bool = False,
 ) -> Mcs51Build:
-    """Compile C through optimized assembly and fail closed on exact limits."""
+    """Compile C through optimized assembly and fail closed on exact limits.
+
+    *optimize* picks what SDCC spends its effort on; see OPTIMIZE_FLAGS.
+    *debug_symbols* asks SDCC for a symbol database and keeps the listings
+    and symbol tables that are otherwise scratch, so a linked image can be
+    read back against the source it came from.
+    """
 
     if not sources or code_size <= 0 or iram_size <= 0:
         raise ValueError("sources and positive memory capacities are required")
     if model not in {"small", "medium", "large"}:
         raise ValueError("SDCC model must be small, medium or large")
+    if optimize not in OPTIMIZE_FLAGS:
+        raise ValueError(
+            f"unknown optimize mode {optimize!r}; "
+            f"choose from {', '.join(sorted(OPTIMIZE_FLAGS))}")
     resolved_sources = [path.resolve(strict=True) for path in sources]
     resolved_includes = [path.resolve(strict=True) for path in includes]
     compiler_path = compiler or find_sdcc()
@@ -217,10 +286,13 @@ def build_mcs51(
     output.mkdir(parents=True, exist_ok=True)
     flags = [
         str(compiler_path), "-mmcs51", f"--model-{model}", "--std-c99",
-        "--opt-code-size", "--iram-size", str(iram_size),
+        *OPTIMIZE_FLAGS[optimize],
+        "--iram-size", str(iram_size),
         "--code-size", str(code_size),
         "--xram-size", str(xram_size),
     ]
+    if debug_symbols:
+        flags.append("--debug")
     if stack_auto:
         flags.append("--stack-auto")
     for name in defines or []:
@@ -266,11 +338,21 @@ def build_mcs51(
     if data_limit is not None and kernel_data is not None and kernel_data > data_limit:
         raise ValueError("kernel-owned data violates the contract limit")
 
+    report = memory_file.read_text(encoding="utf-8", errors="replace")
+    iram_bytes, stack_bytes = parse_sdcc_iram(report)
+    xram_bytes = parse_sdcc_xram_bytes(report)
+
     # Keep the optimized assembly and exact accounting artifacts. Relocatable
-    # objects and assembler listings are reproducible scratch, not deliverables.
+    # objects and assembler listings are reproducible scratch, not
+    # deliverables -- unless symbols were asked for, where they are the point.
+    symbols: list[pathlib.Path] = []
     for name in objects:
         (output / name).unlink(missing_ok=True)
-    for pattern in ("*.lst", "*.rst", "*.sym", "*.lk"):
+    keep = ("*.cdb", "*.sym", "*.lst", "*.rst") if debug_symbols else ()
+    for pattern in ("*.lst", "*.rst", "*.sym", "*.lk", "*.cdb"):
+        if pattern in keep:
+            symbols.extend(sorted(output.glob(pattern)))
+            continue
         for path in output.glob(pattern):
             path.unlink()
 
@@ -294,6 +376,13 @@ def build_mcs51(
         "measured": {
             "linked_system_program_bytes": program_bytes,
             "kernel_data_bytes": kernel_data,
+            "iram_bytes": iram_bytes,
+            "stack_bytes_free": stack_bytes,
+            "xram_bytes": xram_bytes,
+        },
+        "build": {
+            "optimize": optimize,
+            "debug_symbols": bool(debug_symbols),
         },
         "sources": [
             {"name": source.name, "sha256": _sha256(source)}
@@ -315,4 +404,6 @@ def build_mcs51(
         encoding="utf-8", newline="\n",
     )
     return Mcs51Build(
-        image, map_file, memory_file, manifest, program_bytes, kernel_data)
+        image, map_file, memory_file, manifest, program_bytes, kernel_data,
+        iram_bytes=iram_bytes, stack_bytes=stack_bytes, xram_bytes=xram_bytes,
+        optimize=optimize, symbols=tuple(symbols))

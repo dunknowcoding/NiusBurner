@@ -49,6 +49,8 @@ from __future__ import annotations
 import pathlib
 import time
 
+from ..progress import Progress, Spinner, banner, error, note
+
 _VID = 0x03EB
 _PID = 0xC8B4
 _ISP_ACK = 0x69
@@ -272,7 +274,7 @@ class _Programmer:
         """Byte 4 of the read-lock-bits frame; LB1..LB3 are bits 2..4."""
         return self.spi_echoed(0x24, 0x00, 0x00, 0x00)[3]
 
-    def chip_erase(self, timeout_s: float = 12.0) -> None:
+    def chip_erase(self, timeout_s: float = 12.0, spinner=None) -> None:
         """Erase, then wait until the array really reads blank.
 
         The datasheet puts tERASE at 500 ms. This bench needs several times
@@ -286,7 +288,12 @@ class _Programmer:
         while True:
             for _ in range(2):
                 self._spi_fire(0xAC, 0x80, 0x00, 0x00, settle_ms=5)
-                time.sleep(wait)
+                spent = 0.0
+                while spent < wait:
+                    time.sleep(min(0.1, wait - spent))
+                    spent += 0.1
+                    if spinner is not None:
+                        spinner.tick()
             # Erase drops programming-enable; pulse RST and send AC 53 again.
             self.enter_isp()
             if self.blank_check(samples=8) is None:
@@ -321,19 +328,24 @@ class _Programmer:
                 return
             time.sleep(0.001)
 
-    def write_image(self, data: dict[int, int]) -> int:
+    def write_image(self, data: dict[int, int], on_byte=None) -> int:
         payload = _bytes_to_program(data)
         for addr in sorted(payload):
             self.write_byte(addr, payload[addr])
+            if on_byte is not None:
+                on_byte()
         return len(payload)
 
-    def verify_image(self, data: dict[int, int]) -> list[tuple[int, int, int]]:
+    def verify_image(self, data: dict[int, int],
+                     on_byte=None) -> list[tuple[int, int, int]]:
         """[(addr, expected, actual)] for every byte that did not match."""
         bad: list[tuple[int, int, int]] = []
         for addr, expected in sorted(data.items()):
             actual = self.read_byte(addr)
             if actual != expected:
                 bad.append((addr, expected, actual))
+            if on_byte is not None:
+                on_byte()
         return bad
 
 
@@ -346,32 +358,30 @@ def _programmer_or_report() -> _Programmer | int:
 
 
 def probe(target: str) -> int:
-    """Open the programmer, try ISP enable, print signature. No erase."""
-    print(f"Programmer  VID {_VID:04X} / PID {_PID:04X}  ({target})")
+    """Open the programmer, try ISP enable, print the signature. No erase."""
     prog = _programmer_or_report()
     if isinstance(prog, int):
         return prog
     try:
         with prog:
-            print("Entering ISP mode ...")
             try:
                 prog.enter_isp()
             except RuntimeError as exc:
-                print(f"error: {exc}")
+                error(str(exc))
                 return 1
             sig = prog.read_signature()
-            print(f"Signature   0x{sig[0]:02X} 0x{sig[1]:02X} 0x{sig[2]:02X}")
+            sig_text = " ".join(f"{b:02X}" for b in sig)
             if sig == _AT89S52_SIG:
-                print("Probe OK - AT89S52, ISP session live (chip not erased).")
+                note(f"found AT89S52, signature {sig_text}")
             else:
-                print("Probe OK — ISP session is live (chip not erased).")
-                print("warning: signature is not the AT89S52 1E 52 06")
+                note(f"signature {sig_text}")
+                note("warning: that is not the AT89S52 signature 1E 52 06")
             prog.release_to_run()
     except FileNotFoundError as exc:
-        print(f"error: {exc}")
+        error(str(exc))
         return 1
     except OSError as exc:
-        print(f"error: HID I/O failed: {exc}")
+        error(f"HID I/O failed: {exc}")
         return 1
     return 0
 
@@ -401,7 +411,8 @@ def flash(image: pathlib.Path, target: str, run: bool = True) -> int:
     to its UART before the first instruction executes. That startup output
     is otherwise gone by the time a serial port finishes opening.
     """
-    print(f"Programmer  VID {_VID:04X} / PID {_PID:04X}  ({target})")
+    banner(f"Programming {target} over USB-ISP "
+           f"(VID {_VID:04X} / PID {_PID:04X})")
 
     prog = _programmer_or_report()
     if isinstance(prog, int):
@@ -409,59 +420,63 @@ def flash(image: pathlib.Path, target: str, run: bool = True) -> int:
 
     try:
         with prog:
-            print("Entering ISP mode ...")
             try:
                 prog.enter_isp()
             except RuntimeError as exc:
-                print(f"error: {exc}")
+                error(str(exc))
                 return 1
 
             sig = prog.read_signature()
-            print(f"Signature   0x{sig[0]:02X} 0x{sig[1]:02X} 0x{sig[2]:02X}")
+            sig_text = " ".join(f"{b:02X}" for b in sig)
             if target.lower() == "at89s52" and sig != _AT89S52_SIG:
-                print("error: signature is not AT89S52 (1E 52 06); refusing erase")
+                error(f"signature {sig_text} is not AT89S52 (1E 52 06); "
+                      "refusing to erase")
                 return 1
+            note(f"signature {sig_text}")
 
             data = _parse_ihx(image)
             if not data:
-                print("error: image is empty or not valid Intel HEX")
+                error(f"{image.name} is empty or not valid Intel HEX")
                 return 1
+            payload = _bytes_to_program(data)
 
-            print("Erasing ...")
-            prog.chip_erase()
-            dirty = prog.blank_check()
-            if dirty is not None:
-                print(f"error: chip erase left 0x{dirty:04X} programmed")
-                return 1
+            with Spinner("erase") as spin:
+                prog.chip_erase(spinner=spin)
+                dirty = prog.blank_check()
+                if dirty is not None:
+                    spin.fail(f"0x{dirty:04X} still programmed")
+                    return 1
 
-            print(f"Programming {len(_bytes_to_program(data))} bytes ...")
-            prog.write_image(data)
+            with Progress("write", len(payload)) as bar:
+                prog.write_image(data, on_byte=bar.step)
 
-            print("Verifying ...")
             # The first reads after the last write can still catch that write
             # cycle; throw them away before the verify pass counts errors.
             for _ in range(3):
                 prog.read_byte(0x0000)
-            bad = prog.verify_image(data)
-            for addr, expected, actual in bad[:16]:
-                print(f"  0x{addr:04X}: wrote 0x{expected:02X}, read 0x{actual:02X}")
+
+            bad: list[tuple[int, int, int]] = []
+            with Progress("verify", len(data)) as bar:
+                bad = prog.verify_image(data, on_byte=bar.step)
             if bad:
-                print(f"  {len(bad)} verify error(s)")
+                for addr, expected, actual in bad[:16]:
+                    error(f"0x{addr:04X}: wrote 0x{expected:02X}, "
+                          f"read 0x{actual:02X}")
+                error(f"{len(bad)} byte(s) did not verify")
                 return 1
 
-            print("Done - ISP complete.")
             if not run:
-                print("Target held in reset - waiting for an explicit reset.")
+                note("target held in reset, waiting for an explicit reset")
                 return 0
             prog.release_to_run()
-            print("Reset released - user code running, VCC still supplied.")
-            print("If nothing appears on the UART, check that EA (pin 31) is "
-                  "tied to VCC: with EA low the CPU fetches from external "
-                  "memory and never runs the flash you just verified.")
+            note("reset released - user code running, VCC still supplied")
+            note("nothing on the UART? check EA (pin 31) is tied to VCC: "
+                 "with EA low the CPU fetches from external memory and never "
+                 "runs the flash just verified")
     except FileNotFoundError as exc:
-        print(f"error: {exc}")
+        error(str(exc))
         return 1
     except OSError as exc:
-        print(f"error: HID I/O failed: {exc}")
+        error(f"HID I/O failed: {exc}")
         return 1
     return 0

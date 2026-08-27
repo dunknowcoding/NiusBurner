@@ -1,9 +1,15 @@
 {
   "name": "NiusDisplay",
-  "description": "Mount a NiusDisplay checkout (this folder, a sibling tree, or Arduino libraries/NiusDisplay) so NiusBurner can lower BASIC Arduino C++ to the portable C core. Other libraries follow the same layout: <Lib>/niusburner/adapter.json.",
-  "match_includes": ["NiusDisplay.h"],
-  "drop_includes": ["NiusDisplay.h"],
-  "bare_include_headers": ["NiusDuino.h"],
+  "description": "API-level compatibility for the NiusDisplay Arduino library. adapter.json says how each C++ facade lowers; mcs51/ holds the C that backs it. Mount a NiusDisplay checkout to override this copy. Other libraries follow the same layout: <Lib>/niusburner/adapter.json.",
+  "match_includes": [
+    "NiusDisplay.h"
+  ],
+  "drop_includes": [
+    "NiusDisplay.h"
+  ],
+  "bare_include_headers": [
+    "NiusDuino.h"
+  ],
   "refuse": [
     {
       "token": "NiusTFT",
@@ -24,16 +30,30 @@
   ],
   "classes": {
     "NiusSegment": {
-      "headers": ["NiusDuino.h", "nd_tm1637.h"],
-      "stems": ["nd_tm1637"],
+      "headers": [
+        "NiusDuino.h",
+        "nd_tm1637.h"
+      ],
+      "stems": [
+        "nd_tm1637"
+      ],
       "needs_xram": false,
-      "defines": ["ND_TINY=1", "ND_HAL_BUSES=0"],
+      "defines": [
+        "ND_TINY=1",
+        "ND_HAL_BUSES=0"
+      ],
       "c_decl": "static nd_tm1637 {name};",
       "ctor": {
         "min_args": 2,
         "max_args": 3,
-        "fields": ["clk", "dio", "digits"],
-        "defaults": {"digits": "4"},
+        "fields": [
+          "clk",
+          "dio",
+          "digits"
+        ],
+        "defaults": {
+          "digits": "4"
+        },
         "help": "NiusSegment(clk, dio, digits=4)"
       },
       "methods": {
@@ -60,7 +80,9 @@
         "showTime": {
           "min_args": 2,
           "max_args": 3,
-          "trailing": ["1"],
+          "trailing": [
+            "1"
+          ],
           "emit": "nd_tm1637_show_time(&{name}, {0}, {1}, {2})"
         },
         "showInt": {
@@ -76,20 +98,41 @@
         "ready": {
           "refuse": "NiusSegment.ready() is not lowered; use the value of begin()"
         }
-      }
+      },
+      "requires": [
+        "gpio"
+      ]
     },
     "NiusCharLCD": {
-      "headers": ["NiusDuino.h", "nd_hd44780.h", "nd_nb_charlcd.h"],
-      "stems": ["nd_hd44780"],
-      "bind": ["nd_nb_charlcd.c"],
+      "headers": [
+        "NiusDuino.h",
+        "nd_hd44780.h",
+        "nd_nb_charlcd.h"
+      ],
+      "stems": [
+        "nd_hd44780"
+      ],
+      "bind": [
+        "mcs51/nd_nb_charlcd.c"
+      ],
       "needs_xram": false,
-      "defines": ["ND_TINY=1", "ND_HAL_SPI=0", "ND_HAL_PAR=0"],
+      "defines": [
+        "ND_TINY=1",
+        "ND_HAL_SPI=0",
+        "ND_HAL_PAR=0"
+      ],
       "c_decl": "static nd_bus {name}_bus; static nd_hd44780 {name};",
       "ctor": {
         "min_args": 2,
         "max_args": 3,
-        "fields": ["cols", "rows", "addr"],
-        "defaults": {"addr": "0x27"},
+        "fields": [
+          "cols",
+          "rows",
+          "addr"
+        ],
+        "defaults": {
+          "addr": "0x27"
+        },
         "help": "NiusCharLCD(cols, rows, addr=0x27) I2C backpack; 8051 SCL=P1.0 SDA=P1.1"
       },
       "methods": {
@@ -146,20 +189,39 @@
         "ready": {
           "refuse": "NiusCharLCD.ready() is not lowered; use the value of begin()"
         }
-      }
+      },
+      "requires": [
+        "gpio",
+        "i2c"
+      ]
     },
     "NiusMatrix": {
-      "headers": ["NiusDuino.h", "nd_nb_matrix.h"],
+      "headers": [
+        "NiusDuino.h",
+        "nd_nb_matrix.h"
+      ],
       "stems": [],
-      "bind": ["nd_nb_matrix.c"],
+      "bind": [
+        "mcs51/nd_nb_matrix.c"
+      ],
       "needs_xram": false,
-      "defines": ["ND_TINY=1", "ND_HAL_I2C=0", "ND_HAL_PAR=0"],
+      "defines": [
+        "ND_TINY=1",
+        "ND_HAL_I2C=0",
+        "ND_HAL_PAR=0"
+      ],
       "c_decl": "static nd_nb_matrix {name};",
       "ctor": {
         "min_args": 2,
         "max_args": 3,
-        "fields": ["devices", "cs", "wiring"],
-        "defaults": {"wiring": "1"},
+        "fields": [
+          "devices",
+          "cs",
+          "wiring"
+        ],
+        "defaults": {
+          "wiring": "1"
+        },
         "help": "NiusMatrix(devices, cs, wiring=FC16). 8051 SPI: SCK=P1.3 MOSI=P1.4. No gfx/print."
       },
       "methods": {
@@ -186,7 +248,11 @@
         "ready": {
           "refuse": "NiusMatrix.ready() is not lowered; use the value of begin()"
         }
-      }
+      },
+      "requires": [
+        "gpio",
+        "spi"
+      ]
     }
   }
 }

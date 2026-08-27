@@ -61,7 +61,12 @@ def test_mcs51_build_retains_assembly_and_enforces_receipt(tmp_path, monkeypatch
     assert manifest["measured"] == {
         "kernel_data_bytes": 12,
         "linked_system_program_bytes": 694,
+        # The stub memory report carries no RAM lines, so these read zero.
+        "iram_bytes": 0,
+        "stack_bytes_free": 0,
+        "xram_bytes": 0,
     }
+    assert manifest["build"] == {"optimize": "size", "debug_symbols": False}
     assert manifest["limits"]["linked_system_program_bytes"] == 2048
     assert manifest["artifacts"]["assembly"][0]["name"].endswith(".asm")
     assert str(tmp_path) not in result.manifest.read_text(encoding="utf-8")

@@ -44,6 +44,20 @@ def _cmd_list(args: argparse.Namespace) -> int:
 def _cmd_boards(args: argparse.Namespace) -> int:
     catalog = boards_mod.all_boards()
     width = max(len(b.id) for b in catalog.values())
+    if getattr(args, "features", False):
+        names = boards_mod.FEATURES
+        print(f"  {'board':{width}}  " + "  ".join(f"{n:8}" for n in names))
+        for board in catalog.values():
+            cells = [f"{board.capability(name):8}" for name in names]
+            print(f"  {board.id:{width}}  " + "  ".join(cells))
+        print(
+            "\n  hardware  the part has the peripheral"
+            "\n  software  no peripheral, but NiusBurner bit-bangs it and the"
+            "\n            matching Arduino facade works"
+            "\n  none      neither, so a call that needs it is refused with"
+            "\n            the reason instead of being silently retimed"
+        )
+        return 0
     for board in catalog.values():
         flash = f"{board.code_size // 1024} KB"
         print(
@@ -51,6 +65,7 @@ def _cmd_boards(args: argparse.Namespace) -> int:
             f"{board.status:12}  {board.note}"
         )
     print("\ncompile + flash:  python -m niusburner upload <sketch> --board at89s52 --yes")
+    print("peripherals:      python -m niusburner boards --features")
     return 0
 
 
@@ -79,7 +94,17 @@ def _print_check(ok: bool, name: str, detail: str) -> None:
 
 def _cmd_setup(args: argparse.Namespace) -> int:
     """Tell the user what to install so `upload` can run on this machine."""
+    from . import config
+
     missing_required = 0
+    if getattr(args, "sdcc", None) is not None:
+        try:
+            written = config.set_sdcc(args.sdcc)
+        except FileNotFoundError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(f"recorded sdcc in {written}")
+        print()
     board = boards_mod.get_board(args.board) if args.board else None
 
     print("compiler")
@@ -146,7 +171,9 @@ def _cmd_setup(args: argparse.Namespace) -> int:
         dest = ide_mod.install_arduino_platform(
             pathlib.Path(args.sketchbook) if args.sketchbook else None)
         _print_check(True, "board package", str(dest))
-        print("           Tools → Board → NiusBurner 8051 (SDCC) → AT89S52")
+        print("           Tools > Board > NiusBurner 8051 (SDCC) > AT89S52")
+        print("           Tools > Programmer > USB-ISP HID (03EB:C8B4)")
+        print("           Tools > Optimize / Debug info / Compiler")
         print("           Verify = SDCC; Upload = USB-ISP (erases the chip)")
         print("           .S tabs and SDCC __asm are assembled with sdas8051, not avr-as")
     except FileNotFoundError as exc:
@@ -229,11 +256,14 @@ def _cmd_compile(args: argparse.Namespace) -> int:
         plan = _plan_from_args(args)
         _print_plan(plan)
         output = args.output or workflow.default_output(plan.sketch, plan.board)
-        result = workflow.compile_plan(plan, output, compiler=args.compiler)
+        result = workflow.compile_plan(
+            plan, output, compiler=args.compiler,
+            optimize=getattr(args, "optimize", "size"),
+            debug_symbols=getattr(args, "debug_symbols", False))
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"compile failed: {exc}", file=sys.stderr)
         return 2
-    print(f"program   {result.program_bytes} bytes / {plan.board.code_size}")
+    _print_usage(plan, result)
     print(f"image     {result.image}")
     return 0
 
@@ -243,11 +273,14 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         plan = _plan_from_args(args)
         _print_plan(plan)
         output = args.output or workflow.default_output(plan.sketch, plan.board)
-        result = workflow.compile_plan(plan, output, compiler=args.compiler)
+        result = workflow.compile_plan(
+            plan, output, compiler=args.compiler,
+            optimize=getattr(args, "optimize", "size"),
+            debug_symbols=getattr(args, "debug_symbols", False))
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"compile failed: {exc}", file=sys.stderr)
         return 2
-    print(f"program   {result.program_bytes} bytes / {plan.board.code_size}")
+    _print_usage(plan, result)
     print(f"image     {result.image}")
 
     if not args.yes:
@@ -312,6 +345,7 @@ def _cmd_lower(args: argparse.Namespace) -> int:
         argv.extend(["-o", str(args.output)])
     for mount in args.mount or []:
         argv.extend(["--mount", str(mount)])
+    argv.extend(["--board", args.board])
     return cxxlower.main(argv)
 
 
@@ -352,6 +386,32 @@ def _cmd_build_mcs51(args: argparse.Namespace) -> int:
     return 0
 
 
+def _bar(used: int, total: int, width: int = 24) -> str:
+    """A fixed-width meter. Full means the next byte does not fit."""
+    if total <= 0:
+        return ""
+    filled = min(width, (used * width + total - 1) // total)
+    return "[" + "#" * filled + "-" * (width - filled) + "]"
+
+
+def _print_usage(plan, result) -> None:
+    """Flash and RAM, as a share of what the part actually has."""
+    board = plan.board
+    rom = result.program_bytes
+    print(f"flash     {_bar(rom, board.code_size)} {rom:6} / "
+          f"{board.code_size} B  {100 * rom / board.code_size:5.1f}%")
+    if result.iram_bytes:
+        iram = result.iram_bytes
+        print(f"iram      {_bar(iram, board.iram_size)} {iram:6} / "
+              f"{board.iram_size} B  {result.stack_bytes} B left for the stack")
+    if result.xram_bytes:
+        print(f"xram      {result.xram_bytes} B / {plan.xram_size} B")
+    if result.optimize != "size":
+        print(f"optimize  {result.optimize}")
+    if result.symbols:
+        print(f"symbols   {len(result.symbols)} file(s) in {result.image.parent}")
+
+
 def _add_sketch_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("sketch", type=pathlib.Path,
                         help="`.ino`, `.c`, or a sketch directory")
@@ -368,6 +428,13 @@ def _add_sketch_flags(parser: argparse.ArgumentParser) -> None:
                         help="external RAM in bytes; required for graphics on 8051")
     parser.add_argument("--define", action="append", default=[],
                         help="extra -DNAME[=VALUE]; repeatable")
+    parser.add_argument("--optimize", choices=("size", "speed", "none"),
+                        default="size",
+                        help="what SDCC spends its effort on (default: size, "
+                             "because flash runs out before cycles do)")
+    parser.add_argument("--debug-symbols", action="store_true",
+                        help="emit the symbol database and keep the listings, "
+                             "so an image can be read back against its source")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -388,10 +455,16 @@ def main(argv: list[str] | None = None) -> int:
                    help="Arduino sketchbook to install the 8051 board package into")
     p.add_argument("--strict", action="store_true",
                    help="exit non-zero if a required tool is missing")
+    p.add_argument("--sdcc", type=pathlib.Path,
+                   help="record where SDCC is, for when PATH is not the "
+                        "answer and the Arduino IDE cannot ask")
     p.set_defaults(fn=_cmd_setup)
 
-    sub.add_parser("boards", help="parts this tool can compile (and flash)").set_defaults(
-        fn=_cmd_boards)
+    p = sub.add_parser("boards", help="parts this tool can compile (and flash)")
+    p.add_argument("--features", action="store_true",
+                   help="show which peripherals each board has, and which "
+                        "NiusBurner bit-bangs for it")
+    p.set_defaults(fn=_cmd_boards)
 
     p = sub.add_parser(
         "lower",
@@ -403,6 +476,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="write C to this file (default: stdout)")
     p.add_argument("--mount", action="append", type=pathlib.Path, default=[],
                    help="library root with niusburner/adapter.json; repeatable")
+    p.add_argument("--board", default="at89s52",
+                   help="target board, so a refusal can name the missing "
+                        "peripheral (default: at89s52)")
     p.set_defaults(fn=_cmd_lower)
 
     p = sub.add_parser("compile", help="build a sketch for a board; do not flash")

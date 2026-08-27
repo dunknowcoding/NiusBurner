@@ -17,7 +17,13 @@ python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
 
 That is the whole happy path: install a compiler on this machine, write a
 sketch that looks like Arduino (`setup` / `loop`), one command to compile and
-burn. Details: [docs/workflow.md](docs/workflow.md).
+burn.
+
+- [docs/workflow.md](docs/workflow.md) — the command line path
+- [docs/arduino-ide.md](docs/arduino-ide.md) — board, programmer and compiler
+  menus, and what Upload prints
+- [docs/translation.md](docs/translation.md) — what the C++ to C translation
+  covers, and what it refuses
 
 ## Layout
 
@@ -37,7 +43,11 @@ niusburner/          the Python package
   build.py           SDCC driver
   flash.py           delegate probe/burn to the programmer backend
   backends/          USB-ISP HID and later transports
-  runtime/mcs51/     GPIO runtime for sketches that do not use NiusDisplay
+  cxxlower.py        Arduino C++ -> C; assembly and registers pass through
+  adapter.py         how a library says which C++ maps to which C
+  adapters/
+    Arduino/         Serial, Wire, SPI and the core API, as C for mcs51
+    NiusDisplay/     NiusSegment, NiusCharLCD, NiusMatrix, as C for mcs51
 tests/               host tests; no hardware required
 ```
 

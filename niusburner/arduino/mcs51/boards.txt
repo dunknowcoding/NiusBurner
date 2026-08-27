@@ -2,8 +2,23 @@
 #
 # Copyright 2026 dunknowcoding (NiusRobotLab)
 # SPDX-License-Identifier: Apache-2.0
+#
+# Tools > Board > NiusBurner 8051. Every entry here compiles; only the ones
+# marked below can also be flashed from the Upload button today. Defaults are
+# chosen to be the safe answer, not the fastest one:
+#
+#   Optimize        Size   -- these parts run out of flash long before cycles
+#   Debug info      None   -- symbols cost build time and disk, not flash
+#   Compiler        Auto   -- PATH, then the usual install directories
+#
+# Programmer lives in Tools > Programmer (programmers.txt).
 
-at89s52.name=AT89S52 (NiusBurner / USB-ISP)
+menu.optimize=Optimize
+menu.debug=Debug info
+menu.compiler=Compiler
+
+# ---------------------------------------------------------------- AT89S52 --
+at89s52.name=AT89S52 (8 KB, USB-ISP)
 at89s52.upload.tool=niusburner
 at89s52.upload.protocol=hid
 at89s52.upload.maximum_size=8192
@@ -16,3 +31,120 @@ at89s52.build.core=niusburner
 at89s52.build.variant=standard
 at89s52.build.nb_board=at89s52
 at89s52.build.extra_flags=
+
+at89s52.menu.optimize.size=Size (default)
+at89s52.menu.optimize.size.build.nb_optimize=size
+at89s52.menu.optimize.speed=Speed
+at89s52.menu.optimize.speed.build.nb_optimize=speed
+at89s52.menu.optimize.none=None
+at89s52.menu.optimize.none.build.nb_optimize=none
+
+at89s52.menu.debug.none=None (default)
+at89s52.menu.debug.none.build.nb_debug=none
+at89s52.menu.debug.symbols=Symbols and listings
+at89s52.menu.debug.symbols.build.nb_debug=symbols
+
+at89s52.menu.compiler.auto=Auto-detect SDCC (default)
+at89s52.menu.compiler.auto.build.nb_compiler=auto
+at89s52.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+at89s52.menu.compiler.configured.build.nb_compiler=configured
+
+# ---------------------------------------------------------------- AT89S51 --
+at89s51.name=AT89S51 (4 KB, USB-ISP)
+at89s51.upload.tool=niusburner
+at89s51.upload.protocol=hid
+at89s51.upload.maximum_size=4096
+at89s51.upload.maximum_data_size=128
+at89s51.upload.require_upload_port=false
+at89s51.build.mcu=at89s51
+at89s51.build.f_cpu=11059200L
+at89s51.build.board=AT89S51
+at89s51.build.core=niusburner
+at89s51.build.variant=standard
+at89s51.build.nb_board=at89s51
+at89s51.build.extra_flags=
+
+at89s51.menu.optimize.size=Size (default)
+at89s51.menu.optimize.size.build.nb_optimize=size
+at89s51.menu.optimize.speed=Speed
+at89s51.menu.optimize.speed.build.nb_optimize=speed
+at89s51.menu.optimize.none=None
+at89s51.menu.optimize.none.build.nb_optimize=none
+
+at89s51.menu.debug.none=None (default)
+at89s51.menu.debug.none.build.nb_debug=none
+at89s51.menu.debug.symbols=Symbols and listings
+at89s51.menu.debug.symbols.build.nb_debug=symbols
+
+at89s51.menu.compiler.auto=Auto-detect SDCC (default)
+at89s51.menu.compiler.auto.build.nb_compiler=auto
+at89s51.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+at89s51.menu.compiler.configured.build.nb_compiler=configured
+
+# -------------------------------------------------------------- AT89C2051 --
+# Compiles here; the 2051 has no ISP, so Upload needs the 12 V Nano
+# programmer and is not wired to this button yet.
+at89c2051.name=AT89C2051 (2 KB, compile only)
+at89c2051.upload.tool=niusburner
+at89c2051.upload.protocol=hid
+at89c2051.upload.maximum_size=2048
+at89c2051.upload.maximum_data_size=128
+at89c2051.upload.require_upload_port=false
+at89c2051.build.mcu=at89c2051
+at89c2051.build.f_cpu=11059200L
+at89c2051.build.board=AT89C2051
+at89c2051.build.core=niusburner
+at89c2051.build.variant=standard
+at89c2051.build.nb_board=at89c2051
+at89c2051.build.extra_flags=
+
+at89c2051.menu.optimize.size=Size (default)
+at89c2051.menu.optimize.size.build.nb_optimize=size
+at89c2051.menu.optimize.speed=Speed
+at89c2051.menu.optimize.speed.build.nb_optimize=speed
+at89c2051.menu.optimize.none=None
+at89c2051.menu.optimize.none.build.nb_optimize=none
+
+at89c2051.menu.debug.none=None (default)
+at89c2051.menu.debug.none.build.nb_debug=none
+at89c2051.menu.debug.symbols=Symbols and listings
+at89c2051.menu.debug.symbols.build.nb_debug=symbols
+
+at89c2051.menu.compiler.auto=Auto-detect SDCC (default)
+at89c2051.menu.compiler.auto.build.nb_compiler=auto
+at89c2051.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+at89c2051.menu.compiler.configured.build.nb_compiler=configured
+
+# ------------------------------------------------------------ STC89C52RC --
+# Compiles here. Flashing an STC part is its UART bootloader (stcgal), not
+# the SPI ISP header, so Upload is not wired to this button yet.
+stc89c52rc.name=STC89C52RC (8 KB, compile only)
+stc89c52rc.upload.tool=niusburner
+stc89c52rc.upload.protocol=hid
+stc89c52rc.upload.maximum_size=8192
+stc89c52rc.upload.maximum_data_size=256
+stc89c52rc.upload.require_upload_port=false
+stc89c52rc.build.mcu=stc89c52rc
+stc89c52rc.build.f_cpu=11059200L
+stc89c52rc.build.board=STC89C52RC
+stc89c52rc.build.core=niusburner
+stc89c52rc.build.variant=standard
+stc89c52rc.build.nb_board=stc89c52rc
+stc89c52rc.build.extra_flags=
+
+stc89c52rc.menu.optimize.size=Size (default)
+stc89c52rc.menu.optimize.size.build.nb_optimize=size
+stc89c52rc.menu.optimize.speed=Speed
+stc89c52rc.menu.optimize.speed.build.nb_optimize=speed
+stc89c52rc.menu.optimize.none=None
+stc89c52rc.menu.optimize.none.build.nb_optimize=none
+
+stc89c52rc.menu.debug.none=None (default)
+stc89c52rc.menu.debug.none.build.nb_debug=none
+stc89c52rc.menu.debug.symbols=Symbols and listings
+stc89c52rc.menu.debug.symbols.build.nb_debug=symbols
+
+stc89c52rc.menu.compiler.auto=Auto-detect SDCC (default)
+stc89c52rc.menu.compiler.auto.build.nb_compiler=auto
+stc89c52rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+stc89c52rc.menu.compiler.configured.build.nb_compiler=configured
