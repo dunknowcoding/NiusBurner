@@ -28,7 +28,13 @@ zeros -- that USB-resets the device.
   GET FR1 8 bytes    first 4 bytes are SPI RX; payload is byte [3]
   0x0B  disconnect   01 0B 01 00 00 00 00 00
 
-0x0D byte1 is the RST level and byte2 is target VCC. The AT89S52 resets on
+0x0D byte1 is the RST level. Byte 2 reads as a target-VCC flag and is not
+one: with the programmer as a board's only supply, holding it low for eight
+seconds -- with the serial adapter's TXD held low too, so it could not
+back-feed through the RXD clamp diode -- did not interrupt a part that
+prints once a second. The VCC pin on this dongle is tied to USB 5 V. There
+is therefore no way to power-cycle a board from here, which matters for any
+part whose bootloader is entered on power-on. The AT89S52 resets on
 a HIGH level, so the whole programming session runs with byte1 = 1 and the
 part held in reset; byte1 = 0 is the falling edge that starts user code.
 0x0B is not that edge -- it tri-states the header, and the pull-up then
@@ -222,6 +228,7 @@ class _Programmer:
         self._exec([0x0D, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00],
                    settle_ms=settle_ms)
         self._connected = False
+
 
     def release_to_run(self) -> None:
         """End an ISP session in user mode, with target VCC still supplied."""

@@ -170,7 +170,7 @@
       "xram_size": 0,
       "model": "small",
       "programmer": "stcgal",
-      "status": "implemented",
+      "status": "verified",
       "aliases": [
         "stc89c52",
         "stc89"
@@ -185,7 +185,8 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "signature": "magic F002, BSL 6.6C"
     },
     "stc89c51rc": {
       "part": "stc89c51rc",
