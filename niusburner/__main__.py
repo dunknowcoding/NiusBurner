@@ -305,12 +305,16 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         return 2
 
     port = getattr(args, "port", None)
+    # A part on the ISP header can be held in reset until the monitor has the
+    # UART open, because the programmer owns its reset line. A part with a
+    # serial bootloader cannot: the bootloader starts the firmware itself,
+    # and the port it starts on is the one being programmed through.
+    holds_reset = plan.board.programmer != "stcgal"
     try:
-        # With a monitor to attach, hold the part in reset until the port is
-        # open -- a sketch banner is gone within milliseconds of the release.
         rc = workflow.upload_image(
             plan, result.image,
-            hold_reset=bool(port))
+            hold_reset=bool(port) and holds_reset,
+            port=port or "")
     except (OSError, ValueError) as exc:
         print(f"upload failed: {exc}", file=sys.stderr)
         return 2
@@ -327,7 +331,7 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         baud,
         seconds=args.seconds if args.seconds is not None else 4.0,
         expect=args.expect,
-        on_open=lambda: workflow.reset_board(plan),
+        on_open=(lambda: workflow.reset_board(plan)) if holds_reset else None,
     )
 
 

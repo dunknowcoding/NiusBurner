@@ -70,7 +70,8 @@ def resolve_backend() -> list[str]:
 def burn_command(*, target: str, image: pathlib.Path, confirm: str,
                  state_policy: str, address: int = 0,
                  config: pathlib.Path | None = None,
-                 hold_reset: bool = False) -> list[str]:
+                 hold_reset: bool = False,
+                 programmer: str = "", port: str = "") -> list[str]:
     if not target or confirm != target:
         raise ValueError("confirm must exactly match target")
     if state_policy not in {"replace", "restore"}:
@@ -87,6 +88,12 @@ def burn_command(*, target: str, image: pathlib.Path, confirm: str,
                     "--state-policy", "replace"]
         if hold_reset:
             command += ["--hold-reset"]
+        # Which transport, and where it is. A part with a serial bootloader
+        # needs the port; one on the ISP header does not.
+        if programmer:
+            command += ["--programmer", programmer]
+        if port:
+            command += ["--port", port]
     else:
         if address:
             raise ValueError("restore uses a complete backup and no load address")
@@ -107,15 +114,22 @@ def reset(*, target: str, confirm: str) -> int:
                           check=False, env=child_env()).returncode
 
 
-def probe_command(*, target: str, confirm: str) -> list[str]:
+def probe_command(*, target: str, confirm: str, programmer: str = "",
+                  port: str = "") -> list[str]:
     if not target or confirm != target:
         raise ValueError("confirm must exactly match target")
-    return list(resolve_backend()) + ["probe", target, "--confirm", confirm]
+    command = list(resolve_backend()) + ["probe", target, "--confirm", confirm]
+    if programmer:
+        command += ["--programmer", programmer]
+    if port:
+        command += ["--port", port]
+    return command
 
 
-def probe(*, target: str, confirm: str) -> int:
-    return subprocess.run(probe_command(target=target, confirm=confirm),
-                          check=False, env=child_env()).returncode
+def probe(*, target: str, confirm: str, **kwargs) -> int:
+    return subprocess.run(
+        probe_command(target=target, confirm=confirm, **kwargs),
+        check=False, env=child_env()).returncode
 
 
 def burn(**kwargs) -> int:

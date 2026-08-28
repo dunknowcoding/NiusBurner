@@ -15,10 +15,29 @@ import pathlib
 import sys
 
 
+def _needs_port(programmer: str) -> bool:
+    """A serial bootloader has to be told which adapter it is behind."""
+    return programmer == "stcgal"
+
+
+def _no_port(programmer: str) -> int:
+    from niusburner.progress import error
+
+    error(f"{programmer} talks over a serial port and none was given",
+          title="no port for this programmer",
+          hints=("pass --port COM31, or --port on the upload command",))
+    return 2
+
+
 def _cmd_probe(args: argparse.Namespace) -> int:
     if args.confirm != args.target:
         print("refused: --confirm must match target", file=sys.stderr)
         return 2
+    if args.programmer == "stcgal":
+        if not args.port:
+            return _no_port(args.programmer)
+        from niusburner.backends.stc_uart import probe as stc_probe
+        return stc_probe(args.target, args.port)
     from niusburner.backends.usbisp_hid import probe
     return probe(args.target)
 
@@ -33,7 +52,12 @@ def _cmd_burn(args: argparse.Namespace) -> int:
         print(f"refused: image not found: {image}", file=sys.stderr)
         return 2
 
-    # Programmer selection is automatic for now (only one backend supported).
+    if args.programmer == "stcgal":
+        if not args.port:
+            return _no_port(args.programmer)
+        from niusburner.backends.stc_uart import flash as stc_flash
+        return stc_flash(image, args.target, args.port,
+                         run=not args.hold_reset)
     from niusburner.backends.usbisp_hid import flash
     return flash(image, args.target, run=not args.hold_reset)
 
@@ -53,6 +77,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("burn")
+    p.add_argument("--programmer", default="usbisp_hid")
+    p.add_argument("--port", default="")
     p.add_argument("target")
     p.add_argument("image")
     p.add_argument("--addr", default="0x0")
@@ -65,11 +91,15 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(fn=_cmd_burn)
 
     p4 = sub.add_parser("reset")
+    p4.add_argument("--programmer", default="usbisp_hid")
+    p4.add_argument("--port", default="")
     p4.add_argument("target")
     p4.add_argument("--confirm", required=True)
     p4.set_defaults(fn=_cmd_reset)
 
     p3 = sub.add_parser("probe")
+    p3.add_argument("--programmer", default="usbisp_hid")
+    p3.add_argument("--port", default="")
     p3.add_argument("target")
     p3.add_argument("--confirm", required=True)
     p3.set_defaults(fn=_cmd_probe)

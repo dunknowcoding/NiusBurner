@@ -49,10 +49,20 @@ class Board:
     f_cpu: int = 11059200
     peripherals: tuple[tuple[str, str], ...] = ()
 
+    #: Programmers this tool can actually drive. A board whose programmer is
+    #: not here compiles, and says plainly that the route is not wired.
+    DRIVEN = ("usbisp_hid", "stcgal")
+
     @property
     def flashable(self) -> bool:
-        """True when `upload` can erase and program this board itself."""
-        return self.status == "verified" and self.programmer == "usbisp_hid"
+        """True when `upload` can program this board itself.
+
+        Keyed on the programmer rather than on the status: `implemented`
+        means the route exists but no part of this type has been in the
+        socket here, which is a reason to say so afterwards, not a reason to
+        refuse to try.
+        """
+        return self.programmer in self.DRIVEN
 
     def capability(self, feature: str) -> str:
         """"hardware", "software" or "none" for one peripheral."""

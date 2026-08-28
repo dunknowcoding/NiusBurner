@@ -52,6 +52,9 @@ def install_arduino_platform(sketchbook: Path | None = None) -> Path:
     dest = platform_dest(book)
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(PLATFORM_SRC, dest, dirs_exist_ok=True)
+    # Regenerate from the catalog so a newly added part appears in the menu.
+    (dest / "boards.txt").write_text(
+        render_boards_txt(), encoding="utf-8", newline="\n")
     tools = dest / "tools"
     tools.mkdir(parents=True, exist_ok=True)
     # The IDE runs nb_host from the sketchbook, so record both halves of what
@@ -62,6 +65,94 @@ def install_arduino_platform(sketchbook: Path | None = None) -> Path:
     (tools / "niusburner.path").write_text(
         str(HERE.parent.resolve()), encoding="utf-8", newline="\n")
     return dest
+
+
+#: Menus every board offers, and the value each choice passes to the host.
+#: The first entry of each is the default the IDE selects.
+MENUS = (
+    ("optimize", "Optimize", (
+        ("size", "Size (default)", "size"),
+        ("speed", "Speed", "speed"),
+        ("none", "None", "none"),
+    )),
+    ("debug", "Debug info", (
+        ("none", "None (default)", "none"),
+        ("symbols", "Symbols and listings", "symbols"),
+    )),
+    ("compiler", "Compiler", (
+        ("auto", "Auto-detect SDCC (default)", "auto"),
+        ("configured", "Use the path from `niusburner setup --sdcc`",
+         "configured"),
+    )),
+)
+
+
+def render_boards_txt() -> str:
+    """Build boards.txt from the board catalog.
+
+    Generated rather than hand-written, because the two drifted: a part
+    added to the catalog was compilable from the command line and simply
+    absent from the IDE menu, with nothing to say so.
+    """
+    from . import boards as boards_mod
+
+    out = [
+        "# NiusBurner 8051 boards (SDCC).",
+        "#",
+        "# Copyright 2026 dunknowcoding (NiusRobotLab)",
+        "# SPDX-License-Identifier: Apache-2.0",
+        "#",
+        "# Generated from niusburner/boards.json by "
+        "`python -m niusburner setup`.",
+        "# Edit the catalog, not this file.",
+        "#",
+        "# Defaults are the safe answer, not the fastest one: Size, because",
+        "# these parts run out of flash long before cycles; no debug info,",
+        "# because symbols cost build time and disk rather than flash; and",
+        "# auto-detection, because SDCC is normally where its installer put",
+        "# it.",
+        "",
+    ]
+    out += ["menu.%s=%s" % (key, label) for key, label, _ in MENUS]
+    out.append("")
+
+    for board in boards_mod.all_boards().values():
+        flash_kb = board.code_size // 1024
+        how = ("USB-ISP" if board.programmer == "usbisp_hid"
+               else "serial bootloader" if board.programmer == "stcgal"
+               else "compile only")
+        out += [
+            "# %s" % ("-" * 70),
+            "# %s" % board.note,
+            "%s.name=%s (%d KB, %s)" % (
+                board.id, board.part.upper(), flash_kb, how),
+            "%s.upload.tool=niusburner" % board.id,
+            "%s.upload.protocol=%s" % (board.id, board.programmer),
+            "%s.upload.maximum_size=%d" % (board.id, board.code_size),
+            "%s.upload.maximum_data_size=%d" % (board.id, board.iram_size),
+            # A serial-bootloader part is programmed through the port the
+            # IDE already asks for, so that one needs it.
+            "%s.upload.require_upload_port=%s" % (
+                board.id, "true" if board.programmer == "stcgal" else "false"),
+            "%s.build.mcu=%s" % (board.id, board.part),
+            "%s.build.f_cpu=%dL" % (board.id, board.f_cpu),
+            "%s.build.board=%s" % (board.id, board.part.upper()),
+            "%s.build.core=niusburner" % board.id,
+            "%s.build.variant=standard" % board.id,
+            "%s.build.nb_board=%s" % (board.id, board.id),
+            "%s.build.extra_flags=" % board.id,
+            "",
+        ]
+        for key, _, choices in MENUS:
+            for name, label, value in choices:
+                out.append("%s.menu.%s.%s=%s" % (board.id, key, name, label))
+                out.append("%s.menu.%s.%s.build.nb_%s=%s" % (
+                    board.id, key, name, key, value))
+            out.append("")
+    text = "\n".join(out)
+    while "\n\n\n" in text:
+        text = text.replace("\n\n\n", "\n\n")
+    return text.rstrip() + "\n"
 
 
 def _touch(path: Path, data: bytes = b"") -> None:
@@ -127,7 +218,8 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     return 0
 
 
-def cmd_flash(image: Path, board: str, programmer: str = "") -> int:
+def cmd_flash(image: Path, board: str, programmer: str = "",
+              port: str = "") -> int:
     # The IDE Upload button is the erase acknowledgement. Flash the HEX
     # produced during Verify; upload.pattern does not receive the sketch path.
     from . import boards as boards_mod
@@ -162,6 +254,7 @@ def cmd_flash(image: Path, board: str, programmer: str = "") -> int:
         # probe here would only be a second round trip.
         return flash.burn(
             target=spec.part, image=image, confirm=spec.part,
+            programmer=spec.programmer, port=port,
             state_policy="replace",
         )
     except (OSError, ValueError) as exc:
@@ -234,7 +327,8 @@ def arduino_main(argv: list[str]) -> int:
         if cmd == "flash":
             return cmd_flash(
                 Path(rest[0]), rest[1],
-                programmer=rest[2] if len(rest) > 2 else "")
+                programmer=rest[2] if len(rest) > 2 else "",
+                port=rest[3] if len(rest) > 3 else "")
     except (IndexError, ValueError) as exc:
         error(str(exc), title="bad Arduino recipe arguments",
               hints=("re-run `python -m niusburner setup` to refresh the "

@@ -58,6 +58,84 @@
         "eeprom": "none"
       }
     },
+    "at89s53": {
+      "part": "at89s53",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 12288,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 11059200,
+      "programmer": "usbisp_hid",
+      "status": "implemented",
+      "signature": "1E 53 06",
+      "aliases": [
+        "89s53"
+      ],
+      "note": "12 KB flash. Same USB-ISP HID route and the same serial-ISP protocol as the AT89S52.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
+    },
+    "at89s8252": {
+      "part": "at89s8252",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 11059200,
+      "programmer": "usbisp_hid",
+      "status": "implemented",
+      "signature": "1E 72 01",
+      "aliases": [
+        "89s8252"
+      ],
+      "note": "8 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
+    },
+    "at89s8253": {
+      "part": "at89s8253",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 12288,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 11059200,
+      "programmer": "usbisp_hid",
+      "status": "implemented",
+      "signature": "1E 73 01",
+      "aliases": [
+        "89s8253"
+      ],
+      "note": "12 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
+    },
     "at89c2051": {
       "part": "at89c2051",
       "family": "mcs51",
@@ -92,12 +170,60 @@
       "xram_size": 0,
       "model": "small",
       "programmer": "stcgal",
-      "status": "planned",
+      "status": "implemented",
       "aliases": [
         "stc89c52",
         "stc89"
       ],
-      "note": "UART bootloader (stcgal), not SPI ISP. Same DIP-40 as AT89S52 is a different protocol.",
+      "note": "UART bootloader (stcgal) on the serial adapter, not the ISP header. Needs a power cycle while the host is talking.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
+    },
+    "stc89c51rc": {
+      "part": "stc89c51rc",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 4096,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "stcgal",
+      "status": "implemented",
+      "aliases": [
+        "stc89c51"
+      ],
+      "note": "4 KB flash. Same UART bootloader as the STC89C52RC.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
+    },
+    "stc90c52rc": {
+      "part": "stc90c52rc",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "stcgal",
+      "status": "implemented",
+      "aliases": [
+        "stc90c52"
+      ],
+      "note": "8 KB flash. Same STC89-generation bootloader.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",

@@ -27,6 +27,19 @@ def test_menu_values_fall_back_to_the_documented_default():
     assert ide._menu("nonsense", ("size", "speed", "none"), "size") == "size"
 
 
+def test_boards_txt_is_generated_from_the_catalog_and_is_current():
+    """The committed file and the catalog drifted once; they cannot again.
+
+    A part added to boards.json used to be compilable from the command line
+    and simply absent from the IDE menu, with nothing to say so.
+    """
+    from niusburner.ide import render_boards_txt
+
+    committed = (PLATFORM / "boards.txt").read_text(encoding="utf-8")
+    assert committed == render_boards_txt(), (
+        "boards.txt is stale: run `python -m niusburner setup`")
+
+
 def test_boards_txt_offers_every_catalog_board_with_safe_defaults():
     text = (PLATFORM / "boards.txt").read_text(encoding="utf-8")
     from niusburner import boards as boards_mod
@@ -210,3 +223,42 @@ def test_internal_detail_lines_are_quiet_unless_asked_for(capsys, monkeypatch):
     monkeypatch.setenv("NIUSBURNER_VERBOSE", "1")
     progress.note("port resolution detail")
     assert "[nius] port resolution detail" in capsys.readouterr().out
+
+
+# ------------------------------------------------------- programmer routes --
+
+def test_the_programmer_and_port_reach_the_backend_command(tmp_path):
+    """A part with a serial bootloader has to be told which adapter it is on."""
+    from niusburner import flash
+
+    image = tmp_path / "firmware.ihx"
+    image.write_text(":00000001FF\n", encoding="ascii")
+    cmd = flash.burn_command(
+        target="stc89c52rc", image=image, confirm="stc89c52rc",
+        state_policy="replace", programmer="stcgal", port="COM33")
+    assert "--programmer" in cmd and "stcgal" in cmd
+    assert "--port" in cmd and "COM33" in cmd
+
+
+def test_the_isp_route_carries_no_port():
+    from niusburner import flash
+
+    cmd = flash.probe_command(target="at89s52", confirm="at89s52",
+                              programmer="usbisp_hid")
+    assert "--port" not in cmd
+
+
+def test_every_catalogued_programmer_is_either_driven_or_named(tmp_path):
+    """A board is flashable when its programmer has a backend, not when a
+    status field says so."""
+    from niusburner import boards as boards_mod
+
+    for board in boards_mod.all_boards().values():
+        assert board.flashable == (board.programmer in board.DRIVEN)
+
+
+def test_a_serial_bootloader_board_asks_the_ide_for_a_port():
+    """Arduino only offers the port picker when the board requires one."""
+    text = (PLATFORM / "boards.txt").read_text(encoding="utf-8")
+    assert "stc89c52rc.upload.require_upload_port=true" in text
+    assert "at89s52.upload.require_upload_port=false" in text
