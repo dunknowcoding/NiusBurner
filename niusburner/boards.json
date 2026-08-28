@@ -175,7 +175,7 @@
         "stc89c52",
         "stc89"
       ],
-      "note": "UART bootloader (stcgal) on the serial adapter, not the ISP header. Needs a power cycle while the host is talking.",
+      "note": "UART bootloader (stcgal) on the serial adapter, not the ISP header. Entry is power-on only, so the board needs a supply that can be interrupted. Reports 8 KB code flash and a 12-clock machine cycle, so the AT89S52 timing carries over.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -184,7 +184,8 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "f_cpu": 11059200
     },
     "stc89c51rc": {
       "part": "stc89c51rc",
@@ -208,7 +209,8 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "f_cpu": 11059200
     },
     "stc90c52rc": {
       "part": "stc90c52rc",
@@ -232,7 +234,8 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "f_cpu": 11059200
     },
     "pic16f877a": {
       "part": "16F877A",

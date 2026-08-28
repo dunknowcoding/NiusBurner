@@ -321,7 +321,8 @@ def compile_plan(
 
 
 def upload_image(plan: CompilePlan, image: Path, *,
-                 hold_reset: bool = False, port: str = "") -> int:
+                 hold_reset: bool = False, port: str = "",
+                 reset_pin: str = "") -> int:
     """Program *image* onto the planned board.
 
     With *hold_reset* the part is left in reset when programming finishes, so
@@ -346,6 +347,7 @@ def upload_image(plan: CompilePlan, image: Path, *,
         confirm=board.part,
         programmer=board.programmer,
         port=port,
+        reset_pin=reset_pin,
         state_policy="replace",
         hold_reset=hold_reset,
     )

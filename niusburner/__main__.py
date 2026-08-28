@@ -210,9 +210,9 @@ def _cmd_which(args: argparse.Namespace) -> int:
     """
     Every way of programming a part, not one recommendation.
 
-    An STC89C52RC can be written over SPI ISP with a USB-ISP *or* through its
-    serial bootloader, and which is correct depends on how the board is wired.
-    Picking one here would be guessing about a bench this program cannot see.
+    Return every registry-declared route so unsupported transports never become
+    recommendations. In particular, STC89C52RC uses its UART bootloader and is
+    not programmed by the AT89S SPI ISP header despite the shared DIP-40 socket.
     """
     opts = registry.programmers_for(args.part)
     if not opts:
@@ -320,7 +320,8 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         rc = workflow.upload_image(
             plan, result.image,
             hold_reset=bool(port) and holds_reset,
-            port=port or "")
+            port=port or "",
+            reset_pin=getattr(args, "reset_pin", "") or "")
     except (OSError, ValueError) as exc:
         print(f"upload failed: {exc}", file=sys.stderr)
         return 2
@@ -524,6 +525,11 @@ def main(argv: list[str] | None = None) -> int:
     _add_sketch_flags(p)
     p.add_argument("--yes", action="store_true",
                    help="acknowledge that the chip will be erased")
+    p.add_argument("--reset-pin", default="", dest="reset_pin",
+                   choices=("", "dtr", "rts"),
+                   help="modem line that switches the target supply. An STC "
+                        "enters its bootloader on power-on only, so without "
+                        "one somebody has to interrupt power by hand")
     p.add_argument(
         "--port",
         help="after a verified flash, read UART on this CH341 port (COM31)",

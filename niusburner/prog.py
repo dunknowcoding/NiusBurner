@@ -37,7 +37,8 @@ def _cmd_probe(args: argparse.Namespace) -> int:
         if not args.port:
             return _no_port(args.programmer)
         from niusburner.backends.stc_uart import probe as stc_probe
-        return stc_probe(args.target, args.port)
+        return stc_probe(args.target, args.port,
+                         reset_pin=args.reset_pin)
     if args.programmer == "pickit3":
         from niusburner.backends.pickit3 import probe as pk_probe
         return pk_probe(args.target, power=args.power)
@@ -60,7 +61,8 @@ def _cmd_burn(args: argparse.Namespace) -> int:
             return _no_port(args.programmer)
         from niusburner.backends.stc_uart import flash as stc_flash
         return stc_flash(image, args.target, args.port,
-                         run=not args.hold_reset)
+                         run=not args.hold_reset,
+                         reset_pin=args.reset_pin)
     if args.programmer == "pickit3":
         from niusburner.backends.pickit3 import flash as pk_flash
         return pk_flash(image, args.target, power=args.power,
@@ -89,6 +91,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("burn")
     p.add_argument("--programmer", default="usbisp_hid")
     p.add_argument("--port", default="")
+    p.add_argument("--reset-pin", default="", dest="reset_pin",
+                       choices=("", "dtr", "rts"),
+                       help="modem line that switches the target supply; an STC needs a power-on and nothing else can give it one")
     p.add_argument("--power", action="store_true",
                        help="let the programmer supply VDD; leave off when the board has its own supply")
     p.add_argument("target")
@@ -105,6 +110,9 @@ def main(argv: list[str] | None = None) -> int:
     p4 = sub.add_parser("reset")
     p4.add_argument("--programmer", default="usbisp_hid")
     p4.add_argument("--port", default="")
+    p4.add_argument("--reset-pin", default="", dest="reset_pin",
+                       choices=("", "dtr", "rts"),
+                       help="modem line that switches the target supply; an STC needs a power-on and nothing else can give it one")
     p4.add_argument("--power", action="store_true",
                        help="let the programmer supply VDD; leave off when the board has its own supply")
     p4.add_argument("target")
@@ -114,6 +122,9 @@ def main(argv: list[str] | None = None) -> int:
     p3 = sub.add_parser("probe")
     p3.add_argument("--programmer", default="usbisp_hid")
     p3.add_argument("--port", default="")
+    p3.add_argument("--reset-pin", default="", dest="reset_pin",
+                       choices=("", "dtr", "rts"),
+                       help="modem line that switches the target supply; an STC needs a power-on and nothing else can give it one")
     p3.add_argument("--power", action="store_true",
                        help="let the programmer supply VDD; leave off when the board has its own supply")
     p3.add_argument("target")

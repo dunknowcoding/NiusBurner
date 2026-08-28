@@ -14,6 +14,7 @@
 
 menu.optimize=Optimize
 menu.debug=Debug info
+menu.reset=Power switch
 menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
@@ -43,6 +44,13 @@ at89s52.menu.debug.none=None (default)
 at89s52.menu.debug.none.build.nb_debug=none
 at89s52.menu.debug.symbols=Symbols and listings
 at89s52.menu.debug.symbols.build.nb_debug=symbols
+
+at89s52.menu.reset.none=None - interrupt power by hand (default)
+at89s52.menu.reset.none.build.nb_reset=none
+at89s52.menu.reset.dtr=Adapter DTR switches VDD
+at89s52.menu.reset.dtr.build.nb_reset=dtr
+at89s52.menu.reset.rts=Adapter RTS switches VDD
+at89s52.menu.reset.rts.build.nb_reset=rts
 
 at89s52.menu.compiler.auto=Auto-detect SDCC (default)
 at89s52.menu.compiler.auto.build.nb_compiler=auto
@@ -77,6 +85,13 @@ at89s51.menu.debug.none.build.nb_debug=none
 at89s51.menu.debug.symbols=Symbols and listings
 at89s51.menu.debug.symbols.build.nb_debug=symbols
 
+at89s51.menu.reset.none=None - interrupt power by hand (default)
+at89s51.menu.reset.none.build.nb_reset=none
+at89s51.menu.reset.dtr=Adapter DTR switches VDD
+at89s51.menu.reset.dtr.build.nb_reset=dtr
+at89s51.menu.reset.rts=Adapter RTS switches VDD
+at89s51.menu.reset.rts.build.nb_reset=rts
+
 at89s51.menu.compiler.auto=Auto-detect SDCC (default)
 at89s51.menu.compiler.auto.build.nb_compiler=auto
 at89s51.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
@@ -109,6 +124,13 @@ at89s53.menu.debug.none=None (default)
 at89s53.menu.debug.none.build.nb_debug=none
 at89s53.menu.debug.symbols=Symbols and listings
 at89s53.menu.debug.symbols.build.nb_debug=symbols
+
+at89s53.menu.reset.none=None - interrupt power by hand (default)
+at89s53.menu.reset.none.build.nb_reset=none
+at89s53.menu.reset.dtr=Adapter DTR switches VDD
+at89s53.menu.reset.dtr.build.nb_reset=dtr
+at89s53.menu.reset.rts=Adapter RTS switches VDD
+at89s53.menu.reset.rts.build.nb_reset=rts
 
 at89s53.menu.compiler.auto=Auto-detect SDCC (default)
 at89s53.menu.compiler.auto.build.nb_compiler=auto
@@ -143,6 +165,13 @@ at89s8252.menu.debug.none.build.nb_debug=none
 at89s8252.menu.debug.symbols=Symbols and listings
 at89s8252.menu.debug.symbols.build.nb_debug=symbols
 
+at89s8252.menu.reset.none=None - interrupt power by hand (default)
+at89s8252.menu.reset.none.build.nb_reset=none
+at89s8252.menu.reset.dtr=Adapter DTR switches VDD
+at89s8252.menu.reset.dtr.build.nb_reset=dtr
+at89s8252.menu.reset.rts=Adapter RTS switches VDD
+at89s8252.menu.reset.rts.build.nb_reset=rts
+
 at89s8252.menu.compiler.auto=Auto-detect SDCC (default)
 at89s8252.menu.compiler.auto.build.nb_compiler=auto
 at89s8252.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
@@ -175,6 +204,13 @@ at89s8253.menu.debug.none=None (default)
 at89s8253.menu.debug.none.build.nb_debug=none
 at89s8253.menu.debug.symbols=Symbols and listings
 at89s8253.menu.debug.symbols.build.nb_debug=symbols
+
+at89s8253.menu.reset.none=None - interrupt power by hand (default)
+at89s8253.menu.reset.none.build.nb_reset=none
+at89s8253.menu.reset.dtr=Adapter DTR switches VDD
+at89s8253.menu.reset.dtr.build.nb_reset=dtr
+at89s8253.menu.reset.rts=Adapter RTS switches VDD
+at89s8253.menu.reset.rts.build.nb_reset=rts
 
 at89s8253.menu.compiler.auto=Auto-detect SDCC (default)
 at89s8253.menu.compiler.auto.build.nb_compiler=auto
@@ -209,13 +245,20 @@ at89c2051.menu.debug.none.build.nb_debug=none
 at89c2051.menu.debug.symbols=Symbols and listings
 at89c2051.menu.debug.symbols.build.nb_debug=symbols
 
+at89c2051.menu.reset.none=None - interrupt power by hand (default)
+at89c2051.menu.reset.none.build.nb_reset=none
+at89c2051.menu.reset.dtr=Adapter DTR switches VDD
+at89c2051.menu.reset.dtr.build.nb_reset=dtr
+at89c2051.menu.reset.rts=Adapter RTS switches VDD
+at89c2051.menu.reset.rts.build.nb_reset=rts
+
 at89c2051.menu.compiler.auto=Auto-detect SDCC (default)
 at89c2051.menu.compiler.auto.build.nb_compiler=auto
 at89c2051.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89c2051.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
-# UART bootloader (stcgal) on the serial adapter, not the ISP header. Needs a power cycle while the host is talking.
+# UART bootloader (stcgal) on the serial adapter, not the ISP header. Entry is power-on only, so the board needs a supply that can be interrupted. Reports 8 KB code flash and a 12-clock machine cycle, so the AT89S52 timing carries over.
 stc89c52rc.name=STC89C52RC (8 KB, serial bootloader)
 stc89c52rc.upload.tool=niusburner
 stc89c52rc.upload.protocol=stcgal
@@ -241,6 +284,13 @@ stc89c52rc.menu.debug.none=None (default)
 stc89c52rc.menu.debug.none.build.nb_debug=none
 stc89c52rc.menu.debug.symbols=Symbols and listings
 stc89c52rc.menu.debug.symbols.build.nb_debug=symbols
+
+stc89c52rc.menu.reset.none=None - interrupt power by hand (default)
+stc89c52rc.menu.reset.none.build.nb_reset=none
+stc89c52rc.menu.reset.dtr=Adapter DTR switches VDD
+stc89c52rc.menu.reset.dtr.build.nb_reset=dtr
+stc89c52rc.menu.reset.rts=Adapter RTS switches VDD
+stc89c52rc.menu.reset.rts.build.nb_reset=rts
 
 stc89c52rc.menu.compiler.auto=Auto-detect SDCC (default)
 stc89c52rc.menu.compiler.auto.build.nb_compiler=auto
@@ -275,6 +325,13 @@ stc89c51rc.menu.debug.none.build.nb_debug=none
 stc89c51rc.menu.debug.symbols=Symbols and listings
 stc89c51rc.menu.debug.symbols.build.nb_debug=symbols
 
+stc89c51rc.menu.reset.none=None - interrupt power by hand (default)
+stc89c51rc.menu.reset.none.build.nb_reset=none
+stc89c51rc.menu.reset.dtr=Adapter DTR switches VDD
+stc89c51rc.menu.reset.dtr.build.nb_reset=dtr
+stc89c51rc.menu.reset.rts=Adapter RTS switches VDD
+stc89c51rc.menu.reset.rts.build.nb_reset=rts
+
 stc89c51rc.menu.compiler.auto=Auto-detect SDCC (default)
 stc89c51rc.menu.compiler.auto.build.nb_compiler=auto
 stc89c51rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
@@ -307,6 +364,13 @@ stc90c52rc.menu.debug.none=None (default)
 stc90c52rc.menu.debug.none.build.nb_debug=none
 stc90c52rc.menu.debug.symbols=Symbols and listings
 stc90c52rc.menu.debug.symbols.build.nb_debug=symbols
+
+stc90c52rc.menu.reset.none=None - interrupt power by hand (default)
+stc90c52rc.menu.reset.none.build.nb_reset=none
+stc90c52rc.menu.reset.dtr=Adapter DTR switches VDD
+stc90c52rc.menu.reset.dtr.build.nb_reset=dtr
+stc90c52rc.menu.reset.rts=Adapter RTS switches VDD
+stc90c52rc.menu.reset.rts.build.nb_reset=rts
 
 stc90c52rc.menu.compiler.auto=Auto-detect SDCC (default)
 stc90c52rc.menu.compiler.auto.build.nb_compiler=auto

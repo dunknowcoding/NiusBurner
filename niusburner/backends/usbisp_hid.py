@@ -131,6 +131,11 @@ class _Programmer:
                 "Driver must be HidUsb. "
                 "If WinUSB is active, revert via Zadig → HidUsb → Replace Driver. "
                 "See docs/wiring/usbasp-idc10.md.")
+        if len(devs) != 1:
+            raise FileNotFoundError(
+                f"expected exactly one USB-ISP programmer "
+                f"(VID {_VID:04X} / PID {_PID:04X}), found {len(devs)}; "
+                "refusing to power or reset an ambiguous target")
         iface = min(devs, key=lambda d: d["interface_number"])
         self._dev.open_path(iface["path"])
 

@@ -178,8 +178,7 @@
     "usbisp_hid": {
       "programs": [
         "at89s51",
-        "at89s52",
-        "stc89c52rc"
+        "at89s52"
       ],
       "transport": "usb",
       "detect": {
@@ -218,7 +217,7 @@
         "url": "https://github.com/grigorig/stcgal",
         "note": "pip install stcgal"
       },
-      "note": "Serial bootloader, entered by power-cycling the target while the tool waits. STC89 parts can ALSO be done over SPI ISP with a USB-ISP; STC15 cannot."
+      "note": "Serial bootloader, entered by power-cycling the target while the tool waits. STC89 and STC15 parts are not programmed through the AT89S SPI ISP header."
     },
     "pickit3": {
       "programs": [

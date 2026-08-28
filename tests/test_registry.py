@@ -121,15 +121,13 @@ def test_a_command_that_is_the_wrong_tool_is_rejected():
 
 def test_programmers_for_returns_all_options_not_one():
     """
-    An STC89C52RC is listed on both the USB-ISP HID dongle (AT89S SPI, only
-    if that silicon is in the socket) and stcgal (UART bootloader). Collapsing
-    that to a single answer would be a guess about a bench this code cannot see.
+    An STC89C52RC has a UART bootloader, not the AT89S SPI ISP protocol. The
+    shared DIP-40 socket must not make the HID programmer a claimed route.
     """
     opts = registry.programmers_for("stc89c52rc")
     assert opts, "STC89C52RC should have at least one route"
     names = {o.name for o in opts}
-    assert "usbisp_hid" in names
-    assert "stcgal" in names
+    assert names == {"stcgal"}
 
 
 def test_no_toolchain_binary_is_committed():

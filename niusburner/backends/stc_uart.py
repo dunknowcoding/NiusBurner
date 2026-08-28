@@ -39,8 +39,99 @@ PROTOCOLS = {
 }
 
 DEFAULT_BAUD = 19200
+
+#: How the board's power is interrupted, when something can do it.
+#:
+#: An STC89 enters its bootloader on power-on and on nothing else: there is
+#: no pin to assert and no way in from software. So an upload that nobody
+#: has to touch needs VDD under electrical control, which is what every
+#: commercial STC development board does -- a P-channel MOSFET or a PNP in
+#: the supply, driven by the serial adapter's DTR or RTS line.
+#:
+#: "dtr" and "rts" name that line. "off" means nobody can, and the console
+#: asks a person to do it.
+#:
+#: The ISP header cannot: its 0x0D frame carries a VCC byte, and setting it
+#: low was measured on this bench against a part that prints once a second.
+#: The printing continued straight through a 1.5 s cut, so that byte does
+#: not gate the rail whatever else it does.
+RESET_PINS = ("dtr", "rts")
+
 #: The bootloader answers at a low rate and is then handed a faster one.
 HANDSHAKE_BAUD = 2400
+#: stcgal keeps pulsing until the bootloader answers, and the answer only
+#: comes after a power-on. The deadline has to outlast a few cycle attempts
+#: plus a person reaching for a switch when the automatic route is off.
+PROCESS_TIMEOUT_SECONDS = 300
+
+
+def serial_identity(port: str) -> tuple[str, int | None, int | None, str, str, str]:
+    """Capture one exact UART endpoint without opening or resetting it."""
+    try:
+        from serial.tools import list_ports
+    except ImportError as exc:
+        raise RuntimeError("pyserial is required for the STC UART") from exc
+    wanted = port.strip().upper().rstrip(":")
+    matches = [item for item in list_ports.comports()
+               if str(item.device).upper().rstrip(":") == wanted]
+    if len(matches) != 1:
+        raise RuntimeError(f"expected exact UART {wanted} once, found {len(matches)}")
+    item = matches[0]
+    return (
+        str(item.device).upper().rstrip(":"), item.vid, item.pid,
+        str(item.serial_number or ""), str(item.location or ""),
+        str(item.hwid or "").upper(),
+    )
+
+
+def _run_guarded(command: list[str], port: str) -> subprocess.CompletedProcess[str]:
+    """Run stcgal under a deadline and require the same UART afterwards."""
+    before = serial_identity(port)
+    primary: Exception | None = None
+    done = None
+    try:
+        done = subprocess.run(
+            command, capture_output=True, text=True,
+            timeout=PROCESS_TIMEOUT_SECONDS,
+        )
+    except Exception as exc:
+        primary = exc
+    try:
+        after = serial_identity(port)
+        if after != before:
+            raise RuntimeError(
+                f"UART identity changed from {before!r} to {after!r}")
+    except Exception as endpoint_error:
+        if primary is not None:
+            raise RuntimeError(
+                f"stcgal failed ({primary}); UART restoration also failed "
+                f"({endpoint_error})"
+            ) from endpoint_error
+        raise RuntimeError(
+            f"exact UART did not remain restored: {endpoint_error}"
+        ) from endpoint_error
+    if primary is not None:
+        raise primary
+    assert done is not None
+    return done
+
+
+#: Why a bootloader stays silent, in the order worth checking. The first is
+#: the one that costs an afternoon: if the serial adapter and the programmer
+#: both feed VCC, neither can take it away on its own, so no amount of
+#: cutting power at one of them produces a power-on reset. Unplugging the
+#: adapter by hand does not help either -- that closes the port being
+#: programmed through.
+_WHY_NO_ANSWER = (
+    "is anything else feeding VCC? Two supplies tied together cannot be "
+    "interrupted at one of them, so neither produces a power-on",
+    "nothing here switches VDD on its own: the ISP header cannot, and a "
+    "person or a DTR/RTS supply switch has to",
+    "an STC89 enters its bootloader on power-on only; a reset pulse will "
+    "not do it, and there is no way in from software",
+    "check TX/RX are crossed and share a ground",
+    "an STC part cannot be reached through the ISP header at all",
+)
 
 
 def find_stcgal() -> list[str] | None:
@@ -68,6 +159,20 @@ def version() -> str | None:
         return None
 
 
+def autoreset_args(reset_pin: str) -> list[str]:
+    """stcgal's flags for cycling power from a modem control line.
+
+    -r is not used: that runs a shell command, and a command cannot switch
+    a rail this bench has no switch on. -A names the pin, and -a is what
+    makes stcgal consult it at all -- passing -A alone looks right and
+    silently does nothing.
+    """
+    pin = (reset_pin or "").strip().lower()
+    if pin not in RESET_PINS:
+        return []
+    return ["-a", "-A", pin]
+
+
 def _missing() -> int:
     error(
         "stcgal is not installed on this interpreter",
@@ -77,25 +182,42 @@ def _missing() -> int:
     return 1
 
 
-def probe(target: str, port: str, baud: int = DEFAULT_BAUD) -> int:
-    """Ask the bootloader to identify itself. Needs a power cycle."""
+def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
+          reset_pin: str = "") -> int:
+    """Ask the bootloader to identify itself.
+
+    With *reset_pin* set to dtr or rts, the adapter switches VDD and this
+    is one command with nobody touching anything. Without it, a person has
+    to interrupt power, and the console says so.
+    """
     tool = find_stcgal()
     if tool is None:
         return _missing()
     banner(f"8051 Flash Console - Target: {target}")
     stage(0, "Waiting", f"{port} at {HANDSHAKE_BAUD} baud")
-    info("power-cycle the board now: the STC bootloader only listens in the "
-         "first moments after reset")
+    cycle = autoreset_args(reset_pin)
+    if cycle:
+        info(f"cycling target power from {reset_pin.upper()}")
+    else:
+        info("power-cycle the board now, and hold it off for a moment: the "
+             "bootloader is entered on power-on only")
+        info("the surest order is to remove power first, start this, then "
+             "restore it -- the listening window is short and opens once")
     cmd = tool + ["-P", PROTOCOLS["stc89"], "-p", port,
                   "-b", str(baud), "-l", str(HANDSHAKE_BAUD), "-D"]
+    cmd += cycle
     note(" ".join(cmd))
-    done = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        done = _run_guarded(cmd, port)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+        error(str(exc)[:400], title="STC probe transport failed",
+              hints=(f"confirm {port} is still the exact CH341 endpoint",))
+        return 1
     if done.returncode != 0:
         error((done.stderr or done.stdout).strip()[:400],
               title="the bootloader did not answer",
-              hints=("power-cycle the board while this is running",
-                     "check TX/RX are crossed and share a ground",
-                     f"confirm {port} is the adapter wired to this part"))
+              hints=_WHY_NO_ANSWER + (
+                  f"confirm {port} is the adapter wired to this part",))
         return 1
     for line in done.stdout.splitlines():
         if line.strip():
@@ -104,8 +226,14 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD) -> int:
 
 
 def flash(image: pathlib.Path, target: str, port: str,
-          baud: int = DEFAULT_BAUD, run: bool = True) -> int:
-    """Program *image* through the STC bootloader. Needs a power cycle."""
+          baud: int = DEFAULT_BAUD, run: bool = True,
+          reset_pin: str = "") -> int:
+    """Program *image* through the STC bootloader.
+
+    With *reset_pin* set to dtr or rts, the adapter switches VDD and this
+    is one command with nobody touching anything. Without it, a person has
+    to interrupt power, and the console says so.
+    """
     tool = find_stcgal()
     if tool is None:
         return _missing()
@@ -116,19 +244,30 @@ def flash(image: pathlib.Path, target: str, port: str,
 
     banner(f"8051 Flash Console - Target: {target}")
     stage(0, "Waiting", f"{port} at {HANDSHAKE_BAUD} baud")
-    info("power-cycle the board now: the STC bootloader only listens in the "
-         "first moments after reset")
+    cycle = autoreset_args(reset_pin)
+    if cycle:
+        info(f"cycling target power from {reset_pin.upper()}")
+    else:
+        info("power-cycle the board now, and hold it off for a moment: the "
+             "bootloader is entered on power-on only")
+        info("the surest order is to remove power first, start this, then "
+             "restore it -- the listening window is short and opens once")
     cmd = tool + ["-P", PROTOCOLS["stc89"], "-p", port,
-                  "-b", str(baud), "-l", str(HANDSHAKE_BAUD), str(image)]
+                  "-b", str(baud), "-l", str(HANDSHAKE_BAUD)]
+    cmd += cycle
+    cmd += [str(image)]
     note(" ".join(cmd))
-    done = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        done = _run_guarded(cmd, port)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+        error(str(exc)[:400], title="STC upload transport failed",
+              hints=(f"confirm {port} is still the exact CH341 endpoint",))
+        return 1
     output = (done.stdout or "") + (done.stderr or "")
     if done.returncode != 0:
         error(output.strip()[:400] or "stcgal reported a failure",
               title="programming failed",
-              hints=("power-cycle the board while this is running",
-                     "check TX/RX are crossed and share a ground",
-                     "an STC part cannot be reached through the ISP header"))
+              hints=_WHY_NO_ANSWER)
         return 1
     for line in output.splitlines():
         if line.strip():

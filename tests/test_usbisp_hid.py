@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pathlib
 
+import pytest
+
 from niusburner.backends.usbisp_hid import _bytes_to_program, _parse_ihx, _spi_rx
 from niusburner import registry
 
@@ -118,3 +120,5 @@ def test_flash_can_hold_the_part_in_reset():
     # The early return must come before release_to_run, or --hold-reset runs
     # the part anyway.
     assert src.index("if not run:") < src.index("prog.release_to_run()")
+
+

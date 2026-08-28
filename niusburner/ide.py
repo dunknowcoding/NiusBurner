@@ -95,6 +95,11 @@ MENUS = (
         ("none", "None (default)", "none"),
         ("symbols", "Symbols and listings", "symbols"),
     )),
+    ("reset", "Power switch", (
+        ("none", "None - interrupt power by hand (default)", "none"),
+        ("dtr", "Adapter DTR switches VDD", "dtr"),
+        ("rts", "Adapter RTS switches VDD", "rts"),
+    )),
     ("compiler", "Compiler", (
         ("auto", "Auto-detect SDCC (default)", "auto"),
         ("configured", "Use the path from `niusburner setup --sdcc`",
@@ -256,7 +261,7 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
 
 
 def cmd_flash(image: Path, board: str, programmer: str = "",
-              port: str = "") -> int:
+              port: str = "", reset_pin: str = "") -> int:
     # The IDE Upload button is the erase acknowledgement. Flash the HEX
     # produced during Verify; upload.pattern does not receive the sketch path.
     from . import boards as boards_mod
@@ -292,6 +297,7 @@ def cmd_flash(image: Path, board: str, programmer: str = "",
         return flash.burn(
             target=spec.part, image=image, confirm=spec.part,
             programmer=spec.programmer, port=port,
+            reset_pin=_menu(reset_pin, ("dtr", "rts"), ""),
             state_policy="replace",
         )
     except (OSError, ValueError) as exc:
@@ -388,7 +394,8 @@ def arduino_main(argv: list[str]) -> int:
             return cmd_flash(
                 Path(rest[0]), rest[1],
                 programmer=rest[2] if len(rest) > 2 else "",
-                port=rest[3] if len(rest) > 3 else "")
+                port=rest[3] if len(rest) > 3 else "",
+                reset_pin=rest[4] if len(rest) > 4 else "")
     except (IndexError, ValueError) as exc:
         error(str(exc), title="bad Arduino recipe arguments",
               hints=("re-run `python -m niusburner setup` to refresh the "
