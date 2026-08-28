@@ -313,3 +313,16 @@ def test_gaps_that_used_to_reach_sdcc_are_now_refused(call, needle):
     with pytest.raises(CxxLowerError) as exc:
         lower(src)
     assert needle in str(exc.value)
+
+
+def test_progmem_is_refused_with_the_storage_class_that_replaces_it():
+    with pytest.raises(CxxLowerError) as exc:
+        lower('const char t[] PROGMEM = "x";\nvoid setup(){}\nvoid loop(){}\n')
+    assert "__code" in str(exc.value)
+    assert exc.value.kind == "api"
+
+
+def test_progmem_inside_assembly_is_left_alone():
+    src = ("void setup(){ __asm\n  ; PROGMEM is a word in this comment\n"
+           "  nop\n__endasm; }\nvoid loop(){}\n")
+    assert "; PROGMEM is a word in this comment" in lower(src)

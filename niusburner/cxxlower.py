@@ -168,6 +168,21 @@ for _name in _FLOAT_MATH:
         "arithmetic, or a lookup table declared `__code`."
     ))
 
+#: Bare identifiers, not calls: AVR storage attributes that SDCC has never
+#: heard of. Left alone they reach the compiler as an undefined identifier
+#: pointing at the declaration, which says nothing about what to do instead.
+_IDENT_REFUSED = {
+    "PROGMEM": (
+        "PROGMEM is the AVR attribute for putting a table in flash. The 8051 "
+        "has a storage class for it: `const __code unsigned char t[] = {...};`"
+        " and then plain `t[i]`, with no accessor macro."
+    ),
+    "PGM_P": (
+        "PGM_P is an AVR pointer-into-flash type. On this part the type is "
+        "`const __code char *`."
+    ),
+}
+
 #: Calls with an exact 8051 spelling. Rewritten rather than refused, because
 #: the meaning carries over unchanged.
 _CALL_EMIT = {
@@ -692,6 +707,8 @@ def _check_calls(text: str, board=None) -> None:
             i += 1
             continue
         name = match.group(0)
+        if name in _IDENT_REFUSED:
+            raise CxxLowerError(name, _IDENT_REFUSED[name], kind="api")
         j = match.end()
         while j < n and text[j].isspace():
             j += 1

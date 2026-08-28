@@ -126,9 +126,10 @@ about. Use integer arithmetic, or a lookup table declared `__code`.
 
 ### AVR program-memory addressing
 
-`pgm_read_byte`, `pgm_read_word`, `pgm_read_dword`, `memcpy_P` and `strcpy_P`
-are refused. They exist because AVR needs a separate instruction to reach
-flash; the 8051 does not. Declare the table `__code` and index it:
+`PROGMEM`, `PGM_P`, `pgm_read_byte`, `pgm_read_word`, `pgm_read_dword`,
+`memcpy_P` and `strcpy_P` are refused. They exist because AVR needs a
+separate instruction to reach flash; the 8051 does not. Declare the table
+`__code` and index it:
 
 ```c
 const __code unsigned char digits[] = { 0x3F, 0x06, 0x5B };
