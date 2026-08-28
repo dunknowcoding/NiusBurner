@@ -7,10 +7,10 @@
 # Edit the catalog, not this file.
 #
 # Defaults are the safe answer, not the fastest one: Size, because
-# these parts run out of flash long before cycles; no debug info,
+# these parts run out of room long before cycles; no debug info,
 # because symbols cost build time and disk rather than flash; and
-# auto-detection, because SDCC is normally where its installer put
-# it.
+# auto-detection, because a compiler is normally where its own
+# installer put it.
 
 menu.optimize=Optimize
 menu.debug=Debug info

@@ -1,0 +1,50 @@
+# NiusBurner pic16 boards.
+#
+# Copyright 2026 dunknowcoding (NiusRobotLab)
+# SPDX-License-Identifier: Apache-2.0
+#
+# Generated from niusburner/boards.json by `python -m niusburner setup`.
+# Edit the catalog, not this file.
+#
+# Defaults are the safe answer, not the fastest one: Size, because
+# these parts run out of room long before cycles; no debug info,
+# because symbols cost build time and disk rather than flash; and
+# auto-detection, because a compiler is normally where its own
+# installer put it.
+
+menu.optimize=Optimize
+menu.debug=Debug info
+menu.compiler=Compiler
+
+# ----------------------------------------------------------------------
+# 8 K words flash, 368 B RAM, 256 B EEPROM. PICkit 3 over ICSP. USART on RC6/RC7. Unlike a classic 8051 this part has real I2C, SPI, PWM and ADC hardware.
+pic16f877a.name=16F877A (8 K words, PICkit 3)
+pic16f877a.upload.tool=niusburner
+pic16f877a.upload.protocol=pickit3
+pic16f877a.upload.maximum_size=8192
+pic16f877a.upload.maximum_data_size=368
+pic16f877a.upload.require_upload_port=false
+pic16f877a.build.mcu=16F877A
+pic16f877a.build.f_cpu=20000000L
+pic16f877a.build.board=16F877A
+pic16f877a.build.core=niusburner
+pic16f877a.build.variant=standard
+pic16f877a.build.nb_board=pic16f877a
+pic16f877a.build.extra_flags=
+
+pic16f877a.menu.optimize.size=Size (default)
+pic16f877a.menu.optimize.size.build.nb_optimize=size
+pic16f877a.menu.optimize.speed=Speed
+pic16f877a.menu.optimize.speed.build.nb_optimize=speed
+pic16f877a.menu.optimize.none=None
+pic16f877a.menu.optimize.none.build.nb_optimize=none
+
+pic16f877a.menu.debug.none=None (default)
+pic16f877a.menu.debug.none.build.nb_debug=none
+pic16f877a.menu.debug.symbols=Symbols and listings
+pic16f877a.menu.debug.symbols.build.nb_debug=symbols
+
+pic16f877a.menu.compiler.auto=Auto-detect SDCC (default)
+pic16f877a.menu.compiler.auto.build.nb_compiler=auto
+pic16f877a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic16f877a.menu.compiler.configured.build.nb_compiler=configured

@@ -1,0 +1,7 @@
+#!/bin/sh
+DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+if [ -f "$DIR/python.path" ]; then
+  PY=$(tr -d '\r' < "$DIR/python.path")
+  exec "$PY" "$DIR/nb_host.py" "$@"
+fi
+exec python3 "$DIR/nb_host.py" "$@"

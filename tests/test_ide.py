@@ -7,16 +7,28 @@ import pathlib
 from niusburner import ide
 
 
-def test_install_arduino_platform_copies_board_package(tmp_path: pathlib.Path):
+def test_install_arduino_platform_copies_every_board_package(tmp_path):
+    """One package per architecture: the IDE keys its toolchain off that name."""
     book = tmp_path / "Arduino"
-    dest = ide.install_arduino_platform(book)
-    assert dest == book / "hardware" / "niusrobotlab" / "mcs51"
-    assert (dest / "boards.txt").is_file()
-    assert (dest / "platform.txt").is_file()
-    assert (dest / "tools" / "nb_host.py").is_file()
-    python_path = (dest / "tools" / "python.path").read_text(encoding="utf-8").strip()
-    assert python_path
-    assert "at89s52" in (dest / "boards.txt").read_text(encoding="utf-8")
+    vendor = ide.install_arduino_platform(book)
+    assert vendor == book / "hardware" / "niusrobotlab"
+
+    for architecture in ide.ARCHITECTURES:
+        dest = vendor / architecture
+        assert (dest / "boards.txt").is_file(), architecture
+        assert (dest / "platform.txt").is_file(), architecture
+        assert (dest / "tools" / "nb_host.py").is_file(), architecture
+        recorded = (dest / "tools" / "python.path").read_text(
+            encoding="utf-8").strip()
+        assert recorded, architecture
+
+    boards_8051 = (vendor / "mcs51" / "boards.txt").read_text(encoding="utf-8")
+    boards_pic = (vendor / "pic16" / "boards.txt").read_text(encoding="utf-8")
+    assert "at89s52" in boards_8051
+    assert "pic16f877a" in boards_pic
+    # A part belongs to exactly one package, or the IDE offers it twice.
+    assert "pic16f877a" not in boards_8051
+    assert "at89s52" not in boards_pic
 
 
 def test_arduino_host_dummy_o_and_hex(tmp_path: pathlib.Path):

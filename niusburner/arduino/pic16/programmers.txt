@@ -1,0 +1,22 @@
+# Tools > Programmer for the PIC parts.
+#
+# Copyright 2026 dunknowcoding (NiusRobotLab)
+# SPDX-License-Identifier: Apache-2.0
+#
+# A PICkit 3 is a HID device speaking Microchip's own protocol, so it is
+# driven through ipecmd. That needs an MPLAB X 5.x install: support for this
+# programmer was removed after that line.
+
+pickit3.name=PICkit 3 (ICSP, board self-powered) - default
+pickit3.communication=usb
+pickit3.protocol=pickit3
+pickit3.program.tool=niusburner
+pickit3.program.extra_params=
+pickit3.program.nb_programmer=pickit3
+
+pickit3_power.name=PICkit 3 (ICSP, powered by the programmer)
+pickit3_power.communication=usb
+pickit3_power.protocol=pickit3
+pickit3_power.program.tool=niusburner
+pickit3_power.program.extra_params=
+pickit3_power.program.nb_programmer=pickit3_power

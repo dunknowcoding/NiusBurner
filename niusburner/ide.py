@@ -21,7 +21,13 @@ from . import flash, workflow
 from .progress import error, info, note, stage
 
 HERE = Path(__file__).parent
-PLATFORM_SRC = HERE / "arduino" / "mcs51"
+PLATFORM_ROOT = HERE / "arduino"
+PLATFORM_SRC = PLATFORM_ROOT / "mcs51"
+
+#: One Arduino board package per architecture. The IDE keys its
+#: whole toolchain off the architecture directory name, so these
+#: cannot be merged into one package however similar they look.
+ARCHITECTURES = ("mcs51", "pic16")
 VENDOR = "niusrobotlab"
 ARCHITECTURE = "mcs51"
 
@@ -35,36 +41,46 @@ def preferred_sketchbook() -> Path | None:
     return books[0] if books else None
 
 
-def platform_dest(sketchbook: Path) -> Path:
-    return sketchbook / "hardware" / VENDOR / ARCHITECTURE
+def platform_dest(sketchbook: Path, architecture: str = ARCHITECTURE) -> Path:
+    return sketchbook / "hardware" / VENDOR / architecture
 
 
 def install_arduino_platform(sketchbook: Path | None = None) -> Path:
-    """Copy the board package into a sketchbook and record this Python."""
+    """Copy every board package into a sketchbook and record this Python.
+
+    Returns the sketchbook's vendor directory, which is the one thing a
+    person needs to see to know where the packages went.
+    """
     book = sketchbook or preferred_sketchbook()
     if book is None:
         raise FileNotFoundError(
             "no Arduino sketchbook found. Set ARDUINO_SKETCHBOOK or "
             "create Documents/Arduino, then re-run setup."
         )
-    if not PLATFORM_SRC.is_dir():
-        raise FileNotFoundError(f"board package missing at {PLATFORM_SRC}")
-    dest = platform_dest(book)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(PLATFORM_SRC, dest, dirs_exist_ok=True)
-    # Regenerate from the catalog so a newly added part appears in the menu.
-    (dest / "boards.txt").write_text(
-        render_boards_txt(), encoding="utf-8", newline="\n")
-    tools = dest / "tools"
-    tools.mkdir(parents=True, exist_ok=True)
-    # The IDE runs nb_host from the sketchbook, so record both halves of what
-    # it needs there: which interpreter, and where the package lives when it
-    # is not pip-installed on that interpreter.
-    (tools / "python.path").write_text(
-        str(Path(sys.executable).resolve()), encoding="utf-8", newline="\n")
-    (tools / "niusburner.path").write_text(
-        str(HERE.parent.resolve()), encoding="utf-8", newline="\n")
-    return dest
+    last: Path | None = None
+    for architecture in ARCHITECTURES:
+        source = PLATFORM_ROOT / architecture
+        if not source.is_dir():
+            raise FileNotFoundError(f"board package missing at {source}")
+        dest = platform_dest(book, architecture)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(source, dest, dirs_exist_ok=True)
+        # Regenerate from the catalog so a newly added part appears in the
+        # menu of whichever architecture it belongs to.
+        (dest / "boards.txt").write_text(
+            render_boards_txt(architecture), encoding="utf-8", newline="\n")
+        tools = dest / "tools"
+        tools.mkdir(parents=True, exist_ok=True)
+        # The IDE runs nb_host from the sketchbook, so record both halves of
+        # what it needs there: which interpreter, and where the package lives
+        # when it is not pip-installed on that interpreter.
+        (tools / "python.path").write_text(
+            str(Path(sys.executable).resolve()), encoding="utf-8",
+            newline="\n")
+        (tools / "niusburner.path").write_text(
+            str(HERE.parent.resolve()), encoding="utf-8", newline="\n")
+        last = dest
+    return last.parent if last is not None else book
 
 
 #: Menus every board offers, and the value each choice passes to the host.
@@ -107,10 +123,10 @@ def render_boards_txt(family: str = "mcs51") -> str:
         "# Edit the catalog, not this file.",
         "#",
         "# Defaults are the safe answer, not the fastest one: Size, because",
-        "# these parts run out of flash long before cycles; no debug info,",
+        "# these parts run out of room long before cycles; no debug info,",
         "# because symbols cost build time and disk rather than flash; and",
-        "# auto-detection, because SDCC is normally where its installer put",
-        "# it.",
+        "# auto-detection, because a compiler is normally where its own",
+        "# installer put it.",
         "",
     ]
     out += ["menu.%s=%s" % (key, label) for key, label, _ in MENUS]
@@ -119,15 +135,20 @@ def render_boards_txt(family: str = "mcs51") -> str:
     for board in boards_mod.all_boards().values():
         if board.family != family:
             continue
-        flash_kb = board.code_size // 1024
-        how = ("USB-ISP" if board.programmer == "usbisp_hid"
-               else "serial bootloader" if board.programmer == "stcgal"
-               else "compile only")
+        # A PIC16 instruction is one 14-bit word, so its size is quoted in
+        # words. Calling that a kilobyte would be wrong by more than two.
+        if board.family == "pic16":
+            size = "%d K words" % (board.code_size // 1024)
+        else:
+            size = "%d KB" % (board.code_size // 1024)
+        how = {"usbisp_hid": "USB-ISP",
+               "stcgal": "serial bootloader",
+               "pickit3": "PICkit 3"}.get(board.programmer, "compile only")
         out += [
             "# %s" % ("-" * 70),
             "# %s" % board.note,
-            "%s.name=%s (%d KB, %s)" % (
-                board.id, board.part.upper(), flash_kb, how),
+            "%s.name=%s (%s, %s)" % (
+                board.id, board.part.upper(), size, how),
             "%s.upload.tool=niusburner" % board.id,
             "%s.upload.protocol=%s" % (board.id, board.programmer),
             "%s.upload.maximum_size=%d" % (board.id, board.code_size),
@@ -169,30 +190,37 @@ def _menu(value: str | None, allowed: tuple[str, ...], default: str) -> str:
     return text if text in allowed else default
 
 
-def resolve_compiler(choice: str) -> Path | None:
-    """SDCC for this build: the configured path, or auto-detection.
+#: Which recordable tool compiles for which family.
+COMPILER_FOR = {"mcs51": "sdcc", "pic16": "xc8"}
 
-    "auto" is the default and looks on PATH first, then the usual install
-    directories. "configured" uses the path recorded by
-    `niusburner setup --sdcc <path>`, and says so if there is not one.
+
+def resolve_compiler(choice: str, family: str = "mcs51") -> Path | None:
+    """The compiler for this build: the configured path, or auto-detection.
+
+    "auto" is the default and lets the family's own finder look on PATH and
+    in the usual install directories. "configured" uses the path recorded by
+    `niusburner setup --<tool>`, and says so if there is not one.
     """
     from . import config
 
-    if _menu(choice, ("auto", "configured"), "auto") == "configured":
-        recorded = config.sdcc_path()
-        if recorded is None:
-            raise ValueError(
-                "the board menu asks for the configured compiler, but none is "
-                "recorded. Run `python -m niusburner setup --sdcc "
-                "<path to sdcc>` or switch Tools > Compiler back to "
-                "Auto-detect.")
-        return recorded
-    return None
+    if _menu(choice, ("auto", "configured"), "auto") != "configured":
+        return None
+    tool = COMPILER_FOR.get(family, "sdcc")
+    recorded = config.tool_path(tool)
+    if recorded is None:
+        raise ValueError(
+            f"the board menu asks for the configured compiler, but no {tool} "
+            f"is recorded. Run `python -m niusburner setup --{tool} "
+            f"<path to {tool}>` or switch Tools > Compiler back to "
+            "Auto-detect.")
+    return recorded
 
 
 def cmd_compile(sketch: Path, build_path: Path, board: str,
                 optimize: str = "size", debug: str = "none",
                 compiler_choice: str = "auto") -> int:
+    from . import boards as boards_mod
+
     out = build_path / "niusburner"
     optimize = _menu(optimize, ("size", "speed", "none"), "size")
     debug_symbols = _menu(debug, ("none", "symbols"), "none") == "symbols"
@@ -200,7 +228,8 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     # separate process that would otherwise repeat the whole thing.
     stage(0, "Compiling", f"target {board}")
     try:
-        compiler = resolve_compiler(compiler_choice)
+        spec_family = boards_mod.get_board(board).family
+        compiler = resolve_compiler(compiler_choice, spec_family)
         plan = workflow.plan_compile(sketch, board, output=out)
         result = workflow.compile_plan(
             plan, out, compiler=compiler,
@@ -208,14 +237,20 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     except (OSError, ValueError, KeyError) as exc:
         error(str(exc), title="compile failed")
         return 1
-    shutil.copy2(result.image, build_path / "firmware.ihx")
+    # Keep the compiler's own extension: .ihx from SDCC, .hex from XC8.
+    shutil.copy2(result.image, build_path / ("firmware" + result.image.suffix))
     spec = plan.board
     note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
          + (", debug symbols" if debug_symbols else ""))
-    stage(100, "Compiled",
-          f"flash {result.program_bytes}/{spec.code_size} B "
-          f"({100 * result.program_bytes / spec.code_size:.1f}%)  "
-          f"iram {result.iram_bytes}/{spec.iram_size} B")
+    if spec.family == "pic16":
+        detail = (f"flash {result.program_words}/{spec.code_size} words "
+                  f"({100 * result.program_words / spec.code_size:.1f}%)  "
+                  f"ram {result.data_bytes}/{spec.iram_size} B")
+    else:
+        detail = (f"flash {result.program_bytes}/{spec.code_size} B "
+                  f"({100 * result.program_bytes / spec.code_size:.1f}%)  "
+                  f"iram {result.iram_bytes}/{spec.iram_size} B")
+    stage(100, "Compiled", detail)
     print(f"Sketch uses {result.program_bytes} bytes of program storage space.")
     return 0
 
@@ -265,7 +300,11 @@ def cmd_flash(image: Path, board: str, programmer: str = "",
 
 
 def cmd_hex(build_path: Path, project_name: str) -> int:
-    src = build_path / "firmware.ihx"
+    # Whichever the compiler produced. Both are Intel HEX; the extension is
+    # only a house style, and the IDE always wants .hex on the end.
+    src = next((build_path / name for name in ("firmware.hex", "firmware.ihx")
+                if (build_path / name).is_file()),
+               build_path / "firmware.ihx")
     dest = build_path / f"{project_name}.hex"
     if not src.is_file():
         error(f"no firmware.ihx in {build_path}",
@@ -276,17 +315,36 @@ def cmd_hex(build_path: Path, project_name: str) -> int:
 
 
 def cmd_size(build_path: Path) -> int:
-    mem = build_path / "niusburner" / "firmware.mem"
-    if not mem.is_file():
-        print("Sketch uses 0 bytes of program storage space.")
-        return 0
-    from . import build as build_mod
-    try:
-        n = build_mod.parse_sdcc_program_bytes(
-            mem.read_text(encoding="utf-8", errors="replace"))
-    except ValueError:
-        n = 0
-    print(f"Sketch uses {n} bytes of program storage space.")
+    """What the IDE puts in its size bar.
+
+    Read from the build manifest, which every family writes, rather than
+    from one compiler's memory report. The unit differs -- words on a PIC16,
+    bytes on an 8051 -- and the IDE has only one number to show, so it gets
+    the one that matches `upload.maximum_size` for that board.
+    """
+    import json
+
+    manifest = build_path / "niusburner" / "build-manifest.json"
+    used = 0
+    if manifest.is_file():
+        try:
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            measured = data.get("measured", {})
+            used = int(measured.get("program_words")
+                       or measured.get("linked_system_program_bytes") or 0)
+        except (ValueError, TypeError):
+            used = 0
+    if not used:
+        # SDCC's own report, for a build that predates the manifest.
+        mem = build_path / "niusburner" / "firmware.mem"
+        if mem.is_file():
+            from . import build as build_mod
+            try:
+                used = build_mod.parse_sdcc_program_bytes(
+                    mem.read_text(encoding="utf-8", errors="replace"))
+            except ValueError:
+                used = 0
+    print(f"Sketch uses {used} bytes of program storage space.")
     return 0
 
 
