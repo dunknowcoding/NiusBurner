@@ -271,6 +271,10 @@ def _plan_without_display(
     )
 
 
+#: Extra units linked by a build option rather than by what a sketch names.
+OPTION_UNITS = {"isp_entry": "nius_ispentry.c"}
+
+
 def compile_plan(
     plan: CompilePlan,
     output: Path,
@@ -278,12 +282,23 @@ def compile_plan(
     compiler: Path | None = None,
     optimize: str = "size",
     debug_symbols: bool = False,
+    isp_entry: bool = False,
 ) -> Mcs51Build:
     output.mkdir(parents=True, exist_ok=True)
     if plan.generated is not None:
         header = "NiusDuino.h" if plan.runtime == "niusdisplay" else RUNTIME_HEADER
         sketch_mod.wrap_ino(plan.sketch, plan.generated, runtime_header=header)
     defines = list(plan.defines)
+    sources = list(plan.sources)
+    if isp_entry:
+        if plan.board.family != "mcs51":
+            raise ValueError(
+                "bootloader entry over the UART is an STC feature; "
+                f"{plan.board.id} is {plan.board.family}")
+        defines.append("NIUS_ISP_ENTRY")
+        unit = runtime_dir(plan.board.family) / OPTION_UNITS["isp_entry"]
+        if unit not in sources:
+            sources.append(unit)
     if plan.board.family == "mcs51" and plan.board.f_cpu:
         osc = f"NIUS_FOSC={plan.board.f_cpu}UL"
         if osc not in defines:
@@ -292,7 +307,7 @@ def compile_plan(
         from . import build_pic
 
         return build_pic.build_pic16(
-            list(plan.sources),
+            sources,
             list(plan.includes),
             output,
             compiler=compiler,
@@ -305,7 +320,7 @@ def compile_plan(
             debug_symbols=debug_symbols,
         )
     return build.build_mcs51(
-        list(plan.sources),
+        sources,
         list(plan.includes),
         output,
         compiler=compiler,

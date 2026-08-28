@@ -27,6 +27,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import time
 
 from ..progress import banner, complete, error, info, note, stage
 
@@ -134,6 +135,47 @@ _WHY_NO_ANSWER = (
 )
 
 
+#: The sequence a sketch built with NIUS_ISP_ENTRY watches for. Long and
+#: implausible on purpose: a sketch that received it by accident would
+#: reset into the bootloader, which is a bad surprise. Must match MAGIC[]
+#: in adapters/Arduino/mcs51/nius_ispentry.c byte for byte.
+ENTRY_MAGIC = bytes([
+    ord("N"), ord("B"), 0x1B, ord("I"), ord("S"), ord("P"), 0x1B,
+    ord("E"), ord("N"), ord("T"), ord("R"), ord("Y"), 0x1B,
+    0xA5, 0x5A, 0xA5, 0x5A,
+])
+
+
+def ask_for_bootloader(port: str, baud: int = 9600) -> bool:
+    """Ask a running sketch to reset itself into the bootloader.
+
+    An STC89 has no pin and no supply switch that software can reach here,
+    but ISP_CONTR lets the part reset itself into the ISP block. A sketch
+    built with bootloader entry watches the UART for this sequence and does
+    exactly that, which turns an upload that needed a hand on the power
+    into one that does not.
+
+    Returns False only when the port cannot be opened; a part that is not
+    listening simply ignores the bytes, and the caller falls through to
+    asking a person.
+    """
+    try:
+        import serial
+    except ImportError:
+        return False
+    try:
+        with serial.Serial(port=port, baudrate=baud, timeout=0.2) as ser:
+            ser.reset_input_buffer()
+            ser.write(ENTRY_MAGIC)
+            ser.flush()
+    except Exception:
+        return False
+    # The part resets and its bootloader starts listening; give it that long
+    # before the handshake begins.
+    time.sleep(0.05)
+    return True
+
+
 def find_stcgal() -> list[str] | None:
     """How to run stcgal on this machine, or None.
 
@@ -183,7 +225,8 @@ def _missing() -> int:
 
 
 def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
-          reset_pin: str = "") -> int:
+          reset_pin: str = "", soft_entry: bool = True,
+          sketch_baud: int = 9600) -> int:
     """Ask the bootloader to identify itself.
 
     With *reset_pin* set to dtr or rts, the adapter switches VDD and this
@@ -198,6 +241,8 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
     cycle = autoreset_args(reset_pin)
     if cycle:
         info(f"cycling target power from {reset_pin.upper()}")
+    elif soft_entry and ask_for_bootloader(port, sketch_baud):
+        info("asking the running sketch to reset into its bootloader")
     else:
         info("power-cycle the board now, and hold it off for a moment: the "
              "bootloader is entered on power-on only")
@@ -227,7 +272,8 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
 
 def flash(image: pathlib.Path, target: str, port: str,
           baud: int = DEFAULT_BAUD, run: bool = True,
-          reset_pin: str = "") -> int:
+          reset_pin: str = "", soft_entry: bool = True,
+          sketch_baud: int = 9600) -> int:
     """Program *image* through the STC bootloader.
 
     With *reset_pin* set to dtr or rts, the adapter switches VDD and this
@@ -247,6 +293,8 @@ def flash(image: pathlib.Path, target: str, port: str,
     cycle = autoreset_args(reset_pin)
     if cycle:
         info(f"cycling target power from {reset_pin.upper()}")
+    elif soft_entry and ask_for_bootloader(port, sketch_baud):
+        info("asking the running sketch to reset into its bootloader")
     else:
         info("power-cycle the board now, and hold it off for a moment: the "
              "bootloader is entered on power-on only")

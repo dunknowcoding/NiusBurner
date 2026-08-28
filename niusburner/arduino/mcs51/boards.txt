@@ -15,6 +15,7 @@
 menu.optimize=Optimize
 menu.debug=Debug info
 menu.reset=Power switch
+menu.entry=Bootloader entry
 menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
@@ -292,6 +293,11 @@ stc89c52rc.menu.reset.dtr.build.nb_reset=dtr
 stc89c52rc.menu.reset.rts=Adapter RTS switches VDD
 stc89c52rc.menu.reset.rts.build.nb_reset=rts
 
+stc89c52rc.menu.entry.none=Interrupt power by hand (default)
+stc89c52rc.menu.entry.none.build.nb_entry=none
+stc89c52rc.menu.entry.soft=Sketch reboots itself into the bootloader
+stc89c52rc.menu.entry.soft.build.nb_entry=soft
+
 stc89c52rc.menu.compiler.auto=Auto-detect SDCC (default)
 stc89c52rc.menu.compiler.auto.build.nb_compiler=auto
 stc89c52rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
@@ -332,6 +338,11 @@ stc89c51rc.menu.reset.dtr.build.nb_reset=dtr
 stc89c51rc.menu.reset.rts=Adapter RTS switches VDD
 stc89c51rc.menu.reset.rts.build.nb_reset=rts
 
+stc89c51rc.menu.entry.none=Interrupt power by hand (default)
+stc89c51rc.menu.entry.none.build.nb_entry=none
+stc89c51rc.menu.entry.soft=Sketch reboots itself into the bootloader
+stc89c51rc.menu.entry.soft.build.nb_entry=soft
+
 stc89c51rc.menu.compiler.auto=Auto-detect SDCC (default)
 stc89c51rc.menu.compiler.auto.build.nb_compiler=auto
 stc89c51rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
@@ -371,6 +382,11 @@ stc90c52rc.menu.reset.dtr=Adapter DTR switches VDD
 stc90c52rc.menu.reset.dtr.build.nb_reset=dtr
 stc90c52rc.menu.reset.rts=Adapter RTS switches VDD
 stc90c52rc.menu.reset.rts.build.nb_reset=rts
+
+stc90c52rc.menu.entry.none=Interrupt power by hand (default)
+stc90c52rc.menu.entry.none.build.nb_entry=none
+stc90c52rc.menu.entry.soft=Sketch reboots itself into the bootloader
+stc90c52rc.menu.entry.soft.build.nb_entry=soft
 
 stc90c52rc.menu.compiler.auto=Auto-detect SDCC (default)
 stc90c52rc.menu.compiler.auto.build.nb_compiler=auto

@@ -13,6 +13,12 @@
 
 #include "nius_serial.h"
 
+#ifdef NIUS_ISP_ENTRY
+/* Set by the bootloader-entry ISR when a byte finishes going out. */
+extern volatile unsigned char nius_tx_done;
+void nius_isp_entry_begin(void);
+#endif
+
 #ifdef __SDCC
 #include <8052.h>
 /* Not in 8052.h. T2OE (bit 1) clocks P1.0; must stay 0 on a no-XRAM DIP-40. */
@@ -50,6 +56,10 @@ void nius_serial_begin(unsigned long baud)
         TR1 = 1;
     }
     TI = 1;
+#ifdef NIUS_ISP_ENTRY
+    /* Arm the bootloader-entry watcher once the UART is up. */
+    nius_isp_entry_begin();
+#endif
 #else
     (void)baud;
 #endif
@@ -67,10 +77,22 @@ void nius_serial_end(void)
 void nius_serial_write(unsigned char c)
 {
 #ifdef __SDCC
+#ifdef NIUS_ISP_ENTRY
+    /*
+     * With the bootloader-entry interrupt installed, TI is cleared by the
+     * ISR before this could ever see it. The ISR records the event instead
+     * and this waits on the record; polling TI here would hang forever.
+     */
+    while (!nius_tx_done)
+        ;
+    nius_tx_done = 0;
+    SBUF = c;
+#else
     while (!TI)
         ;
     TI = 0;
     SBUF = c;
+#endif
 #else
     (void)c;
 #endif

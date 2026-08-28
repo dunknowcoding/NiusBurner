@@ -277,7 +277,8 @@ def _cmd_compile(args: argparse.Namespace) -> int:
         result = workflow.compile_plan(
             plan, output, compiler=args.compiler,
             optimize=getattr(args, "optimize", "size"),
-            debug_symbols=getattr(args, "debug_symbols", False))
+            debug_symbols=getattr(args, "debug_symbols", False),
+            isp_entry=getattr(args, "bootloader_entry", False))
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"compile failed: {exc}", file=sys.stderr)
         return 2
@@ -294,7 +295,8 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         result = workflow.compile_plan(
             plan, output, compiler=args.compiler,
             optimize=getattr(args, "optimize", "size"),
-            debug_symbols=getattr(args, "debug_symbols", False))
+            debug_symbols=getattr(args, "debug_symbols", False),
+            isp_entry=getattr(args, "bootloader_entry", False))
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"compile failed: {exc}", file=sys.stderr)
         return 2
@@ -462,6 +464,11 @@ def _add_sketch_flags(parser: argparse.ArgumentParser) -> None:
                         default="size",
                         help="what SDCC spends its effort on (default: size, "
                              "because flash runs out before cycles do)")
+    parser.add_argument("--bootloader-entry", action="store_true",
+                        dest="bootloader_entry",
+                        help="build the sketch so the host can ask it to "
+                             "reboot into the bootloader, which is what lets "
+                             "a later upload run without interrupting power")
     parser.add_argument("--debug-symbols", action="store_true",
                         help="emit the symbol database and keep the listings, "
                              "so an image can be read back against its source")

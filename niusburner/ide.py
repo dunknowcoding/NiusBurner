@@ -100,6 +100,10 @@ MENUS = (
         ("dtr", "Adapter DTR switches VDD", "dtr"),
         ("rts", "Adapter RTS switches VDD", "rts"),
     )),
+    ("entry", "Bootloader entry", (
+        ("none", "Interrupt power by hand (default)", "none"),
+        ("soft", "Sketch reboots itself into the bootloader", "soft"),
+    )),
     ("compiler", "Compiler", (
         ("auto", "Auto-detect SDCC (default)", "auto"),
         ("configured", "Use the path from `niusburner setup --sdcc`",
@@ -134,7 +138,14 @@ def render_boards_txt(family: str = "mcs51") -> str:
         "# installer put it.",
         "",
     ]
-    out += ["menu.%s=%s" % (key, label) for key, label, _ in MENUS]
+    # A menu declared with no board offering choices renders as an empty
+    # Tools entry, so the bootloader-entry menu is declared only where at
+    # least one board can actually use it.
+    soft_entry = any(b.programmer == "stcgal"
+                     for b in boards_mod.all_boards().values()
+                     if b.family == family)
+    out += ["menu.%s=%s" % (key, label) for key, label, _ in MENUS
+            if key != "entry" or soft_entry]
     out.append("")
 
     for board in boards_mod.all_boards().values():
@@ -172,6 +183,11 @@ def render_boards_txt(family: str = "mcs51") -> str:
             "",
         ]
         for key, _, choices in MENUS:
+            # Only a part programmed through its own bootloader can be asked
+            # to reboot into it. On an ISP part the choice would be inert,
+            # and an inert menu entry is worse than an absent one.
+            if key == "entry" and board.programmer != "stcgal":
+                continue
             for name, label, value in choices:
                 out.append("%s.menu.%s.%s=%s" % (board.id, key, name, label))
                 out.append("%s.menu.%s.%s.build.nb_%s=%s" % (
@@ -223,12 +239,13 @@ def resolve_compiler(choice: str, family: str = "mcs51") -> Path | None:
 
 def cmd_compile(sketch: Path, build_path: Path, board: str,
                 optimize: str = "size", debug: str = "none",
-                compiler_choice: str = "auto") -> int:
+                compiler_choice: str = "auto", entry: str = "none") -> int:
     from . import boards as boards_mod
 
     out = build_path / "niusburner"
     optimize = _menu(optimize, ("size", "speed", "none"), "size")
     debug_symbols = _menu(debug, ("none", "symbols"), "none") == "symbols"
+    isp_entry = _menu(entry, ("none", "soft"), "none") == "soft"
     # No banner here: the upload tool prints it once, and Verify runs in a
     # separate process that would otherwise repeat the whole thing.
     stage(0, "Compiling", f"target {board}")
@@ -238,7 +255,8 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
         plan = workflow.plan_compile(sketch, board, output=out)
         result = workflow.compile_plan(
             plan, out, compiler=compiler,
-            optimize=optimize, debug_symbols=debug_symbols)
+            optimize=optimize, debug_symbols=debug_symbols,
+            isp_entry=isp_entry)
     except (OSError, ValueError, KeyError) as exc:
         error(str(exc), title="compile failed")
         return 1
@@ -246,7 +264,8 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     shutil.copy2(result.image, build_path / ("firmware" + result.image.suffix))
     spec = plan.board
     note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
-         + (", debug symbols" if debug_symbols else ""))
+         + (", debug symbols" if debug_symbols else "")
+         + (", bootloader entry" if isp_entry else ""))
     if spec.family == "pic16":
         detail = (f"flash {result.program_words}/{spec.code_size} words "
                   f"({100 * result.program_words / spec.code_size:.1f}%)  "
@@ -377,7 +396,8 @@ def arduino_main(argv: list[str]) -> int:
                 Path(rest[0]), Path(rest[1]), rest[2],
                 optimize=rest[3] if len(rest) > 3 else "size",
                 debug=rest[4] if len(rest) > 4 else "none",
-                compiler_choice=rest[5] if len(rest) > 5 else "auto")
+                compiler_choice=rest[5] if len(rest) > 5 else "auto",
+                entry=rest[6] if len(rest) > 6 else "none")
         if cmd == "preproc":
             return cmd_preproc(Path(rest[0]), Path(rest[1]))
         if cmd == "dummy-o":

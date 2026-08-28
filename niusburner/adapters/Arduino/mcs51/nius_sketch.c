@@ -86,6 +86,18 @@
 
 static unsigned char g_p1 = 0xFF;
 static unsigned char g_p2 = 0xFF;
+#ifdef NIUS_ISP_ENTRY
+/*
+ * SDCC only emits an interrupt vector in the module being compiled, so an
+ * ISR defined elsewhere needs its prototype visible *here*, where main()
+ * is, or nothing is placed at 0x0023. Without this the part jumps into
+ * whatever happens to be at that address the moment the serial interrupt
+ * is enabled, which is immediately: begin() leaves TI set. The symptom is
+ * a board that looks unpowered because it dies before printing a byte.
+ */
+void nius_isp_entry_isr(void) __interrupt(4);
+#endif
+
 static unsigned long g_ms;
 
 void pinMode(unsigned char pin, unsigned char mode)
