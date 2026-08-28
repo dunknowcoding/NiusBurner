@@ -88,26 +88,25 @@ static void half(void)
 
 #ifdef __SDCC
 
-static void sck_write(unsigned char level)
-{
-    if (level)
-        P1 |= SCK_M;
-    else
-        P1 &= (unsigned char)~SCK_M;
-}
+/*
+ * The port pins are bit-addressable, so each edge is one machine cycle.
+ *
+ * These were helper functions taking a level and branching on it, called
+ * three times per bit. Measured on silicon that made an SPI bit cost about
+ * 213 machine cycles, of which the deliberate half-bit delay was 15 -- the
+ * bus ran at the speed of the C, not the speed it was asked for. `setb` and
+ * `clr` on a bit-addressable SFR are one cycle and two bytes, so this is
+ * both faster and smaller.
+ *
+ * P1 is bit-addressable at 0x90, so bit n lives at 0x90 + n.
+ */
+__sbit __at (0x90 + NIUS_SPI_SCK_BIT)  NIUS_SCK;
+__sbit __at (0x90 + NIUS_SPI_MOSI_BIT) NIUS_MOSI;
+__sbit __at (0x90 + NIUS_SPI_MISO_BIT) NIUS_MISO;
 
-static void mosi_write(unsigned char level)
-{
-    if (level)
-        P1 |= MOSI_M;
-    else
-        P1 &= (unsigned char)~MOSI_M;
-}
-
-static unsigned char miso_read(void)
-{
-    return (unsigned char)((P1 & MISO_M) ? 1 : 0);
-}
+#define sck_write(level)  do { if (level) NIUS_SCK = 1; else NIUS_SCK = 0; } while (0)
+#define mosi_write(level) do { if (level) NIUS_MOSI = 1; else NIUS_MOSI = 0; } while (0)
+#define miso_read()       ((unsigned char)NIUS_MISO)
 
 #else
 
@@ -175,7 +174,13 @@ unsigned char nius_spi_transfer(unsigned char value)
     unsigned char out;
     unsigned char idle = g_cpol;
     unsigned char active = (unsigned char)(g_cpol ? 0 : 1);
-
+    /*
+     * The mode flags are read from memory on each of the eight bits. Copying
+     * them into locals first was tried and is worse on both counts: two more
+     * live values push SDCC past what it can keep in registers, and the
+     * measured bit period went from 190 us to 204 us while the code grew 23
+     * bytes. Left as it is on the evidence.
+     */
     for (bit = 0; bit < 8; bit++) {
         if (g_msb_first) {
             out = (unsigned char)((value & 0x80) ? 1 : 0);

@@ -114,34 +114,37 @@ static void half(void)
 
 #ifdef __SDCC
 
-static void sda_release(void)
-{
-    P1 |= SDA_M;
-}
+/*
+ * The port pins are bit-addressable, so releasing or pulling a line is one
+ * machine cycle rather than a read-modify-write through a helper. Open
+ * drain is unchanged: a quasi-bidirectional pin drives low when written 0
+ * and is released to the pull-up when written 1, which is exactly what
+ * `clr` and `setb` do to it.
+ *
+ * P1 is bit-addressable at 0x90, so bit n lives at 0x90 + n.
+ */
+__sbit __at (0x90 + NIUS_I2C_SCL_BIT) NIUS_SCL;
+__sbit __at (0x90 + NIUS_I2C_SDA_BIT) NIUS_SDA;
 
-static void sda_pull(void)
-{
-    P1 &= (unsigned char)~SDA_M;
-}
+#define sda_release() (NIUS_SDA = 1)
+#define sda_pull()    (NIUS_SDA = 0)
+#define scl_pull()    (NIUS_SCL = 0)
 
-static void scl_pull(void)
+static unsigned char sda_read(void)
 {
-    P1 &= (unsigned char)~SCL_M;
+    NIUS_SDA = 1;
+    return (unsigned char)NIUS_SDA;
 }
 
 static void scl_release(void)
 {
+    /* Bounded clock-stretch wait: a slave that never lets go is a bus
+       fault, not something to hang the sketch on. */
     unsigned char guard = STRETCH_LIMIT;
 
-    P1 |= SCL_M;
-    while (!(P1 & SCL_M) && guard--)
+    NIUS_SCL = 1;
+    while (!NIUS_SCL && guard--)
         half();
-}
-
-static unsigned char sda_read(void)
-{
-    P1 |= SDA_M;
-    return (unsigned char)((P1 & SDA_M) ? 1 : 0);
 }
 
 static void bus_start(void)

@@ -194,31 +194,40 @@ target so the loop and UART overhead cancel:
 
 | setting | measured | vs the fastest setting |
 |---|---|---|
-| `setClock(400000)` / `setClock(100000)` | 1284 µs per transaction | — |
-| `setClock(50000)` | 1571 µs | +287 µs |
-| `setClock(25000)` | 2144 µs | +860 µs |
-| `setClock(10000)` | 3289 µs | +2005 µs |
+| `setClock(400000)` / `setClock(100000)` | 1061 µs per transaction | — |
+| `setClock(50000)` | 1347 µs | +286 µs |
+| `setClock(25000)` | 1920 µs | +860 µs |
+| `setClock(10000)` | 3066 µs | +2006 µs |
 
 A transaction there is START, nine bits of address and ACK slot, then STOP.
-The steps are exactly linear in the setting (287 µs, 3×, 7×), and the two
+The steps are exactly linear in the setting (286 µs, 3×, 7×), and the two
 fastest requests land in the same band because both ask for more than the
 part can do.
 
 | `setClockDivider` | measured per bit | vs DIV2 |
 |---|---|---|
-| `SPI_CLOCK_DIV2` | 231 µs | — |
-| `SPI_CLOCK_DIV4` | 257 µs | +26 µs |
-| `SPI_CLOCK_DIV8` | 309 µs | +78 µs |
-| `SPI_CLOCK_DIV16` | 414 µs | +182 µs |
-| `SPI_CLOCK_DIV64` | 1039 µs | +807 µs |
+| `SPI_CLOCK_DIV2` | 190 µs | — |
+| `SPI_CLOCK_DIV4` | 216 µs | +26 µs |
+| `SPI_CLOCK_DIV8` | 268 µs | +78 µs |
+| `SPI_CLOCK_DIV16` | 372 µs | +182 µs |
+| `SPI_CLOCK_DIV64` | 997 µs | +807 µs |
 
 Two things follow. The *ratios* between settings hold and the steps are
 exact, so a device that needs a slower bus gets one. But the floor is set by
-the C bit loop, not by the requested rate: about 131 machine cycles per I2C
-bit and 213 per SPI bit, of which the deliberate delay is 15. So the fastest
-SCL available is roughly 7 kHz and the fastest SCK roughly 4 kHz, whatever
-the sketch asks for. Both are far below what the same call gives on an AVR,
-and a sketch with a timeout that assumes 100 kHz will notice.
+the bit loop rather than by the requested rate: roughly 108 machine cycles
+per I2C bit and 175 per SPI bit, of which the deliberate delay is 15. So the
+fastest SCL available is about 8.5 kHz and the fastest SCK about 5 kHz,
+whatever the sketch asks for. Both are far below what the same call gives on
+an AVR, and a sketch with a timeout that assumes 100 kHz will notice.
+
+Those floors came down about 17 % by addressing the pins as bits. Driving a
+line was a helper function taking a level and branching on it, called three
+times per bit; `setb` and `clr` on a bit-addressable SFR are one cycle and
+two bytes. Hoisting the SPI mode flags into locals was tried next and made
+it *worse* -- two more live values push SDCC past what it can keep in
+registers, and the measured bit period went from 190 µs to 204 µs while the
+code grew 23 bytes. It was reverted on the evidence, and the comment in
+`nius_spi.c` says so, so the next person does not repeat it.
 
 The half-bit delay itself is exact. It is assembly, not a C loop, and it
 costs `15 + 8 × step` machine cycles by construction:
@@ -287,10 +296,15 @@ Measured on an AT89S52 build:
 
 | sketch | flash | internal RAM |
 |---|---|---|
-| empty `setup()`/`loop()` | 734 B | 19 B |
-| `examples/at89s52_serial` | 1336 B | 40 B |
-| `examples/at89s52_registers` | 1429 B | 41 B |
-| Wire + SPI + Serial + asm | 2492 B | 61 B |
+| empty `setup()`/`loop()` | 592 B | 19 B |
+| `examples/at89s52_serial` | 1512 B | 67 B |
+| `examples/at89s52_registers` | 1619 B | 68 B |
+| Wire + SPI + Serial + asm | 2045 B | 78 B |
+
+The serial figures grew when printing stopped truncating: a 32-bit digit
+routine and its buffer cost about 180 bytes of flash and 27 of internal RAM
+over the 16-bit one it replaced. That is the price of `println(millis())`
+being right, and it is the trade this tool makes every time.
 
 `--optimize size` (the default), `speed`, or `none` chooses what SDCC spends
 its effort on. `size` is the default because these parts run out of flash

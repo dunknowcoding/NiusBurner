@@ -134,7 +134,10 @@ void nius_serial_println_s(const char *s)
  */
 static void put_digits(unsigned long u, unsigned char base)
 {
-    char buf[34];
+    /* 32 is the worst case exactly: a 32-bit value in base 2.
+       These are statically allocated on this part, so the
+       difference is internal RAM a sketch could have used. */
+    char buf[32];
     unsigned char n = 0;
 
     if (u == 0) {
