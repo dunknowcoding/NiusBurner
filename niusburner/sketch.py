@@ -21,6 +21,22 @@ ADAPTERS = HERE / "adapters"
 #: Arduino API translated to C, per target family. `adapters/<Library>/<family>`
 #: is where every C++ facade this tool lowers keeps its C support code.
 ARDUINO_MCS51 = ADAPTERS / "Arduino" / "mcs51"
+ARDUINO_PIC16 = ADAPTERS / "Arduino" / "pic16"
+
+#: The Arduino runtime is per instruction set, not per part: one
+#: directory of C for every board in a family.
+ARDUINO_RUNTIME = {"mcs51": ARDUINO_MCS51, "pic16": ARDUINO_PIC16}
+
+
+def runtime_dir(family: str):
+    """Where the Arduino API lives for *family*."""
+    try:
+        return ARDUINO_RUNTIME[family]
+    except KeyError:
+        raise ValueError(
+            f"no Arduino runtime for the {family} family yet. "
+            f"Known: {', '.join(sorted(ARDUINO_RUNTIME))}."
+        ) from None
 
 _COMMENT_LINE = re.compile(r"//.*?$", re.M)
 _COMMENT_BLOCK = re.compile(r"/\*.*?\*/", re.S)

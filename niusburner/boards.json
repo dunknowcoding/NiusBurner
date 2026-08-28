@@ -233,6 +233,32 @@
         "adc": "none",
         "eeprom": "none"
       }
+    },
+    "pic16f877a": {
+      "part": "16F877A",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 8192,
+      "iram_size": 368,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "implemented",
+      "aliases": [
+        "16f877a",
+        "pic877a"
+      ],
+      "note": "8 K words flash, 368 B RAM, 256 B EEPROM. PICkit 3 over ICSP. USART on RC6/RC7. Unlike a classic 8051 this part has real I2C, SPI, PWM and ADC hardware.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      }
     }
   },
   "_peripherals": [

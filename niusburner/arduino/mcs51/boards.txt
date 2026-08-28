@@ -1,4 +1,4 @@
-# NiusBurner 8051 boards (SDCC).
+# NiusBurner mcs51 boards.
 #
 # Copyright 2026 dunknowcoding (NiusRobotLab)
 # SPDX-License-Identifier: Apache-2.0

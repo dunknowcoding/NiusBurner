@@ -44,7 +44,9 @@ def test_boards_txt_offers_every_catalog_board_with_safe_defaults():
     text = (PLATFORM / "boards.txt").read_text(encoding="utf-8")
     from niusburner import boards as boards_mod
 
-    for board_id in boards_mod.all_boards():
+    for board_id, board in boards_mod.all_boards().items():
+        if board.family != "mcs51":
+            continue          # each family has its own board package
         assert f"{board_id}.name=" in text, f"{board_id} is missing from boards.txt"
         assert f"{board_id}.build.nb_board={board_id}" in text
         # Size and no debug info are the defaults every board must agree on.

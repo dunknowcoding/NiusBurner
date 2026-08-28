@@ -1,0 +1,267 @@
+"""PICkit 3 backend, driven through MPLAB's ipecmd.
+
+Copyright 2026 dunknowcoding (NiusRobotLab)
+SPDX-License-Identifier: Apache-2.0
+
+A PICkit 3 in its normal firmware is a USB HID device (04D8:900A), not a
+serial port, and it speaks a protocol that only Microchip's own tooling
+implements. `ipecmd` is that tooling's command line, and it ships inside
+MPLAB X, so this module locates it, builds the request, and turns its
+output into the same console every other target uses.
+
+The options that matter here, from `ipecmd /?`:
+
+    -TPPK3          the tool is a PICkit 3
+    -P<part>        the part, without a leading PIC
+    -F<file>        the HEX to program
+    -M              program the device
+    -Y              verify it afterwards
+    -E              erase first
+    -OL             release from reset when finished, instead of holding it
+    -W              power the target from the tool
+
+`-W` is deliberately not the default. On this bench the board takes its 5 V
+from the serial adapter, and having two supplies fight over VDD is a good
+way to damage one of them. A board with no other supply needs it, so it is
+an argument rather than a decision made here.
+"""
+
+from __future__ import annotations
+
+import pathlib
+import re
+import shutil
+import subprocess
+
+from ..progress import Progress, banner, complete, error, info, note, stage
+
+#: Where MPLAB X puts ipecmd, relative to a version directory.
+_IPE_LEAF = pathlib.Path("mplab_platform") / "mplab_ipe"
+_INSTALL_ROOTS = (
+    r"H:\MPLABX",
+    r"C:\Program Files\Microchip\MPLABX",
+    r"C:\Program Files (x86)\Microchip\MPLABX",
+    "/opt/microchip/mplabx",
+)
+
+#: ipecmd is chatty and most of it is banner. These are the lines that say
+#: something happened, and the ones that say something went wrong.
+_PROGRESS = re.compile(
+    r"(Programming|Verifying|Erasing|Program Memory|Configuration Memory|"
+    r"EEPROM|Programming/Verify complete|Device ID Revision)", re.I)
+_TROUBLE = re.compile(
+    r"(fail|error|unable|not found|no device|cannot|invalid|mismatch|"
+    r"target device was not found|check your connections)", re.I)
+
+
+def supports_pk3(ipecmd: pathlib.Path) -> bool:
+    """Whether this MPLAB X install can drive a PICkit 3 at all.
+
+    Support was removed after the 5.x line. A 6.x ipecmd asked for -TPPK3
+    answers "Could not find device", which sends people to the Pack Manager
+    to fix a device that is not the problem -- so the version is checked
+    here and the real reason is reported instead.
+    """
+    for part in ipecmd.resolve().parts:
+        if part.lower().startswith("v") and part[1:2].isdigit():
+            try:
+                major = int(part[1:].split(".")[0])
+            except ValueError:
+                continue
+            return major < 6
+    # An install whose version cannot be read from the path is given the
+    # benefit of the doubt: ipecmd's own error is better than a guess.
+    return True
+
+
+def find_ipecmd(require_pk3: bool = True) -> pathlib.Path | None:
+    """Locate ipecmd: recorded path, PATH, then the usual MPLAB X installs.
+
+    With *require_pk3* an install that cannot drive a PICkit 3 is skipped,
+    so a 6.x sitting beside a 5.x does not shadow the one that works.
+    """
+    from .. import config
+
+    found: list[pathlib.Path] = []
+    recorded = config.tool_path("pickit3")
+    if recorded is not None:
+        found.append(recorded)
+    which = shutil.which("ipecmd")
+    if which:
+        found.append(pathlib.Path(which))
+    for root in (pathlib.Path(r) for r in _INSTALL_ROOTS):
+        if not root.is_dir():
+            continue
+        for version in sorted(root.iterdir(), reverse=True):
+            for name in ("ipecmd.exe", "ipecmd"):
+                candidate = version / _IPE_LEAF / name
+                if candidate.is_file():
+                    found.append(candidate)
+    if not found:
+        return None
+    if require_pk3:
+        for candidate in found:
+            if supports_pk3(candidate):
+                return candidate
+        # Something is installed, but none of it drives a PICkit 3. Saying
+        # so is the caller's job; returning one anyway would produce
+        # ipecmd's misleading "Could not find device".
+        return None
+    return found[0]
+
+
+def _missing() -> int:
+    """No usable ipecmd. Say which of the two problems it is."""
+    unusable = find_ipecmd(require_pk3=False)
+    if unusable is not None:
+        error(
+            f"the MPLAB X at {unusable.parents[2].name} cannot drive a "
+            "PICkit 3: support for it was removed after the 5.x line",
+            title="this MPLAB X is too new for a PICkit 3",
+            hints=("install MPLAB X 5.35, the last release that drives one, "
+                   "and record it with "
+                   "`python -m niusburner setup --pickit3 <path to ipecmd>`",
+                   "or fit a PICkit 4 or 5, which current MPLAB X supports",
+                   "asked for -TPPK3, a 6.x ipecmd answers 'Could not find "
+                   "device', which is not the real problem"))
+        return 1
+    error(
+        "ipecmd was not found, and a PICkit 3 speaks only Microchip's own "
+        "protocol",
+        title="no PIC programmer",
+        hints=("install MPLAB X 5.35, which ships ipecmd and drives a "
+               "PICkit 3, then re-run `python -m niusburner setup`",
+               "already installed elsewhere? "
+               "`python -m niusburner setup --pickit3 <path to ipecmd>`"))
+    return 1
+
+
+def _report(output: str) -> None:
+    """Pass through the lines that say what happened, drop the banner."""
+    for line in output.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if _PROGRESS.search(line):
+            info(line)
+        else:
+            note(line)
+
+
+def _trouble(output: str) -> tuple[str, ...]:
+    """The lines that look like the reason, most useful first."""
+    hits = [line.strip() for line in output.splitlines()
+            if line.strip() and _TROUBLE.search(line)]
+    # Keep the order but drop repeats: ipecmd says the same thing twice.
+    seen: set[str] = set()
+    unique = []
+    for line in hits:
+        if line not in seen:
+            seen.add(line)
+            unique.append(line)
+    return tuple(unique[:6])
+
+
+def _run(tool: pathlib.Path, args: list[str],
+         cwd: pathlib.Path) -> tuple[int, str]:
+    try:
+        done = subprocess.run([str(tool), *args], cwd=cwd,
+                              capture_output=True, text=True, timeout=300)
+    except FileNotFoundError:
+        return 1, f"could not run {tool}"
+    except subprocess.TimeoutExpired:
+        return 1, "ipecmd did not finish within 300 s"
+    return done.returncode, (done.stdout or "") + (done.stderr or "")
+
+
+_HINTS = (
+    "check the ICSP header: MCLR, VDD, VSS, PGD and PGC, pin 1 to pin 1",
+    "the part must be powered -- pass --power to let the programmer supply "
+    "it, or power the board itself",
+    "a PICkit 3 must be in its MPLAB firmware, not the standalone "
+    "programmer-app firmware",
+)
+
+
+def probe(target: str, power: bool = False) -> int:
+    """Read the device ID. Programs nothing."""
+    tool = find_ipecmd()
+    if tool is None:
+        return _missing()
+    banner(f"PIC Flash Console - Target: {target}")
+    stage(0, "Connecting", "PICkit 3 over ICSP")
+    args = [f"-P{target}", "-TPPK3"]
+    if power:
+        args.append("-W")
+    code, output = _run(tool, args, pathlib.Path.cwd())
+    if code != 0 or _trouble(output):
+        error("the programmer did not identify the part",
+              title="no answer over ICSP",
+              hints=_HINTS, details=_trouble(output))
+        return 1
+    _report(output)
+    stage(100, "Connected", target)
+    return 0
+
+
+def flash(image: pathlib.Path, target: str, power: bool = False,
+          run: bool = True) -> int:
+    """Erase, program and verify *image* on *target* through a PICkit 3."""
+    tool = find_ipecmd()
+    if tool is None:
+        return _missing()
+    if not image.is_file():
+        error(f"image not found: {image}", title="nothing to program",
+              hints=("did Verify succeed?",))
+        return 1
+
+    banner(f"PIC Flash Console - Target: {target}")
+    stage(0, "Connecting", "PICkit 3 over ICSP")
+
+    args = [f"-P{target}", "-TPPK3", f"-F{image}", "-E", "-M", "-Y"]
+    if power:
+        args.append("-W")
+    if run:
+        args.append("-OL")
+    note(" ".join([tool.name, *args]))
+
+    # ipecmd does not report progress as it goes, so there is nothing
+    # honest to animate: one line before, one after, and its own output in
+    # between rather than a bar that would be pretending.
+    stage(20, "Programming", image.name)
+    code, output = _run(tool, args, image.parent)
+    problems = _trouble(output)
+    if code != 0 or problems:
+        error("ipecmd did not report a clean program and verify",
+              title="programming failed", hints=_HINTS, details=problems)
+        _report(output)
+        return 1
+    _report(output)
+    if not run:
+        complete("Programmed, held in reset",
+                 "Reset             : held - waiting for the caller to "
+                 "release it")
+        return 0
+    complete("Upload complete",
+             "Reset             : released - board running the new firmware",
+             "Power             : "
+             + ("supplied by the programmer" if power
+                else "supplied by the board, not the programmer"))
+    return 0
+
+
+def reset(target: str, power: bool = False) -> int:
+    """Release the part from reset without touching its flash."""
+    tool = find_ipecmd()
+    if tool is None:
+        return _missing()
+    args = [f"-P{target}", "-TPPK3", "-OL"]
+    if power:
+        args.append("-W")
+    code, output = _run(tool, args, pathlib.Path.cwd())
+    if code != 0:
+        error("could not release the part", title="reset failed",
+              hints=_HINTS, details=_trouble(output))
+        return 1
+    info(f"reset  {target} released from reset")
+    return 0

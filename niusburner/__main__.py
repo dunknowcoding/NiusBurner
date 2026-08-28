@@ -98,13 +98,16 @@ def _cmd_setup(args: argparse.Namespace) -> int:
     from . import config
 
     missing_required = 0
-    if getattr(args, "sdcc", None) is not None:
+    for tool in sorted(config.TOOLS):
+        given = getattr(args, tool, None)
+        if given is None:
+            continue
         try:
-            written = config.set_sdcc(args.sdcc)
-        except FileNotFoundError as exc:
+            written = config.set_tool(tool, given)
+        except (FileNotFoundError, ValueError) as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
-        print(f"recorded sdcc in {written}")
+        print(f"recorded {tool} in {written}")
         print()
     board = boards_mod.get_board(args.board) if args.board else None
 
@@ -246,9 +249,12 @@ def _print_plan(plan: workflow.CompilePlan) -> None:
     info(f"runtime   {plan.runtime}"
          + (f"  ({plan.library})" if plan.library else ""))
     info(f"sources   {len(plan.sources)} translation units")
-    info(f"sdcc      --model-{plan.model}"
-         + (" --stack-auto" if plan.stack_auto else "")
-         + (f" --xram-size {plan.xram_size}" if plan.xram_size else ""))
+    if board.family == "mcs51":
+        info(f"sdcc      --model-{plan.model}"
+             + (" --stack-auto" if plan.stack_auto else "")
+             + (f" --xram-size {plan.xram_size}" if plan.xram_size else ""))
+    else:
+        info(f"{board.compiler:9} -mcpu={board.part}")
 
 
 def _plan_from_args(args: argparse.Namespace) -> workflow.CompilePlan:
@@ -403,18 +409,32 @@ def _cmd_build_mcs51(args: argparse.Namespace) -> int:
 
 
 def _print_usage(plan, result) -> None:
-    """Flash and RAM, as a share of what the part actually has."""
+    """What the image cost, against what the part actually has.
+
+    The units differ by family and saying so matters: a PIC16 instruction is
+    one 14-bit word, so quoting bytes there would be wrong by more than a
+    factor of two.
+    """
     board = plan.board
-    rom = result.program_bytes
-    stage(int(100 * rom / board.code_size), "Flash",
-          f"{rom}/{board.code_size} B")
-    if result.iram_bytes:
-        iram = result.iram_bytes
-        stage(int(100 * iram / board.iram_size), "IRAM",
-              f"{iram}/{board.iram_size} B  "
-              f"{result.stack_bytes} B left for the stack")
-    if result.xram_bytes:
-        info(f"xram      {result.xram_bytes} B / {plan.xram_size} B")
+    if board.family == "pic16":
+        words = result.program_words
+        stage(int(100 * words / board.code_size), "Flash",
+              f"{words}/{board.code_size} words")
+        stage(int(100 * result.data_bytes / board.iram_size), "RAM",
+              f"{result.data_bytes}/{board.iram_size} B")
+        if result.eeprom_bytes:
+            info(f"eeprom    {result.eeprom_bytes} B")
+    else:
+        rom = result.program_bytes
+        stage(int(100 * rom / board.code_size), "Flash",
+              f"{rom}/{board.code_size} B")
+        if result.iram_bytes:
+            iram = result.iram_bytes
+            stage(int(100 * iram / board.iram_size), "IRAM",
+                  f"{iram}/{board.iram_size} B  "
+                  f"{result.stack_bytes} B left for the stack")
+        if result.xram_bytes:
+            info(f"xram      {result.xram_bytes} B / {plan.xram_size} B")
     if result.optimize != "size":
         info(f"optimize  {result.optimize}")
     if result.symbols:
@@ -467,6 +487,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--sdcc", type=pathlib.Path,
                    help="record where SDCC is, for when PATH is not the "
                         "answer and the Arduino IDE cannot ask")
+    p.add_argument("--xc8", type=pathlib.Path,
+                   help="record where the XC8 driver (xc8-cc) is, for PIC "
+                        "boards")
+    p.add_argument("--pickit3", type=pathlib.Path,
+                   help="record where ipecmd is -- the command-line "
+                        "programmer that drives a PICkit 3")
     p.set_defaults(fn=_cmd_setup)
 
     p = sub.add_parser("boards", help="parts this tool can compile (and flash)")

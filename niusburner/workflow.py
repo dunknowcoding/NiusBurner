@@ -27,10 +27,11 @@ from . import build, cxxlower, display as display_mod, flash, sketch as sketch_m
 from .boards import Board
 from .build import Mcs51Build
 from .display import DisplayLib
-from .sketch import ARDUINO_MCS51, Sketch
+from .sketch import ARDUINO_MCS51, ARDUINO_PIC16, Sketch, runtime_dir
 
 RUNTIME_HEADER = "nius_sketch.h"
-RUNTIME_C = ARDUINO_MCS51 / "nius_sketch.c"
+#: Every family names its core unit the same, under its own directory.
+RUNTIME_UNIT = "nius_sketch.c"
 
 #: Arduino facades that lower to a C unit in adapters/Arduino/mcs51. A unit is
 #: linked only when the lowered text actually calls into it, so a sketch that
@@ -62,6 +63,7 @@ def _link_runtime(
     sk: Sketch,
     sources: tuple[Path, ...],
     includes: tuple[Path, ...],
+    family: str = "mcs51",
 ) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
     """Add the Arduino API units the lowered sketch actually calls."""
     def names(token: str) -> bool:
@@ -72,7 +74,7 @@ def _link_runtime(
         return bool(re.search(pattern, sk.text))
 
     wanted = [
-        ARDUINO_MCS51 / unit
+        runtime_dir(family) / unit
         for tokens, unit in RUNTIME_UNITS
         if any(names(token) for token in tokens)
     ]
@@ -85,8 +87,9 @@ def _link_runtime(
         if path.resolve() not in seen:
             src.append(path)
             seen.add(path.resolve())
-    if ARDUINO_MCS51.resolve() not in {path.resolve() for path in inc}:
-        inc.append(ARDUINO_MCS51)
+    home = runtime_dir(family)
+    if home.resolve() not in {path.resolve() for path in inc}:
+        inc.append(home)
     return tuple(src), tuple(inc)
 
 
@@ -120,10 +123,12 @@ def plan_compile(
     output: Path | None = None,
 ) -> CompilePlan:
     board = boards_mod.get_board(board_name)
-    if board.family != "mcs51" or board.compiler != "sdcc":
+    #: Families whose Arduino runtime and compiler are both wired up.
+    if board.family not in sketch_mod.ARDUINO_RUNTIME:
         raise ValueError(
-            f"board {board.id} is {board.compiler}/{board.family}; "
-            "only SDCC mcs51 boards can be compiled by this command today"
+            f"board {board.id} is {board.compiler}/{board.family}, and there "
+            f"is no Arduino runtime for that family yet. Known: "
+            f"{', '.join(sorted(sketch_mod.ARDUINO_RUNTIME))}."
         )
     sk = sketch_mod.resolve_sketch(sketch_path)
     out = (output or default_output(sk, board)).resolve()
@@ -195,7 +200,7 @@ def _plan_with_display(
         if path not in includes:
             includes.append(path)
     includes = _with_sketch_dir(sk, includes)
-    sources, includes_t = _link_runtime(sk, tuple(unique), tuple(includes))
+    sources, includes_t = _link_runtime(sk, tuple(unique), tuple(includes), board.family)
     return CompilePlan(
         board=board,
         sketch=sk,
@@ -236,19 +241,21 @@ def _plan_without_display(
         if sk.kind == "ino":
             generated = output / "sketch.c"
             sketch_mod.wrap_ino(sk, generated, runtime_header=RUNTIME_HEADER)
-            sources = [generated, *sk.extra_c, *sk.extra_asm, RUNTIME_C]
+            sources = [generated, *sk.extra_c, *sk.extra_asm,
+                       runtime_dir(board.family) / RUNTIME_UNIT]
         else:
-            sources = [sk.path, *sk.extra_c, *sk.extra_asm, RUNTIME_C]
+            sources = [sk.path, *sk.extra_c, *sk.extra_asm,
+                       runtime_dir(board.family) / RUNTIME_UNIT]
         defines = ("ND_NIUS_SKETCH_MAIN", *extra_defines)
         runtime = "sketch"
-        includes = [ARDUINO_MCS51]
+        includes = [runtime_dir(board.family)]
     else:
         raise ValueError(
             f"{sk.path.name} has neither main() nor setup()/loop()"
         )
 
     includes = _with_sketch_dir(sk, includes)
-    sources_t, includes_t = _link_runtime(sk, tuple(sources), tuple(includes))
+    sources_t, includes_t = _link_runtime(sk, tuple(sources), tuple(includes), board.family)
     return CompilePlan(
         board=board,
         sketch=sk,
@@ -281,6 +288,22 @@ def compile_plan(
         osc = f"NIUS_FOSC={plan.board.f_cpu}UL"
         if osc not in defines:
             defines.append(osc)
+    if plan.board.family == "pic16":
+        from . import build_pic
+
+        return build_pic.build_pic16(
+            list(plan.sources),
+            list(plan.includes),
+            output,
+            compiler=compiler,
+            part=plan.board.part,
+            f_cpu=plan.board.f_cpu,
+            program_size=plan.board.code_size,
+            data_size=plan.board.iram_size,
+            defines=defines,
+            optimize=optimize,
+            debug_symbols=debug_symbols,
+        )
     return build.build_mcs51(
         list(plan.sources),
         list(plan.includes),

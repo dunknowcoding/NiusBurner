@@ -51,7 +51,7 @@ class Board:
 
     #: Programmers this tool can actually drive. A board whose programmer is
     #: not here compiles, and says plainly that the route is not wired.
-    DRIVEN = ("usbisp_hid", "stcgal")
+    DRIVEN = ("usbisp_hid", "stcgal", "pickit3")
 
     @property
     def flashable(self) -> bool:

@@ -47,35 +47,76 @@ def save(data: dict) -> Path:
     return path
 
 
-def sdcc_path() -> Path | None:
-    """The recorded SDCC, if it is recorded and still there."""
-    recorded = load().get("sdcc")
+#: Tools a person can pin by hand, and what each one is.
+TOOLS = {
+    "sdcc": "the SDCC driver, for 8051 boards",
+    "xc8": "the XC8 driver (xc8-cc), for PIC boards",
+    "pickit3": "ipecmd, the command-line programmer that drives a PICkit 3",
+}
+
+
+def tool_path(name: str) -> Path | None:
+    """The recorded path for *name*, if it is recorded and still there."""
+    recorded = load().get(name)
     if not recorded:
         return None
     path = Path(str(recorded)).expanduser()
     return path if path.is_file() else None
 
 
-def set_sdcc(path: Path) -> Path:
-    """Record an SDCC binary after checking it exists. Returns the config file."""
+def set_tool(name: str, path: Path) -> Path:
+    """Record a tool after checking it exists. Returns the config file.
+
+    A directory is accepted and searched, because the thing a person has to
+    hand is usually the install root rather than the executable inside it.
+    """
+    if name not in TOOLS:
+        raise ValueError(
+            f"unknown tool {name!r}. Known: {', '.join(sorted(TOOLS))}.")
     resolved = Path(path).expanduser()
     if resolved.is_dir():
-        for name in ("sdcc.exe", "sdcc"):
-            candidate = resolved / name
-            if candidate.is_file():
-                resolved = candidate
-                break
-            candidate = resolved / "bin" / name
-            if candidate.is_file():
-                resolved = candidate
-                break
+        resolved = _find_in(resolved, name) or resolved
     if not resolved.is_file():
         raise FileNotFoundError(
-            f"no SDCC executable at {path}. Point --sdcc at sdcc.exe, at its "
-            "bin directory, or at the SDCC install root.")
+            f"no {name} executable at {path}. Point --{name} at the program "
+            "itself, at its bin directory, or at the install root.")
     data = load()
-    data["sdcc"] = str(resolved.resolve())
+    data[name] = str(resolved.resolve())
     return save(data)
+
+
+#: What each tool's executable is called, most specific first.
+_NAMES = {
+    "sdcc": ("sdcc.exe", "sdcc"),
+    "xc8": ("xc8-cc.exe", "xc8-cc"),
+    "pickit3": ("ipecmd.exe", "ipecmd", "ipecmd.jar"),
+}
+
+
+def _find_in(root: Path, name: str) -> Path | None:
+    """Look for a tool under *root*: beside it, in bin/, then one level down."""
+    for leaf in _NAMES[name]:
+        for candidate in (root / leaf, root / "bin" / leaf):
+            if candidate.is_file():
+                return candidate
+    for child in sorted(root.iterdir(), reverse=True):
+        if not child.is_dir():
+            continue
+        for leaf in _NAMES[name]:
+            for candidate in (child / leaf, child / "bin" / leaf):
+                if candidate.is_file():
+                    return candidate
+    return None
+
+
+def sdcc_path() -> Path | None:
+    """The recorded SDCC, if it is recorded and still there."""
+    return tool_path("sdcc")
+
+
+def set_sdcc(path: Path) -> Path:
+    """Record an SDCC binary after checking it exists."""
+    return set_tool("sdcc", path)
 
 
 def toolchain_root() -> Path | None:
@@ -90,9 +131,12 @@ def toolchain_root() -> Path | None:
 def describe() -> list[tuple[str, str]]:
     """(label, value) pairs for `niusburner setup` to print."""
     rows: list[tuple[str, str]] = []
-    recorded = load().get("sdcc")
     rows.append(("config file", str(config_path())))
-    rows.append(("sdcc (configured)", str(recorded) if recorded else "not set"))
+    data = load()
+    for name, what in sorted(TOOLS.items()):
+        value = data.get(name)
+        rows.append((f"{name} (configured)",
+                     str(value) if value else f"not set -- {what}"))
     root = os.environ.get(TOOLCHAIN_ROOT_VAR)
     rows.append((f"{TOOLCHAIN_ROOT_VAR}", root or "not set"))
     return rows

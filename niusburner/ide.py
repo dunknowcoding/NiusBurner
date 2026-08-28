@@ -87,7 +87,7 @@ MENUS = (
 )
 
 
-def render_boards_txt() -> str:
+def render_boards_txt(family: str = "mcs51") -> str:
     """Build boards.txt from the board catalog.
 
     Generated rather than hand-written, because the two drifted: a part
@@ -97,7 +97,7 @@ def render_boards_txt() -> str:
     from . import boards as boards_mod
 
     out = [
-        "# NiusBurner 8051 boards (SDCC).",
+        "# NiusBurner %s boards." % family,
         "#",
         "# Copyright 2026 dunknowcoding (NiusRobotLab)",
         "# SPDX-License-Identifier: Apache-2.0",
@@ -117,6 +117,8 @@ def render_boards_txt() -> str:
     out.append("")
 
     for board in boards_mod.all_boards().values():
+        if board.family != family:
+            continue
         flash_kb = board.code_size // 1024
         how = ("USB-ISP" if board.programmer == "usbisp_hid"
                else "serial bootloader" if board.programmer == "stcgal"
