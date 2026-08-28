@@ -1,21 +1,34 @@
-"""Progress reporting for long operations, readable in a terminal and in an IDE.
+"""Console output for long operations, in the NiusRobotLab house style.
 
 Copyright 2026 dunknowcoding (NiusRobotLab)
 SPDX-License-Identifier: Apache-2.0
 
-Programming an 8051 over serial ISP is a byte at a time at roughly 5 ms a
-byte, so a 3 KB image takes the better part of a minute. Silence for a minute
-is indistinguishable from a hang, which is the actual problem this solves.
+The style is the one ArduinoNRF's uploader established, so a person who has
+flashed an nRF52 recognises this console immediately: the same banner, the
+same signature bar, the same closing summary, the same failure block.
 
-Two output shapes, chosen by asking the stream:
+    *******************************************************************
+        <NiusRobotLab, figlet slant>
+    *******************************************************************
+       8051 Flash Console - Target: at89s52
 
-  a terminal      one line, rewritten in place with \\r, with a bar and an ETA
-  anything else   a new line at each step, because the Arduino IDE console
-                  renders \\r as a line break and would otherwise print
-                  hundreds of them
+      NIUS  ==============>.......   64%  Programming  890/1390 B
 
-Nothing here needs a package. `no_color()` also honours NO_COLOR, which the
-IDE console and most CI logs want.
+Three rules carried over from that tool, each for a reason:
+
+**stdout, never stderr.** arduino-cli and Arduino IDE 2 capture both streams
+into one Output panel, so anything on stderr is rendered red and, in a plain
+terminal, printed twice. Progress is not an error.
+
+**Quiet by default.** The console shows the banner, the bar and the result.
+Everything else is a `[nius]` detail line, shown only when the IDE's "verbose
+upload" preference or NIUSBURNER_VERBOSE is set.
+
+**Pure ASCII.** The art and the bar render identically whatever the console
+codepage is, which on Windows is not something to assume.
+
+The `***` rules appear only around the banner. A failure block is the only
+other rule, and it uses dashes.
 """
 
 from __future__ import annotations
@@ -25,32 +38,45 @@ import sys
 import time
 from typing import TextIO
 
-_BAR_WIDTH = 28
-_TICK = "#"
-_GAP = "."
+#: figlet "slant", the lab name. The subtitle underneath names the console.
+BANNER_RULE = "*" * 67
+BANNER_ART = (
+    r"    _   ___            ____        __          __  __          __",
+    r"   / | / (_)_  _______/ __ \____  / /_  ____  / /_/ /   ____ _/ /_",
+    # A raw string cannot end in a backslash, and this row does.
+    r"  /  |/ / / / / / ___/ /_/ / __ \/ __ \/ __ \/ __/ /   / __ `/ __ " + "\\",
+    r" / /|  / / /_/ (__  ) _, _/ /_/ / /_/ / /_/ / /_/ /___/ /_/ / /_/ /",
+    r"/_/ |_/_/\__,_/____/_/ |_|\____/_.___/\____/\__/_____/\__,_/_.___/",
+)
 
-#: Steps between lines when the output is not a terminal. Twenty lines is
-#: enough to see movement and few enough to read.
-_QUIET_STEPS = 20
+_BAR_WIDTH = 22
+_FAIL_RULE = "-" * 64
+
+#: Milestones printed when the stream cannot rewrite a line. Ten percent is
+#: enough to see movement and few enough to read in an IDE panel.
+_QUIET_STEP = 10
+
+_start_utc: float | None = None
 
 
-def no_color(stream: TextIO | None = None) -> bool:
+def verbose() -> bool:
+    """Whether the internal `[nius]` detail lines are shown."""
+    return os.environ.get("NIUSBURNER_VERBOSE", "") in {"1", "true", "TRUE"}
+
+
+def _out(stream: TextIO | None = None) -> TextIO:
+    return stream or sys.stdout
+
+
+def _rewritable(stream: TextIO) -> bool:
+    """True when a line can be redrawn in place.
+
+    Only a real terminal. The IDE panel turns a carriage return into a line
+    break, which would print one line per byte programmed.
+    """
     if os.environ.get("NO_COLOR"):
-        return True
-    stream = stream or sys.stderr
-    return not hasattr(stream, "isatty") or not stream.isatty()
-
-
-class _Style:
-    """ANSI, or empty strings when the stream cannot show them."""
-
-    def __init__(self, plain: bool) -> None:
-        self.dim = "" if plain else "\033[2m"
-        self.bold = "" if plain else "\033[1m"
-        self.green = "" if plain else "\033[32m"
-        self.red = "" if plain else "\033[31m"
-        self.yellow = "" if plain else "\033[33m"
-        self.off = "" if plain else "\033[0m"
+        return False
+    return hasattr(stream, "isatty") and stream.isatty()
 
 
 def human_time(seconds: float) -> str:
@@ -60,11 +86,107 @@ def human_time(seconds: float) -> str:
     return f"{seconds // 60:02d}:{seconds % 60:02d}"
 
 
+def _bar(percent: int) -> str:
+    """The signature comet: `==============>.......`, never bracketed."""
+    percent = max(0, min(100, percent))
+    filled = int(round(percent * _BAR_WIDTH / 100.0))
+    if filled >= _BAR_WIDTH:
+        return "=" * _BAR_WIDTH
+    if filled <= 0:
+        return "." * _BAR_WIDTH
+    return (("=" * (filled - 1)) + ">").ljust(_BAR_WIDTH, ".")
+
+
+def stage(percent: int, label: str, detail: str = "",
+          stream: TextIO | None = None, end: str = "\n") -> None:
+    """One progress line: `  NIUS  ====>....   64%  Programming  890/1390 B`."""
+    out = _out(stream)
+    line = f"  NIUS  {_bar(percent)}  {max(0, min(100, percent)):3d}%  {label}"
+    if detail:
+        line = f"{line}  {detail}"
+    out.write(line + end)
+    out.flush()
+
+
+def banner(subtitle: str, stream: TextIO | None = None) -> None:
+    """Printed once, at the start of a run. Starts the elapsed-time clock."""
+    global _start_utc
+    out = _out(stream)
+    out.write(BANNER_RULE + "\n")
+    for line in BANNER_ART:
+        out.write(line + "\n")
+    out.write(BANNER_RULE + "\n")
+    out.write(f"   {subtitle}\n\n")
+    out.flush()
+    _start_utc = time.monotonic()
+
+
+def elapsed() -> str:
+    if _start_utc is None:
+        return ""
+    return f"{time.monotonic() - _start_utc:.1f}s"
+
+
+def complete(label: str = "Upload complete", *rows: str,
+             stream: TextIO | None = None) -> None:
+    """The closing summary: the full bar, then plain-language status lines."""
+    out = _out(stream)
+    stage(100, label, stream=out)
+    out.write("\n")
+    spent = elapsed()
+    if spent:
+        out.write(f"  Total upload time : {spent}\n")
+    for row in rows:
+        if row:
+            out.write(f"  {row}\n")
+    out.write("\n")
+    out.flush()
+
+
+def note(text: str, stream: TextIO | None = None) -> None:
+    """An internal detail. Suppressed unless verbose, exactly as upstream."""
+    if not verbose():
+        return
+    out = _out(stream)
+    out.write(f"[nius] {text}\n")
+    out.flush()
+
+
+def info(text: str, stream: TextIO | None = None) -> None:
+    """A short line the operator should see even in quiet mode."""
+    out = _out(stream)
+    out.write(f"  {text}\n")
+    out.flush()
+
+
+def error(summary: str, *, title: str = "upload failed",
+          hints: tuple[str, ...] = (), details: tuple[str, ...] = (),
+          stream: TextIO | None = None) -> None:
+    """The failure block: a dashed rule, the reason, then hints and trace."""
+    out = _out(stream)
+    out.write(_FAIL_RULE + "\n")
+    out.write(f"[nius][fail] {title}\n")
+    out.write(f" reason: {summary}\n")
+    if hints:
+        out.write(" hints:\n")
+        for hint in hints:
+            if hint:
+                out.write(f"  - {hint}\n")
+    if details:
+        out.write(" trace:\n")
+        for detail in details:
+            if detail:
+                out.write(f"  > {detail}\n")
+    out.write(_FAIL_RULE + "\n")
+    out.flush()
+
+
 class Progress:
     """One phase of work with a known number of steps.
 
-    Call `step()` as work completes and `done()` at the end. `done()` is safe
-    to call twice, so a `finally` can close a phase an exception interrupted.
+    Emits the signature bar. On a terminal the line is rewritten in place;
+    anywhere else it prints at ten-percent milestones, so an IDE panel gets
+    a readable handful of lines instead of one per byte.
     """
 
     def __init__(self, label: str, total: int, *,
@@ -72,58 +194,50 @@ class Progress:
         self.label = label
         self.total = max(0, int(total))
         self.unit = unit
-        self.stream = stream or sys.stderr
-        self.plain = no_color(self.stream)
-        self.style = _Style(self.plain)
+        self.stream = _out(stream)
+        self.live = _rewritable(self.stream)
         self.count = 0
         self.started = time.monotonic()
         self._last_drawn = -1.0
+        self._mark = -1
         self._closed = False
-        self._quiet_mark = 0
         self._draw(force=True)
 
     # -- drawing ---------------------------------------------------------
 
-    def _bar(self, fraction: float) -> str:
-        filled = int(fraction * _BAR_WIDTH)
-        return _TICK * filled + _GAP * (_BAR_WIDTH - filled)
+    def _fraction(self) -> float:
+        return 1.0 if not self.total else min(1.0, self.count / self.total)
 
-    def _line(self, fraction: float, eta: float) -> str:
-        s = self.style
-        pct = f"{100 * fraction:5.1f}%"
+    def _detail(self, fraction: float) -> str:
         counts = f"{self.count}/{self.total} {self.unit}" if self.total else ""
-        return (
-            f"  {s.bold}{self.label:<10}{s.off} "
-            f"[{self._bar(fraction)}] {pct}  {counts:>16}  "
-            f"{s.dim}ETA {human_time(eta)}{s.off}"
-        )
-
-    def _eta(self, fraction: float) -> float:
-        if fraction <= 0:
-            return float("nan")
-        elapsed = time.monotonic() - self.started
-        return elapsed / fraction - elapsed
+        eta = ""
+        if 0 < fraction < 1:
+            spent = time.monotonic() - self.started
+            eta = f"  ETA {human_time(spent / fraction - spent)}"
+        return f"{counts}{eta}"
 
     def _draw(self, force: bool = False) -> None:
         if self._closed:
             return
-        fraction = 1.0 if not self.total else min(1.0, self.count / self.total)
-        now = time.monotonic()
-        if self.plain:
-            # Only at whole steps, so an IDE console gets a readable handful
-            # of lines instead of one per byte.
-            mark = int(fraction * _QUIET_STEPS)
-            if not force and mark <= self._quiet_mark:
+        fraction = self._fraction()
+        percent = int(fraction * 100)
+        if not self.live:
+            # done() prints the only 100% line, so the last milestone would
+            # just repeat it one line earlier.
+            if percent >= 100 and not force:
                 return
-            self._quiet_mark = mark
-            self.stream.write(self._line(fraction, self._eta(fraction)) + "\n")
-            self.stream.flush()
+            mark = percent // _QUIET_STEP
+            if not force and mark <= self._mark:
+                return
+            self._mark = mark
+            stage(percent, self.label, self._detail(fraction), self.stream)
             return
+        now = time.monotonic()
         if not force and now - self._last_drawn < 0.08:
             return
         self._last_drawn = now
-        self.stream.write("\r" + self._line(fraction, self._eta(fraction)))
-        self.stream.flush()
+        stage(percent, self.label, self._detail(fraction) + "   ",
+              self.stream, end="\r")
 
     # -- api -------------------------------------------------------------
 
@@ -135,36 +249,26 @@ class Progress:
         self.count = count
         self._draw()
 
-    def done(self, note: str = "") -> None:
+    def done(self, note_text: str = "") -> None:
         if self._closed:
             return
         self.count = self.total
-        elapsed = time.monotonic() - self.started
-        s = self.style
-        tail = f"  {note}" if note else ""
-        line = (
-            f"  {s.bold}{self.label:<10}{s.off} "
-            f"[{self._bar(1.0)}] {s.green}done{s.off}  "
-            f"{self.total}{' ' + self.unit if self.unit else ''} in "
-            f"{elapsed:.1f}s{tail}"
-        )
-        if self.plain:
-            self.stream.write(line + "\n")
-        else:
-            self.stream.write("\r" + line + "\033[K\n")
-        self.stream.flush()
+        spent = time.monotonic() - self.started
+        detail = f"{self.total} {self.unit} in {spent:.1f}s" if self.total else ""
+        if note_text:
+            detail = f"{detail}  {note_text}" if detail else note_text
+        if self.live:
+            self.stream.write("\r")
+        stage(100, self.label, detail, self.stream)
         self._closed = True
 
     def fail(self, reason: str) -> None:
         if self._closed:
             return
-        s = self.style
-        line = f"  {s.bold}{self.label:<10}{s.off} {s.red}failed{s.off}  {reason}"
-        if self.plain:
-            self.stream.write(line + "\n")
-        else:
-            self.stream.write("\r" + line + "\033[K\n")
-        self.stream.flush()
+        if self.live:
+            self.stream.write("\r")
+        stage(int(self._fraction() * 100), self.label, f"FAILED  {reason}",
+              self.stream)
         self._closed = True
 
     def __enter__(self) -> "Progress":
@@ -178,46 +282,53 @@ class Progress:
 
 
 class Spinner:
-    """A phase whose length is not known ahead of time, such as chip erase."""
+    """A phase whose length is not known ahead of time, such as chip erase.
 
-    FRAMES = "|/-\\"
+    Upstream keeps its pulse verbose-only, because in quiet mode the
+    milestone lines are enough and a spinner just fills the IDE panel. Same
+    here: one line at the start, one at the end, and animation only on a
+    terminal.
+    """
+
+    FRAMES = ("[-]", "[\\]", "[|]", "[/]")
 
     def __init__(self, label: str, *, stream: TextIO | None = None) -> None:
         self.label = label
-        self.stream = stream or sys.stderr
-        self.plain = no_color(self.stream)
-        self.style = _Style(self.plain)
+        self.stream = _out(stream)
+        self.live = _rewritable(self.stream)
         self.started = time.monotonic()
         self._frame = 0
         self._closed = False
-        if self.plain:
-            self.stream.write(f"  {self.label:<10} working ...\n")
-            self.stream.flush()
+        if not self.live:
+            stage(0, self.label, "working", self.stream)
 
     def tick(self) -> None:
-        if self._closed or self.plain:
+        if self._closed or not self.live:
             return
-        self._frame = (self._frame + 1) % len(self.FRAMES)
-        elapsed = time.monotonic() - self.started
-        s = self.style
-        self.stream.write(
-            f"\r  {s.bold}{self.label:<10}{s.off} "
-            f"{self.FRAMES[self._frame]} {s.dim}{elapsed:4.1f}s{s.off}")
-        self.stream.flush()
+        self._frame += 1
+        spent = time.monotonic() - self.started
+        stage(0, self.label,
+              f"{self.FRAMES[self._frame % len(self.FRAMES)]} {spent:4.1f}s  ",
+              self.stream, end="\r")
 
-    def done(self, note: str = "") -> None:
+    def done(self, note_text: str = "") -> None:
         if self._closed:
             return
-        elapsed = time.monotonic() - self.started
-        s = self.style
-        tail = f"  {note}" if note else ""
-        line = (f"  {s.bold}{self.label:<10}{s.off} {s.green}done{s.off}  "
-                f"{elapsed:.1f}s{tail}")
-        if self.plain:
-            self.stream.write(line + "\n")
-        else:
-            self.stream.write("\r" + line + "\033[K\n")
-        self.stream.flush()
+        spent = time.monotonic() - self.started
+        detail = f"{spent:.1f}s"
+        if note_text:
+            detail = f"{detail}  {note_text}"
+        if self.live:
+            self.stream.write("\r")
+        stage(100, self.label, detail, self.stream)
+        self._closed = True
+
+    def fail(self, reason: str) -> None:
+        if self._closed:
+            return
+        if self.live:
+            self.stream.write("\r")
+        stage(0, self.label, f"FAILED  {reason}", self.stream)
         self._closed = True
 
     def __enter__(self) -> "Spinner":
@@ -226,30 +337,5 @@ class Spinner:
     def __exit__(self, exc_type, exc, tb) -> None:
         if exc_type is None:
             self.done()
-        elif not self._closed:
-            s = self.style
-            self.stream.write(
-                f"\r  {s.bold}{self.label:<10}{s.off} {s.red}failed{s.off}\n")
-            self.stream.flush()
-            self._closed = True
-
-
-def banner(text: str, stream: TextIO | None = None) -> None:
-    stream = stream or sys.stderr
-    style = _Style(no_color(stream))
-    stream.write(f"{style.bold}{text}{style.off}\n")
-    stream.flush()
-
-
-def note(text: str, stream: TextIO | None = None) -> None:
-    stream = stream or sys.stderr
-    style = _Style(no_color(stream))
-    stream.write(f"  {style.dim}{text}{style.off}\n")
-    stream.flush()
-
-
-def error(text: str, stream: TextIO | None = None) -> None:
-    stream = stream or sys.stderr
-    style = _Style(no_color(stream))
-    stream.write(f"{style.red}error{style.off}  {text}\n")
-    stream.flush()
+        else:
+            self.fail(str(exc) or exc_type.__name__)

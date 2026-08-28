@@ -49,7 +49,8 @@ from __future__ import annotations
 import pathlib
 import time
 
-from ..progress import Progress, Spinner, banner, error, note
+from ..progress import (Progress, Spinner, banner, complete, error,
+                        info, note, stage)
 
 _VID = 0x03EB
 _PID = 0xC8B4
@@ -367,21 +368,21 @@ def probe(target: str) -> int:
             try:
                 prog.enter_isp()
             except RuntimeError as exc:
-                error(str(exc))
+                error(str(exc), title="ISP enable failed")
                 return 1
             sig = prog.read_signature()
             sig_text = " ".join(f"{b:02X}" for b in sig)
             if sig == _AT89S52_SIG:
-                note(f"found AT89S52, signature {sig_text}")
+                info(f"found AT89S52, signature {sig_text}")
             else:
-                note(f"signature {sig_text}")
-                note("warning: that is not the AT89S52 signature 1E 52 06")
+                info(f"signature {sig_text}")
+                info("warning: that is not the AT89S52 signature 1E 52 06")
             prog.release_to_run()
     except FileNotFoundError as exc:
-        error(str(exc))
+        error(str(exc), title="programmer not found")
         return 1
     except OSError as exc:
-        error(f"HID I/O failed: {exc}")
+        error(f"HID I/O failed: {exc}", title="programmer stopped responding")
         return 1
     return 0
 
@@ -395,12 +396,12 @@ def reset(target: str) -> int:
         with prog:
             prog.auto_reset()
     except FileNotFoundError as exc:
-        print(f"error: {exc}")
+        error(str(exc), title="programmer not found")
         return 1
     except OSError as exc:
-        print(f"error: HID I/O failed: {exc}")
+        error(f"HID I/O failed: {exc}", title="reset failed")
         return 1
-    print(f"reset  {target} released from reset")
+    info(f"reset  {target} released from reset")
     return 0
 
 
@@ -411,8 +412,7 @@ def flash(image: pathlib.Path, target: str, run: bool = True) -> int:
     to its UART before the first instruction executes. That startup output
     is otherwise gone by the time a serial port finishes opening.
     """
-    banner(f"Programming {target} over USB-ISP "
-           f"(VID {_VID:04X} / PID {_PID:04X})")
+    banner(f"8051 Flash Console - Target: {target}")
 
     prog = _programmer_or_report()
     if isinstance(prog, int):
@@ -420,34 +420,52 @@ def flash(image: pathlib.Path, target: str, run: bool = True) -> int:
 
     try:
         with prog:
+            stage(0, "Connecting", f"USB-ISP {_VID:04X}:{_PID:04X}")
             try:
                 prog.enter_isp()
             except RuntimeError as exc:
-                error(str(exc))
+                error(str(exc), title="ISP enable failed",
+                      hints=("check the IDC10 pin-1 alignment against "
+                             "docs/wiring/usbasp-idc10.md",
+                             "confirm the board is powered and its crystal "
+                             "is running",
+                             "an STC part in the same socket uses the UART "
+                             "bootloader, not this header"))
                 return 1
 
             sig = prog.read_signature()
             sig_text = " ".join(f"{b:02X}" for b in sig)
             if target.lower() == "at89s52" and sig != _AT89S52_SIG:
-                error(f"signature {sig_text} is not AT89S52 (1E 52 06); "
-                      "refusing to erase")
+                error(f"signature {sig_text} is not AT89S52 (1E 52 06)",
+                      title="wrong part in the socket",
+                      hints=("nothing was erased",
+                             "select the board that matches the part, or "
+                             "fit the part that matches the board"))
                 return 1
-            note(f"signature {sig_text}")
+            stage(5, "Connected", f"signature {sig_text}")
 
             data = _parse_ihx(image)
             if not data:
-                error(f"{image.name} is empty or not valid Intel HEX")
+                error(f"{image.name} is empty or not valid Intel HEX",
+                      title="nothing to program",
+                      hints=("did Verify succeed?",))
                 return 1
             payload = _bytes_to_program(data)
 
-            with Spinner("erase") as spin:
+            with Spinner("Erasing") as spin:
                 prog.chip_erase(spinner=spin)
                 dirty = prog.blank_check()
                 if dirty is not None:
                     spin.fail(f"0x{dirty:04X} still programmed")
+                    error(f"the array still holds data at 0x{dirty:04X} "
+                          "after a chip erase",
+                          title="erase did not finish",
+                          hints=("the part may be lock-bit protected",
+                                 "check VCC is steady under the "
+                                 "programmer's load"))
                     return 1
 
-            with Progress("write", len(payload)) as bar:
+            with Progress("Programming", len(payload)) as bar:
                 prog.write_image(data, on_byte=bar.step)
 
             # The first reads after the last write can still catch that write
@@ -455,28 +473,42 @@ def flash(image: pathlib.Path, target: str, run: bool = True) -> int:
             for _ in range(3):
                 prog.read_byte(0x0000)
 
-            bad: list[tuple[int, int, int]] = []
-            with Progress("verify", len(data)) as bar:
+            with Progress("Verifying", len(data)) as bar:
                 bad = prog.verify_image(data, on_byte=bar.step)
             if bad:
-                for addr, expected, actual in bad[:16]:
-                    error(f"0x{addr:04X}: wrote 0x{expected:02X}, "
-                          f"read 0x{actual:02X}")
-                error(f"{len(bad)} byte(s) did not verify")
+                trace = tuple(
+                    f"0x{addr:04X}: wrote 0x{want:02X}, read 0x{got:02X}"
+                    for addr, want, got in bad[:8]
+                )
+                error(f"{len(bad)} byte(s) did not read back as written",
+                      title="verify failed",
+                      hints=("the image on the part is not the one built",
+                             "check the ISP cable and the supply before "
+                             "trusting the board"),
+                      details=trace)
                 return 1
 
             if not run:
-                note("target held in reset, waiting for an explicit reset")
+                complete("Programmed, held in reset",
+                         "Reset             : held - waiting for the caller "
+                         "to release it")
                 return 0
             prog.release_to_run()
-            note("reset released - user code running, VCC still supplied")
+            complete(
+                "Upload complete",
+                "Soft reset        : done - board running the new firmware",
+                "Power             : VCC still supplied by the programmer",
+            )
             note("nothing on the UART? check EA (pin 31) is tied to VCC: "
                  "with EA low the CPU fetches from external memory and never "
                  "runs the flash just verified")
     except FileNotFoundError as exc:
-        error(str(exc))
+        error(str(exc), title="programmer not found",
+              hints=("install the driver as HidUsb, not WinUSB",
+                     "run `python -m niusburner setup` to check"))
         return 1
     except OSError as exc:
-        error(f"HID I/O failed: {exc}")
+        error(f"HID I/O failed: {exc}", title="programmer stopped responding",
+              hints=("unplug and replug the dongle, then retry",))
         return 1
     return 0

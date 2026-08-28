@@ -63,35 +63,73 @@ root.
 
 ## What Upload prints
 
+The console is the one ArduinoNRF's uploader established, so if you have
+flashed an nRF52 with these tools it reads the same: the banner once, the
+signature bar for each phase, then the closing summary.
+
 Verify reports what the sketch cost against what the part has:
 
 ```
-NiusBurner: compiling for at89s52
-  3 translation unit(s), optimize=size
-  flash 1429/8192 B  (17.4%)   iram 41/256 B
+  NIUS  ......................    0%  Compiling  target at89s52
+  NIUS  ======================  100%  Compiled  flash 1429/8192 B (17.4%)  iram 41/256 B
 Sketch uses 1429 bytes of program storage space.
 ```
 
-Upload shows each phase, with a bar and an ETA, because programming an 8051
-is one byte at a time at about 5 ms a byte — a 1.4 KB image takes half a
-minute, and silence for half a minute is indistinguishable from a hang:
+Upload prints the banner, then a bar with an ETA for every phase, because
+programming an 8051 is one byte at a time at about 5 ms a byte — a 1.4 KB
+image takes half a minute, and half a minute of silence is
+indistinguishable from a hang:
 
 ```
-Programming at89s52 over USB-ISP (VID 03EB / PID C8B4)
-  signature 1E 52 06
-  erase      done  2.1s
-  write      [##########..................]  35.0%    487/1390 B  ETA 00:23
-  write      [############################] done  1390 B in 34.4s
-  verify     [############################] done  1390 B in 18.0s
-  reset released - user code running, VCC still supplied
+*******************************************************************
+    _   ___            ____        __          __  __          __
+   / | / (_)_  _______/ __ \____  / /_  ____  / /_/ /   ____ _/ /_
+  /  |/ / / / / / ___/ /_/ / __ \/ __ \/ __ \/ __/ /   / __ `/ __ \
+ / /|  / / /_/ (__  ) _, _/ /_/ / /_/ / /_/ / /_/ /___/ /_/ / /_/ /
+/_/ |_/_/\__,_/____/_/ |_|\____/_.___/\____/\__/_____/\__,_/_.___/
+*******************************************************************
+   8051 Flash Console - Target: at89s52
+
+  NIUS  >.....................    5%  Connected  signature 1E 52 06
+  NIUS  ======================  100%  Erasing  2.1s
+  NIUS  ==============>.......   70%  Programming  856/1222 B  ETA 00:09
+  NIUS  ======================  100%  Programming  1222 B in 30.9s
+  NIUS  ======================  100%  Verifying  1245 B in 15.9s
+  NIUS  ======================  100%  Upload complete
+
+  Total upload time : 49.3s
+  Soft reset        : done - board running the new firmware
+  Power             : VCC still supplied by the programmer
 ```
 
-In a terminal this is one line rewritten in place. The IDE console renders
-`\r` as a line break, so there it becomes twenty progress lines per phase
-instead of one per byte.
+In a terminal the bar is rewritten in place. The IDE panel renders a
+carriage return as a line break, so there each phase prints at ten-percent
+milestones instead of one line per byte.
 
-Errors are named, not numbered. A refusal says which peripheral is missing,
-which register to use instead, or which menu entry disagrees with the board.
+Three things this console does on purpose, all carried over from the nRF52
+tool:
+
+- **Everything goes to stdout.** arduino-cli and Arduino IDE 2 capture both
+  streams into one Output panel, so anything written to stderr is rendered
+  red and, in a plain terminal, printed twice. Progress is not an error.
+- **Every line is flushed.** A pipe block-buffers, and unflushed lines
+  surface after the upload they were meant to introduce.
+- **Quiet by default.** Internal detail lines are prefixed `[nius]` and are
+  hidden unless `NIUSBURNER_VERBOSE=1`.
+
+A failure is a block, not a stack trace — the reason, what to try, and the
+trace only when there is one:
+
+```
+----------------------------------------------------------------
+[nius][fail] ISP enable failed
+ reason: no 0x69 ACK from the target
+ hints:
+  - check the IDC10 pin-1 alignment against docs/wiring/usbasp-idc10.md
+  - confirm the board is powered and its crystal is running
+  - an STC part in the same socket uses the UART bootloader, not this header
+----------------------------------------------------------------
+```
 
 ## What the IDE cannot do here
 

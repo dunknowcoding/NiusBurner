@@ -297,7 +297,7 @@ def compile_plan(
     )
 
 
-def upload_image(plan: CompilePlan, image: Path, *, skip_probe: bool = False,
+def upload_image(plan: CompilePlan, image: Path, *,
                  hold_reset: bool = False) -> int:
     """Program *image* onto the planned board.
 
@@ -314,10 +314,9 @@ def upload_image(plan: CompilePlan, image: Path, *, skip_probe: bool = False,
             f"(programmer {board.programmer}, status {board.status}). "
             "See docs/families/8051.md."
         )
-    if not skip_probe:
-        rc = flash.probe(target=board.part, confirm=board.part)
-        if rc != 0:
-            return rc
+    # No pre-probe. `burn` opens its own ISP session and checks the
+    # signature before it erases anything, so probing first only costs a
+    # second round trip and puts a stray line above the banner.
     return flash.burn(
         target=board.part,
         image=image,

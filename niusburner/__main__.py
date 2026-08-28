@@ -25,6 +25,7 @@ import sys
 from . import __version__, boards as boards_mod, build, display as display_mod
 from . import flash, registry, workflow
 from .package import package_image, verify_package
+from .progress import info, stage
 
 
 def _cmd_list(args: argparse.Namespace) -> int:
@@ -230,18 +231,24 @@ def _cmd_which(args: argparse.Namespace) -> int:
 
 
 def _print_plan(plan: workflow.CompilePlan) -> None:
+    """What is about to be built. Every line flushes.
+
+    A plain print() is block-buffered once stdout is a pipe, which the
+    Arduino IDE panel is, so unflushed lines surface after the upload they
+    were supposed to introduce.
+    """
     board = plan.board
-    print(f"board     {board.id}  ({board.code_size} B flash, {board.iram_size} B IRAM, "
-          f"{board.programmer})")
-    print(f"sketch    {plan.sketch.path}")
+    info(f"board     {board.id}  ({board.code_size} B flash, "
+         f"{board.iram_size} B IRAM, {board.programmer})")
+    info(f"sketch    {plan.sketch.path}")
     if plan.sketch.lowered:
-        print("lowered   BASIC Arduino C++ -> C")
-    print(f"runtime   {plan.runtime}"
-          + (f"  ({plan.library})" if plan.library else ""))
-    print(f"sources   {len(plan.sources)} translation units")
-    print(f"sdcc      --model-{plan.model}"
-          + (" --stack-auto" if plan.stack_auto else "")
-          + (f" --xram-size {plan.xram_size}" if plan.xram_size else ""))
+        info("lowered   BASIC Arduino C++ -> C")
+    info(f"runtime   {plan.runtime}"
+         + (f"  ({plan.library})" if plan.library else ""))
+    info(f"sources   {len(plan.sources)} translation units")
+    info(f"sdcc      --model-{plan.model}"
+         + (" --stack-auto" if plan.stack_auto else "")
+         + (f" --xram-size {plan.xram_size}" if plan.xram_size else ""))
 
 
 def _plan_from_args(args: argparse.Namespace) -> workflow.CompilePlan:
@@ -269,7 +276,7 @@ def _cmd_compile(args: argparse.Namespace) -> int:
         print(f"compile failed: {exc}", file=sys.stderr)
         return 2
     _print_usage(plan, result)
-    print(f"image     {result.image}")
+    info(f"image     {result.image}")
     return 0
 
 
@@ -286,7 +293,7 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         print(f"compile failed: {exc}", file=sys.stderr)
         return 2
     _print_usage(plan, result)
-    print(f"image     {result.image}")
+    info(f"image     {result.image}")
 
     if not args.yes:
         print(
@@ -302,7 +309,7 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         # With a monitor to attach, hold the part in reset until the port is
         # open -- a sketch banner is gone within milliseconds of the release.
         rc = workflow.upload_image(
-            plan, result.image, skip_probe=args.skip_probe,
+            plan, result.image,
             hold_reset=bool(port))
     except (OSError, ValueError) as exc:
         print(f"upload failed: {exc}", file=sys.stderr)
@@ -391,30 +398,23 @@ def _cmd_build_mcs51(args: argparse.Namespace) -> int:
     return 0
 
 
-def _bar(used: int, total: int, width: int = 24) -> str:
-    """A fixed-width meter. Full means the next byte does not fit."""
-    if total <= 0:
-        return ""
-    filled = min(width, (used * width + total - 1) // total)
-    return "[" + "#" * filled + "-" * (width - filled) + "]"
-
-
 def _print_usage(plan, result) -> None:
     """Flash and RAM, as a share of what the part actually has."""
     board = plan.board
     rom = result.program_bytes
-    print(f"flash     {_bar(rom, board.code_size)} {rom:6} / "
-          f"{board.code_size} B  {100 * rom / board.code_size:5.1f}%")
+    stage(int(100 * rom / board.code_size), "Flash",
+          f"{rom}/{board.code_size} B")
     if result.iram_bytes:
         iram = result.iram_bytes
-        print(f"iram      {_bar(iram, board.iram_size)} {iram:6} / "
-              f"{board.iram_size} B  {result.stack_bytes} B left for the stack")
+        stage(int(100 * iram / board.iram_size), "IRAM",
+              f"{iram}/{board.iram_size} B  "
+              f"{result.stack_bytes} B left for the stack")
     if result.xram_bytes:
-        print(f"xram      {result.xram_bytes} B / {plan.xram_size} B")
+        info(f"xram      {result.xram_bytes} B / {plan.xram_size} B")
     if result.optimize != "size":
-        print(f"optimize  {result.optimize}")
+        info(f"optimize  {result.optimize}")
     if result.symbols:
-        print(f"symbols   {len(result.symbols)} file(s) in {result.image.parent}")
+        info(f"symbols   {len(result.symbols)} file(s) in {result.image.parent}")
 
 
 def _add_sketch_flags(parser: argparse.ArgumentParser) -> None:
@@ -494,8 +494,6 @@ def main(argv: list[str] | None = None) -> int:
     _add_sketch_flags(p)
     p.add_argument("--yes", action="store_true",
                    help="acknowledge that the chip will be erased")
-    p.add_argument("--skip-probe", action="store_true",
-                   help="do not read the signature before erase")
     p.add_argument(
         "--port",
         help="after a verified flash, read UART on this CH341 port (COM31)",

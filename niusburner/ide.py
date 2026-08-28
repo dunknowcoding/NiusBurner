@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import display as display_mod
 from . import flash, workflow
-from .progress import banner, error, note
+from .progress import error, info, note, stage
 
 HERE = Path(__file__).parent
 PLATFORM_SRC = HERE / "arduino" / "mcs51"
@@ -103,7 +103,9 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     out = build_path / "niusburner"
     optimize = _menu(optimize, ("size", "speed", "none"), "size")
     debug_symbols = _menu(debug, ("none", "symbols"), "none") == "symbols"
-    banner(f"NiusBurner: compiling for {board}")
+    # No banner here: the upload tool prints it once, and Verify runs in a
+    # separate process that would otherwise repeat the whole thing.
+    stage(0, "Compiling", f"target {board}")
     try:
         compiler = resolve_compiler(compiler_choice)
         plan = workflow.plan_compile(sketch, board, output=out)
@@ -111,15 +113,16 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
             plan, out, compiler=compiler,
             optimize=optimize, debug_symbols=debug_symbols)
     except (OSError, ValueError, KeyError) as exc:
-        error(str(exc))
+        error(str(exc), title="compile failed")
         return 1
     shutil.copy2(result.image, build_path / "firmware.ihx")
     spec = plan.board
     note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
          + (", debug symbols" if debug_symbols else ""))
-    note(f"flash {result.program_bytes}/{spec.code_size} B"
-         f"  ({100 * result.program_bytes / spec.code_size:.1f}%)"
-         f"   iram {result.iram_bytes}/{spec.iram_size} B")
+    stage(100, "Compiled",
+          f"flash {result.program_bytes}/{spec.code_size} B "
+          f"({100 * result.program_bytes / spec.code_size:.1f}%)  "
+          f"iram {result.iram_bytes}/{spec.iram_size} B")
     print(f"Sketch uses {result.program_bytes} bytes of program storage space.")
     return 0
 
@@ -131,34 +134,38 @@ def cmd_flash(image: Path, board: str, programmer: str = "") -> int:
     try:
         spec = boards_mod.get_board(board)
     except KeyError as exc:
-        print(f"niusburner: {exc}", file=sys.stderr)
+        error(str(exc), title="unknown board")
         return 1
     wanted = (programmer or spec.programmer).strip() or spec.programmer
     if wanted != spec.programmer:
         error(
             f"Tools > Programmer is set to {wanted}, but {spec.id} is "
-            f"programmed with {spec.programmer}. Pick that entry, or a board "
-            "that uses the programmer you have.")
+            f"programmed with {spec.programmer}",
+            title="programmer does not match the board",
+            hints=(f"select Tools > Programmer > {spec.programmer}",
+                   "or select a board that uses the programmer you have"))
         return 1
     if not spec.flashable:
         error(
-            f"the sketch compiled, but this board cannot be flashed from the "
-            f"Upload button yet: {spec.id} is programmed with "
-            f"{spec.programmer} ({spec.status}). See docs/families/8051.md.")
+            f"{spec.id} is programmed with {spec.programmer} "
+            f"({spec.status}), which the Upload button does not drive yet",
+            title="this board compiles but cannot be flashed here",
+            hints=("the sketch itself compiled cleanly",
+                   "see docs/families/8051.md for the route this part needs"))
         return 1
     if not image.is_file():
-        error(f"image not found: {image}. Did Verify succeed?")
+        error(f"image not found: {image}",
+              title="nothing to upload", hints=("did Verify succeed?",))
         return 1
     try:
-        rc = flash.probe(target=spec.part, confirm=spec.part)
-        if rc != 0:
-            return rc
+        # `burn` enters ISP and checks the signature itself, so a separate
+        # probe here would only be a second round trip.
         return flash.burn(
             target=spec.part, image=image, confirm=spec.part,
             state_policy="replace",
         )
     except (OSError, ValueError) as exc:
-        error(str(exc))
+        error(str(exc), title="upload failed")
         return 1
 
 
@@ -166,8 +173,8 @@ def cmd_hex(build_path: Path, project_name: str) -> int:
     src = build_path / "firmware.ihx"
     dest = build_path / f"{project_name}.hex"
     if not src.is_file():
-        print(f"niusburner: no firmware.ihx in {build_path} (Verify failed?)",
-              file=sys.stderr)
+        error(f"no firmware.ihx in {build_path}",
+              title="nothing to package", hints=("did Verify succeed?",))
         return 1
     shutil.copy2(src, dest)
     return 0
@@ -198,8 +205,10 @@ def cmd_preproc(source: Path, dest: Path) -> int:
 
 def arduino_main(argv: list[str]) -> int:
     if not argv:
-        print("niusburner Arduino host: compile|preproc|dummy-o|dummy-ar|hex|size|flash",
-              file=sys.stderr)
+        error("no recipe named",
+              title="Arduino host called with no arguments",
+              hints=("commands: compile, preproc, dummy-o, dummy-ar, hex, "
+                     "size, flash",))
         return 2
     cmd = argv[0]
     rest = argv[1:]
@@ -227,7 +236,9 @@ def arduino_main(argv: list[str]) -> int:
                 Path(rest[0]), rest[1],
                 programmer=rest[2] if len(rest) > 2 else "")
     except (IndexError, ValueError) as exc:
-        print(f"niusburner: bad Arduino recipe arguments: {exc}", file=sys.stderr)
+        error(str(exc), title="bad Arduino recipe arguments",
+              hints=("re-run `python -m niusburner setup` to refresh the "
+                     "board package",))
         return 2
-    print(f"niusburner: unknown Arduino host command {cmd!r}", file=sys.stderr)
+    error(f"unknown Arduino host command {cmd!r}", title="bad recipe")
     return 2

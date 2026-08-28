@@ -64,7 +64,10 @@ def test_wrong_programmer_is_reported_before_anything_is_erased(tmp_path, capsys
     image.write_text(":00000001FF\n", encoding="ascii")
     rc = ide.cmd_flash(image, "at89s52", programmer="usbasp")
     assert rc == 1
-    assert "usbasp" in capsys.readouterr().err
+    # stdout, not stderr: the IDE panel renders stderr red and can double it.
+    captured = capsys.readouterr()
+    assert "usbasp" in captured.out
+    assert captured.err == ""
 
 
 # ------------------------------------------------------- compiler location --
@@ -111,16 +114,19 @@ def test_progress_prints_whole_steps_when_the_stream_is_not_a_terminal():
     from niusburner.progress import Progress
 
     out = io.StringIO()
-    bar = Progress("write", 1000, stream=out)
+    bar = Progress("Programming", 1000, stream=out)
     for _ in range(1000):
         bar.step()
     bar.done()
     text = out.getvalue()
+    lines = text.splitlines()
     assert "\r" not in text
-    # One line per 5% plus the start and the summary, not one per byte.
-    assert len(text.splitlines()) <= 25
-    assert "100.0%" in text
-    assert "done" in text
+    # One line per 10% plus the start and the summary, not one per byte.
+    assert len(lines) <= 14
+    assert "100%" in text
+    # Every line is the house bar: two spaces, NIUS, the comet, a percent.
+    assert all(line.startswith("  NIUS  ") for line in lines)
+    assert all("%" in line for line in lines)
 
 
 def test_progress_reports_an_eta_once_it_has_something_to_go_on():
@@ -143,5 +149,64 @@ def test_progress_failure_is_visible_and_closes_the_phase():
         with Progress("write", 10, stream=out):
             raise RuntimeError("target went away")
     text = out.getvalue()
-    assert "failed" in text
+    assert "FAILED" in text
     assert "target went away" in text
+
+
+# ------------------------------------------------------------ house style --
+
+def test_banner_is_bracketed_by_the_only_star_rules():
+    """The *** rules belong to the banner alone; a failure block uses dashes."""
+    from niusburner import progress
+
+    out = io.StringIO()
+    progress.banner("8051 Flash Console - Target: at89s52", stream=out)
+    lines = out.getvalue().splitlines()
+    assert lines[0] == progress.BANNER_RULE
+    assert lines[-3] == progress.BANNER_RULE
+    assert lines[-2].strip() == "8051 Flash Console - Target: at89s52"
+    assert all(line.startswith("*") for line in (lines[0], lines[-3]))
+
+
+def test_the_bar_is_a_comet_on_a_dotted_track_without_brackets():
+    from niusburner.progress import _bar
+
+    assert _bar(0) == "." * 22
+    assert _bar(100) == "=" * 22
+    middle = _bar(50)
+    assert middle.endswith(".")
+    assert ">" in middle
+    assert len(middle) == 22
+    # Upstream's bar carries no bracket decorations at all.
+    assert "[" not in middle and "]" not in middle
+
+
+def test_everything_the_ide_reads_goes_to_stdout(capsys):
+    """Arduino IDE 2 renders stderr red and can print it twice."""
+    from niusburner import progress
+
+    progress.banner("test", stream=None)
+    progress.stage(50, "Programming", "1/2 B")
+    progress.info("a line the operator sees")
+    progress.error("something went wrong", title="failed",
+                   hints=("try this",), details=("trace line",))
+    progress.complete("Upload complete", "Soft reset        : done")
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert "NIUS" in captured.out
+    assert "[nius][fail]" in captured.out
+    assert " reason: something went wrong" in captured.out
+    assert "  - try this" in captured.out
+    assert "  > trace line" in captured.out
+
+
+def test_internal_detail_lines_are_quiet_unless_asked_for(capsys, monkeypatch):
+    from niusburner import progress
+
+    monkeypatch.delenv("NIUSBURNER_VERBOSE", raising=False)
+    progress.note("port resolution detail")
+    assert capsys.readouterr().out == ""
+
+    monkeypatch.setenv("NIUSBURNER_VERBOSE", "1")
+    progress.note("port resolution detail")
+    assert "[nius] port resolution detail" in capsys.readouterr().out
