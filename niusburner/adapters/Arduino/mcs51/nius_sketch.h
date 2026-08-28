@@ -12,6 +12,51 @@
 #ifndef NIUS_SKETCH_H
 #define NIUS_SKETCH_H
 
+/*
+ * The Arduino spellings a sketch expects to already exist. Each is exactly
+ * the AVR core's definition, because a different one is a silent behaviour
+ * change: `_BV` shifts an int there, so it shifts an int here too.
+ */
+#include <string.h>              /* memcpy, memset, strlen, strcmp */
+#include <stdio.h>               /* sprintf, if a sketch wants it */
+
+typedef unsigned char byte;
+typedef unsigned int  word;
+
+#ifndef NULL
+#define NULL ((void *)0)
+#endif
+#define nullptr NULL
+
+#define _BV(b) (1 << (b))
+
+/*
+ * P1.0 by convention: it is where 8051 development boards put their first
+ * LED. Override it for a board that does not, and note that this is a
+ * convention rather than something the silicon defines.
+ */
+#ifndef LED_BUILTIN
+#define LED_BUILTIN 0
+#endif
+
+/*
+ * The maths constants. Defined so a sketch that only names them compiles;
+ * actually doing float arithmetic with them still costs the soft-float
+ * library, which is why the float maths functions stay refused.
+ */
+#define PI         3.1415926535897932384626433832795
+#define HALF_PI    1.5707963267948966192313216916398
+#define TWO_PI     6.283185307179586476925286766559
+#define DEG_TO_RAD 0.017453292519943295769236907684886
+#define RAD_TO_DEG 57.295779513082320876798154814105
+#define EULER      2.718281828459045235360287471352
+
+/* C11 spelling of a compile-time check; SDCC accepts the underscore form
+   even under --std-c99. */
+#ifndef static_assert
+#define static_assert _Static_assert
+#endif
+
 #define LOW  0
 #define HIGH 1
 #define INPUT        0

@@ -35,4 +35,25 @@ void nius_serial_println(void);
 void nius_serial_print_int(int value, unsigned char base);
 void nius_serial_println_int(int value, unsigned char base);
 
+/*
+ * Printing a number, without throwing away the top of it.
+ *
+ * Everything used to be forced through `(int)`, which is 16 bits and
+ * signed here: Serial.println(millis()) went negative after 32.7 seconds
+ * and wrapped to zero after 65.5, and println(70000) printed 4464. No
+ * warning in either case, because the cast was in the generated code.
+ *
+ * C has no overloading, so the type is resolved with _Generic at compile
+ * time. Only `unsigned long` needs its own entry; every narrower type
+ * converts to `long` without losing a value.
+ */
+void nius_serial_print_long(long value, unsigned char base);
+void nius_serial_println_long(long value, unsigned char base);
+void nius_serial_print_ulong(unsigned long value, unsigned char base);
+void nius_serial_println_ulong(unsigned long value, unsigned char base);
+
+#define nius_serial_print_num(v, base) _Generic((v),     unsigned long: nius_serial_print_ulong,     default: nius_serial_print_long)((v), (base))
+
+#define nius_serial_println_num(v, base) _Generic((v),     unsigned long: nius_serial_println_ulong,     default: nius_serial_println_long)((v), (base))
+
 #endif /* NIUS_SERIAL_H */

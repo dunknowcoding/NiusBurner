@@ -326,3 +326,74 @@ def test_progmem_inside_assembly_is_left_alone():
     src = ("void setup(){ __asm\n  ; PROGMEM is a word in this comment\n"
            "  nop\n__endasm; }\nvoid loop(){}\n")
     assert "; PROGMEM is a word in this comment" in lower(src)
+
+
+# ------------------------------------------------------- widths and casts --
+
+def test_printing_a_number_keeps_its_width_and_sign():
+    """Every print used to be forced through a 16-bit signed int.
+
+    Serial.println(millis()) went negative after 32.7 s and wrapped at 65.5;
+    println(70000) printed 4464. The generated call carries no cast now, and
+    _Generic in nius_serial.h picks the right routine.
+    """
+    out = lower("void setup(){ Serial.begin(9600); }\n"
+                "void loop(){ Serial.println(millis()); }\n")
+    assert "nius_serial_println_num((millis()), 10)" in out
+    assert "(int)" not in out
+
+
+def test_a_character_literal_still_prints_as_a_character():
+    out = lower("void setup(){ Serial.begin(9600); }\n"
+                "void loop(){ Serial.print('A'); }\n")
+    assert "nius_serial_write((unsigned char)('A'))" in out
+
+
+def test_generic_dispatch_covers_unsigned_long_separately():
+    header = (cxxlower.Path(__file__).resolve().parents[1] / "niusburner" /
+              "adapters" / "Arduino" / "mcs51" / "nius_serial.h")
+    text = header.read_text(encoding="utf-8")
+    assert "_Generic" in text
+    # Only unsigned long needs its own arm; everything narrower converts to
+    # long without losing a value.
+    assert "unsigned long: nius_serial_print_ulong" in text
+    assert "default: nius_serial_print_long" in text
+
+
+# ------------------------------------------------ Arduino spellings exist --
+
+@pytest.mark.parametrize("snippet", [
+    "byte b = 5; (void)b;",
+    "word w = 5; (void)w;",
+    "char *p = nullptr; (void)p;",
+    "unsigned char m = _BV(3); (void)m;",
+    "pinMode(LED_BUILTIN, OUTPUT);",
+    "unsigned char t[4]; memset(t, 0, 4);",
+    "static_assert(1, \"ok\");",
+])
+def test_common_arduino_spellings_are_not_refused(snippet):
+    lower(f"void setup(){{ Serial.begin(9600); }}\nvoid loop(){{ {snippet} }}\n")
+
+
+@pytest.mark.parametrize("snippet, needle", [
+    ("pinMode(A0, INPUT);", "analog input"),
+    ("int a[3]; for (int v : a) { (void)v; }", "real C++"),
+])
+def test_spellings_that_cannot_work_here_are_refused(snippet, needle):
+    with pytest.raises(CxxLowerError) as exc:
+        lower(f"void setup(){{}}\nvoid loop(){{ {snippet} }}\n")
+    assert needle in str(exc.value)
+
+
+def test_a_default_argument_is_refused_before_the_linker_sees_it():
+    src = ("void f(int a, int b = 2) { (void)a; (void)b; }\n"
+           "void setup(){}\nvoid loop(){ f(1); }\n")
+    with pytest.raises(CxxLowerError):
+        lower(src)
+
+
+def test_a_three_part_for_loop_is_not_mistaken_for_a_range_for():
+    """A ternary in the init clause has a colon too."""
+    out = lower("void setup(){}\n"
+                "void loop(){ int i; for (i = 0 ? 1 : 2; i < 3; i++) { } }\n")
+    assert "for (i = 0 ? 1 : 2; i < 3; i++)" in out

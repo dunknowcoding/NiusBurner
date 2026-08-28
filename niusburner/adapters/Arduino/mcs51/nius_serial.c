@@ -127,20 +127,16 @@ void nius_serial_println_s(const char *s)
     nius_serial_println();
 }
 
-void nius_serial_print_int(int value, unsigned char base)
+/*
+ * One digit generator for every width and sign. The 16-bit entry point is
+ * kept because it is the cheap common case and because the bench monitor
+ * calls it, but the digits themselves are produced once, here.
+ */
+static void put_digits(unsigned long u, unsigned char base)
 {
-    char buf[18];
+    char buf[34];
     unsigned char n = 0;
-    unsigned int u;
 
-    if (base < 2)
-        base = 10;
-    if (value < 0 && base == 10) {
-        nius_serial_write('-');
-        u = (unsigned int)(-value);
-    } else {
-        u = (unsigned int)value;
-    }
     if (u == 0) {
         nius_serial_write('0');
         return;
@@ -154,8 +150,46 @@ void nius_serial_print_int(int value, unsigned char base)
         nius_serial_write((unsigned char)buf[--n]);
 }
 
+void nius_serial_print_ulong(unsigned long value, unsigned char base)
+{
+    if (base < 2)
+        base = 10;
+    put_digits(value, base);
+}
+
+void nius_serial_print_long(long value, unsigned char base)
+{
+    if (base < 2)
+        base = 10;
+    /* Only base 10 carries a sign, the same as Arduino: print(-1, HEX)
+       shows the two's-complement pattern, not "-1". */
+    if (value < 0 && base == 10) {
+        nius_serial_write('-');
+        put_digits((unsigned long)(-value), base);
+        return;
+    }
+    put_digits((unsigned long)value, base);
+}
+
+void nius_serial_print_int(int value, unsigned char base)
+{
+    nius_serial_print_long((long)value, base);
+}
+
 void nius_serial_println_int(int value, unsigned char base)
 {
-    nius_serial_print_int(value, base);
+    nius_serial_print_long((long)value, base);
+    nius_serial_println();
+}
+
+void nius_serial_println_long(long value, unsigned char base)
+{
+    nius_serial_print_long(value, base);
+    nius_serial_println();
+}
+
+void nius_serial_println_ulong(unsigned long value, unsigned char base)
+{
+    nius_serial_print_ulong(value, base);
     nius_serial_println();
 }

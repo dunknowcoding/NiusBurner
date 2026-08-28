@@ -63,6 +63,10 @@ lcd.print(buffer[i++]);   // refused: i++ would be evaluated twice
 | `map` / `constrain` / `min` / `max` / `abs` / `bitRead` / `bitSet` / … | the same macros and functions | `min`/`max`/`abs` stay macros, so they double-evaluate exactly as they do on AVR |
 | `shiftOut` / `shiftIn` / `random` / `randomSeed` | C equivalents | linked only if called |
 | `true` / `false` / `bool` / `uint8_t` / … | `1` / `0` / `unsigned char` / … | |
+| `byte` / `word` / `nullptr` / `NULL` / `_BV()` / `LED_BUILTIN` / `PI` … | the AVR core's own definitions | `LED_BUILTIN` is P1.0 by convention; override it |
+| `memcpy` / `memset` / `strlen` / `sprintf` … | themselves | `<string.h>` and `<stdio.h>` are already included |
+| `interrupts()` / `noInterrupts()` | `EA = 1` / `EA = 0` | the zero-argument form only |
+| `Serial.print(x)` of any width | the right routine for x's type | see *Widths* below |
 | `struct Point { … }; Point p;` | the same, plus `typedef struct Point Point;` | C needs the tag or a typedef; the layout is untouched |
 | NiusDisplay `NiusSegment` / `NiusCharLCD` / `NiusMatrix` | the library's portable C core | see *Libraries* |
 
@@ -154,6 +158,15 @@ Three consequences worth knowing:
   `while (millis() - start < 500) { }` never finishes. Use `delay()`.
 - **Interrupts stretch delays.** The loop counts iterations, not time. Any
   interrupt handler you install is added to every delay.
+- **`delay()` is within 0.03 %.** Measured on an AT89S52 at 11.0592 MHz,
+  `delay(1000)` is 999.7 ms. Spins per millisecond is fractional -- 53.72 --
+  and spending only its whole part cost 0.28 % on every millisecond, always
+  in the same direction; the remainder is carried and spent as one extra
+  spin whenever it adds up to one. The per-iteration overhead is carried in
+  1/256ths of a machine cycle for the same reason: as a whole number it
+  could only be tuned in steps of 0.11 %, coarser than the error being
+  corrected. `_work/debugger_8051/verify/calibrate.py` fits both constants
+  on silicon.
 - **`delayMicroseconds()` has about 190 µs of fixed cost.** One machine
   cycle is 1.085 µs at 11.0592 MHz, and the call itself has to scale its
   argument. Measured on an AT89S52, 1000 calls per sample:
@@ -171,10 +184,78 @@ Three consequences worth knowing:
   inline assembly, which the translator passes through untouched.
   `examples/at89s52_registers` counts out twelve cycles that way.
 
-The bit-banged buses are unaffected: I2C and SPI specify minimum times, not
-exact ones, and both masters err slow. `Wire.setClock()` and
-`SPI.setClockDivider()` are honoured as *ratios* — the absolute rate does not
-match an AVR at the same setting, and cannot.
+### The bit-banged buses
+
+I2C and SPI specify minimum times, not exact ones, and both masters err
+slow, so a slow bus is a correct bus. How slow is worth knowing, and it was
+measured rather than assumed --
+`_work/debugger_8051/verify/busrate.py` differences two batch sizes on the
+target so the loop and UART overhead cancel:
+
+| setting | measured | vs the fastest setting |
+|---|---|---|
+| `setClock(400000)` / `setClock(100000)` | 1284 µs per transaction | — |
+| `setClock(50000)` | 1571 µs | +287 µs |
+| `setClock(25000)` | 2144 µs | +860 µs |
+| `setClock(10000)` | 3289 µs | +2005 µs |
+
+A transaction there is START, nine bits of address and ACK slot, then STOP.
+The steps are exactly linear in the setting (287 µs, 3×, 7×), and the two
+fastest requests land in the same band because both ask for more than the
+part can do.
+
+| `setClockDivider` | measured per bit | vs DIV2 |
+|---|---|---|
+| `SPI_CLOCK_DIV2` | 231 µs | — |
+| `SPI_CLOCK_DIV4` | 257 µs | +26 µs |
+| `SPI_CLOCK_DIV8` | 309 µs | +78 µs |
+| `SPI_CLOCK_DIV16` | 414 µs | +182 µs |
+| `SPI_CLOCK_DIV64` | 1039 µs | +807 µs |
+
+Two things follow. The *ratios* between settings hold and the steps are
+exact, so a device that needs a slower bus gets one. But the floor is set by
+the C bit loop, not by the requested rate: about 131 machine cycles per I2C
+bit and 213 per SPI bit, of which the deliberate delay is 15. So the fastest
+SCL available is roughly 7 kHz and the fastest SCK roughly 4 kHz, whatever
+the sketch asks for. Both are far below what the same call gives on an AVR,
+and a sketch with a timeout that assumes 100 kHz will notice.
+
+The half-bit delay itself is exact. It is assembly, not a C loop, and it
+costs `15 + 8 × step` machine cycles by construction:
+
+```
+push ar7   2      mov r7,_g_extra  2      loop: nop ×6  6
+mov  a,r7  1      jz   done        2            djnz    2      pop ar7  2
+```
+
+It was a C `while (n--)` around a nop block, whose own cost was whatever
+SDCC emitted that day. An earlier attempt to keep the counter in a register
+assumed the local landed in DPL; it was actually in r7, which would have
+looped an arbitrary number of times. The register is saved and the counter
+is read straight from the global now, because SDCC's allocation is not part
+of the contract.
+
+## Widths
+
+C has no overloading, so a number reaching `Serial.print` used to be cast to
+`int` — 16 bits, signed — whatever it actually was. That silently destroyed
+values: `Serial.println(millis())` went negative after 32.7 seconds and
+wrapped to zero after 65.5, and `Serial.println(70000)` printed 4464.
+
+The generated call carries no cast now. `nius_serial.h` resolves the type
+with `_Generic`, which SDCC supports: `unsigned long` gets its own routine
+and everything narrower converts to `long` without losing a value. Verified
+on silicon — `4000000000`, `EE6B2800`, `-70000`, `65000`, `200` and `70000`
+all print correctly, and `'A'` still prints as a character rather than 65.
+
+Floating point has no printer at all, deliberately. A float reaching
+`Serial.print` would otherwise be converted to an integer and quietly lose
+its fraction.
+
+The casts the library facades apply are each the Arduino signature for that
+call — `Wire.write(uint8_t)`, `SPI.transfer(uint8_t)` — so a value too wide
+for the call truncates exactly where it truncates on an AVR, and nowhere
+else.
 
 ## Libraries
 

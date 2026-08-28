@@ -33,19 +33,56 @@ static unsigned char g_cpol;
 static unsigned char g_cpha;
 static unsigned char g_extra;                 /* spins added per half clock */
 
+/*
+ * An exact number of machine cycles, and nothing else.
+ *
+ * This used to be `while (n--) { __asm nop... __endasm; }`: a hand-counted
+ * body inside a loop whose own cost was whatever SDCC emitted that day. A
+ * bit-banged bus is a timing contract, so the delay is assembly and the
+ * count is arithmetic.
+ *
+ * The counter is read straight from the global and the register it uses is
+ * saved, because SDCC's allocation is not part of the contract -- an
+ * earlier attempt here assumed the local landed in DPL and it was actually
+ * in r7, which would have looped an arbitrary number of times.
+ *
+ *   push ar7          2      mov r7,_g_extra   2
+ *   mov  a,r7         1      jz  done          2
+ *   loop: nop x6      6      djnz r7,loop      2
+ *   pop  ar7          2
+ *
+ * so the delay is 15 + 8 * g_extra machine cycles, plus the call and
+ * return the compiler adds. One machine cycle is 12 oscillator periods:
+ * 1.085 us at 11.0592 MHz.
+ */
+#define NIUS_SPI_HALF_BASE_MC 15U
+#define NIUS_SPI_HALF_STEP_MC 8U
+
 static void half(void)
 {
 #ifdef __SDCC
-    unsigned char n = g_extra;
-
-    while (n--) {
-        __asm
-            nop
-            nop
-            nop
-            nop
-        __endasm;
-    }
+    __asm
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        push    ar7
+        mov     r7,_g_extra
+        mov     a,r7
+        jz      00062$
+    00061$:
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        djnz    r7,00061$
+    00062$:
+        pop     ar7
+    __endasm;
 #endif
 }
 

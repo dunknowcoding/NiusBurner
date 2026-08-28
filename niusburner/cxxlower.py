@@ -54,6 +54,22 @@ _HARD = (
         r"boolean|u?int(?:8|16|32|64)_t|size_t)\s*&\s*\w"
     ),
     re.compile(r"::"),
+    # Range-based for. SDCC reports this as a bare syntax error on the
+    # colon, which says nothing about why.
+    re.compile(
+        r"\bfor\s*\(\s*(?:const\s+)?"
+        r"(?:void|char|short|int|long|unsigned|signed|float|double|bool|"
+        r"boolean|byte|word|auto|u?int(?:8|16|32|64)_t)\b[\w\s*&]*\s+"
+        r"\w+\s*:"
+    ),
+    # A default argument in a declaration. Without it SDCC compiles the
+    # call and the linker complains about `_f_PARM_2`, which is nobody's
+    # idea of a useful message.
+    re.compile(
+        r"\b(?:void|char|short|int|long|unsigned|signed|float|double|bool|"
+        r"boolean|byte|word|u?int(?:8|16|32|64)_t)\s+\w+\s*\("
+        r"[^;{)]*\w\s*=\s*[^;{)]*\)\s*[;{]"
+    ),
 )
 
 #: Arduino headers whose facade needs a peripheral. If the board can drive it,
@@ -172,6 +188,13 @@ for _name in _FLOAT_MATH:
 #: heard of. Left alone they reach the compiler as an undefined identifier
 #: pointing at the declaration, which says nothing about what to do instead.
 _IDENT_REFUSED = {
+    # A0..A7 name the analog inputs. On a part with no converter they are
+    # not pin numbers that happen to be missing, they are nothing at all.
+    **{f"A{i}": (
+        f"A{i} names an analog input, and this part has no converter to "
+        "read one. Digital pins are plain numbers: 0-7 are P1.0-P1.7 and "
+        "8-15 are P2.0-P2.7."
+    ) for i in range(8)},
     "PROGMEM": (
         "PROGMEM is the AVR attribute for putting a table in flash. The 8051 "
         "has a storage class for it: `const __code unsigned char t[] = {...};`"
@@ -489,8 +512,10 @@ def _serial_call(method: str, args: list[str]) -> str:
                 "Serial.print(float) is not lowered (SDCC float runtime is huge)",
             )
         if len(args) == 2:
-            fn = "nius_serial_println_int" if nl else "nius_serial_print_int"
-            return f"{fn}((int)({args[0]}), {args[1]})"
+            fn = "nius_serial_println_num" if nl else "nius_serial_print_num"
+            # No cast: the width and signedness of the expression are the
+            # caller's, and _Generic in nius_serial.h keeps them.
+            return f"{fn}(({args[0]}), {args[1]})"
         if len(args) != 1:
             raise CxxLowerError(method, f"Serial.{method} takes 0, 1 or 2 arguments")
         arg = args[0]
@@ -500,8 +525,8 @@ def _serial_call(method: str, args: list[str]) -> str:
         if arg.strip().startswith("'"):
             call = f"nius_serial_write((unsigned char)({arg}))"
             return f"({call}, nius_serial_println())" if nl else call
-        fn = "nius_serial_println_int" if nl else "nius_serial_print_int"
-        return f"{fn}((int)({arg}), 10)"
+        fn = "nius_serial_println_num" if nl else "nius_serial_print_num"
+        return f"{fn}(({arg}), 10)"
     raise CxxLowerError(
         method,
         f"Serial.{method}() is not in the BASIC UART subset "
