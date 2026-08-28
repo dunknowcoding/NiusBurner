@@ -131,12 +131,17 @@ def plan_compile(
     if library is not None:
         mount_list.append(library)
 
-    if sketch_mod.cxx_reason(sk.text):
-        try:
+    try:
+        if sketch_mod.cxx_reason(sk.text):
             sk = cxxlower.lower_sketch(
                 sk, mounts=mount_list or None, board=board)
-        except cxxlower.CxxLowerError as exc:
-            raise sketch_mod.cxx_error(sk, exc.hit, exc.detail) from exc
+        else:
+            # Not C++, but still an Arduino sketch: the board checks and the
+            # API rewrites apply either way.
+            sk = cxxlower.check_sketch(sk, board=board)
+    except cxxlower.CxxLowerError as exc:
+        raise sketch_mod.cxx_error(
+            sk, exc.hit, exc.detail, kind=exc.kind) from exc
 
     extra_defines = tuple(defines or ())
     ram = board.xram_size if xram_size is None else xram_size

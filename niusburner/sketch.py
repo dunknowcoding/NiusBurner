@@ -83,8 +83,22 @@ def cxx_reason(text: str) -> str | None:
     return None
 
 
-def cxx_error(sketch: Sketch, hit: str, detail: str | None = None) -> ValueError:
+def cxx_error(sketch: Sketch, hit: str, detail: str | None = None,
+              kind: str = "cxx") -> ValueError:
     extra = f" {detail}" if detail else ""
+    if kind == "board":
+        # Not a language problem: the part is missing the peripheral. Saying
+        # "uses C++" here sends people to rewrite code that is already fine.
+        return ValueError(
+            f"{sketch.path.name} cannot run on this part ({hit!r}).{extra}"
+        )
+    if kind == "api":
+        # An Arduino API this runtime does not carry. Also not C++, and the
+        # detail already names the 8051 spelling to use instead.
+        return ValueError(
+            f"{sketch.path.name} uses an Arduino API this runtime does not "
+            f"provide ({hit!r}).{extra}"
+        )
     return ValueError(
         f"{sketch.path.name} uses C++ that SDCC cannot compile ({hit!r}).{extra}\n"
         "SDCC has no C++ compiler. `python -m niusburner lower` rewrites a BASIC "

@@ -46,6 +46,15 @@
 #define NIUS_MC_PER_MS    (NIUS_FOSC / 12000UL)
 #define NIUS_SPINS_PER_MS ((NIUS_MC_PER_MS - NIUS_DELAY_MC) / NIUS_SPIN_MC)
 
+/* Spins per microsecond, Q16 fixed point, so delayMicroseconds() needs no
+   division at run time. 65536 keeps the rounding error under 0.01 %. */
+#define NIUS_SPINS_PER_US_Q16     (((NIUS_MC_PER_MS) * 65536UL) / (1000UL * NIUS_SPIN_MC))
+
+/* The cast in delayMicroseconds() is only safe while this holds. */
+#if NIUS_SPINS_PER_US_Q16 > 0xFFFFUL
+#error "NIUS_FOSC too high for the Q16 delayMicroseconds scale"
+#endif
+
 static unsigned char g_p1 = 0xFF;
 static unsigned char g_p2 = 0xFF;
 static unsigned long g_ms;
@@ -101,20 +110,24 @@ void delayMicroseconds(unsigned int us)
 {
     /*
      * One machine cycle is already about 1.085 us at 11.0592 MHz, so a
-     * single microsecond is below what a C loop can resolve. Calls under
-     * roughly 50 us are dominated by the arithmetic below and round up.
+     * single microsecond is below what a C loop can resolve.
+     *
+     * The scale factor is folded by the preprocessor. It used to be a
+     * 32-bit divide done here, at run time, and this core has no divide
+     * instruction: SDCC calls a routine costing about a thousand machine
+     * cycles, over a millisecond. Measured on silicon, that made
+     * delayMicroseconds(50) take 1206 us and delayMicroseconds(250) take
+     * 1488 us -- 24x and 6x their arguments. Q16 turns it into one 16x16
+     * multiply and a byte select.
      */
-    /* Scaled through NIUS_MC_PER_MS, not NIUS_SPINS_PER_MS: the per-
-       millisecond overhead is not paid here, and us * Fosc would overflow. */
-    unsigned long spins =
-        ((unsigned long)us * NIUS_MC_PER_MS) / (1000UL * NIUS_SPIN_MC);
+    /* us is 16 bit, so the product shifted back down can never exceed the
+       Q16 constant itself -- the old paging loop over 0xFFFF was dead code
+       whose 32-bit comparison ran on every call. */
+    unsigned int spins =
+        (unsigned int)(((unsigned long)us * NIUS_SPINS_PER_US_Q16) >> 16);
 
-    while (spins > 0xFFFFUL) {
-        nius_spin(0xFFFF);
-        spins -= 0xFFFFUL;
-    }
     if (spins)
-        nius_spin((unsigned int)spins);
+        nius_spin(spins);
 }
 
 void delay(unsigned int ms)

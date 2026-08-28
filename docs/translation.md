@@ -12,6 +12,17 @@ it:
 > Anything that would change *when* code runs, *how many times* it runs, or
 > *what it computes*, is refused rather than approximated.
 
+A refusal says which of three things is wrong, because the fix differs:
+
+| Message | Meaning |
+|---|---|
+| *uses C++ that SDCC cannot compile* | the language; rewrite it in C |
+| *cannot run on this part* | the peripheral is missing; change board or wiring |
+| *uses an Arduino API this runtime does not provide* | the call, with the 8051 spelling to use instead |
+
+These checks run on **every** sketch, including one written in plain C with
+no C++ in it anywhere. A missing peripheral is missing either way.
+
 An approximation that compiles and then misbehaves on hardware is worse than
 a refusal that names the problem.
 
@@ -95,10 +106,34 @@ case, so it is refused.
 
 ### Things with no timebase
 
-`micros()` and `pulseIn()` need a free-running microsecond counter. No timer
-is started by the runtime, so both are refused instead of returning a number
-that never advances. `attachInterrupt()` is refused with the SDCC spelling in
-the message: `void on_int0(void) __interrupt(0) { … }`.
+`micros()`, `pulseIn()` and `pulseInLong()` need a free-running microsecond
+counter. No timer is started by the runtime, so all three are refused instead
+of returning a number that never advances. `attachInterrupt()` is refused
+with the SDCC spelling in the message: `void on_int0(void) __interrupt(0)
+{ … }`.
+
+`interrupts()` and `noInterrupts()` are **not** refused — on an 8051 they are
+exactly the global enable bit, so they lower to `EA = 1` and `EA = 0`. Only
+the zero-argument Arduino spelling is rewritten, so a function of your own
+called `interrupts(n)` is left alone.
+
+### Floating point
+
+`pow`, `sqrt`, `sin`, `cos`, `floor`, `fabs` and the rest of `<math.h>` are
+refused. SDCC can compile them, but each one pulls in the soft-float library,
+which does not fit next to a sketch in 8 KB and has no fixed cost to reason
+about. Use integer arithmetic, or a lookup table declared `__code`.
+
+### AVR program-memory addressing
+
+`pgm_read_byte`, `pgm_read_word`, `pgm_read_dword`, `memcpy_P` and `strcpy_P`
+are refused. They exist because AVR needs a separate instruction to reach
+flash; the 8051 does not. Declare the table `__code` and index it:
+
+```c
+const __code unsigned char digits[] = { 0x3F, 0x06, 0x5B };
+unsigned char d = digits[i];
+```
 
 ### AVR-specific headers
 
@@ -118,9 +153,22 @@ Three consequences worth knowing:
   `while (millis() - start < 500) { }` never finishes. Use `delay()`.
 - **Interrupts stretch delays.** The loop counts iterations, not time. Any
   interrupt handler you install is added to every delay.
-- **`delayMicroseconds()` has a floor.** One machine cycle is already about
-  1.085 µs at 11.0592 MHz, so calls under roughly 50 µs are dominated by
-  their own arithmetic and round up.
+- **`delayMicroseconds()` has about 190 µs of fixed cost.** One machine
+  cycle is 1.085 µs at 11.0592 MHz, and the call itself has to scale its
+  argument. Measured on an AT89S52, 1000 calls per sample:
+
+  | asked | actual | note |
+  |---|---|---|
+  | 50 µs | 240 µs | overhead dominates |
+  | 100 µs | 292 µs | |
+  | 250 µs | 448 µs | |
+  | 1000 µs | 1195 µs | +19 % |
+
+  The slope is right — every microsecond asked for beyond the fixed cost
+  arrives — so a caller who subtracts the overhead gets what it wants. Below
+  roughly 500 µs the overhead is most of the wait, and the honest tool is
+  inline assembly, which the translator passes through untouched.
+  `examples/at89s52_registers` counts out twelve cycles that way.
 
 The bit-banged buses are unaffected: I2C and SPI specify minimum times, not
 exact ones, and both masters err slow. `Wire.setClock()` and

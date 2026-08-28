@@ -265,8 +265,13 @@ def build_mcs51(
     compiler_path = compiler or find_sdcc()
     if compiler_path is None or not compiler_path.is_file():
         raise FileNotFoundError(
-            "SDCC is not available. Install it from https://sourceforge.net/projects/sdcc/files/ "
-            "and re-run `python -m niusburner setup`, or pass --compiler"
+            "SDCC was not found. Install it from "
+            "https://sourceforge.net/projects/sdcc/files/ and re-run "
+            "`python -m niusburner setup`.\n"
+            "  Already installed somewhere else? Record it once:\n"
+            "    python -m niusburner setup --sdcc \"<path to sdcc>\"\n"
+            "  Searched: the recorded path, PATH, the usual install "
+            "directories, SDCC_HOME, then EMBD_TOOLCHAINS."
         )
     compiler_path = compiler_path.resolve(strict=True)
     version = _run([str(compiler_path), "--version"], pathlib.Path.cwd()).strip()

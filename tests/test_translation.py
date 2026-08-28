@@ -231,3 +231,85 @@ def test_a_loose_ino_does_not_absorb_its_neighbours(tmp_path):
 
     sk = sketch_mod.resolve_sketch(tmp_path / "mine.ino")
     assert "NotMine" not in sk.text
+
+
+# ----------------------------------------------- checks without any C++ ----
+
+def test_board_refusals_apply_to_a_sketch_with_no_cxx_in_it(tmp_path):
+    """The peripheral is missing whether or not the sketch spells any C++.
+
+    A plain-C .ino used to skip lowering entirely, so `analogWrite` reached
+    SDCC and came back as an undefined symbol instead of the reason.
+    """
+    folder = tmp_path / "plain"
+    folder.mkdir()
+    (folder / "plain.ino").write_text(
+        "void setup(void){ pinMode(0, OUTPUT); }\n"
+        "void loop(void){ analogWrite(0, 128); }\n", encoding="ascii")
+    with pytest.raises(ValueError) as exc:
+        workflow.plan_compile(folder, "at89s52", output=tmp_path / "out")
+    message = str(exc.value)
+    assert "pwm" in message
+    # It is not a language problem, so it must not be reported as one.
+    assert "uses C++" not in message
+
+
+def test_a_board_refusal_is_not_phrased_as_a_cxx_problem():
+    with pytest.raises(CxxLowerError) as exc:
+        lower("void setup(){}\nvoid loop(){ analogRead(0); }\n")
+    assert exc.value.kind == "board"
+
+
+def test_real_cxx_keeps_the_cxx_phrasing():
+    with pytest.raises(CxxLowerError) as exc:
+        lower("class F { public: int x; };\nvoid setup(){}\nvoid loop(){}\n")
+    assert exc.value.kind == "cxx"
+
+
+# ------------------------------------------------- the interrupt-enable ----
+
+def test_interrupts_lower_to_the_global_enable_bit():
+    out = lower("void setup(){ noInterrupts(); interrupts(); }\nvoid loop(){}\n")
+    assert "(EA = 0)" in out
+    assert "(EA = 1)" in out
+    assert "noInterrupts(" not in out
+    assert "interrupts(" not in out.replace("noInterrupts(", "")
+
+
+def test_interrupts_are_not_rewritten_inside_assembly():
+    src = (
+        "void setup(){}\n"
+        "void loop(){ __asm\n"
+        "  ; interrupts() here is a comment, not a call\n"
+        "  nop\n"
+        "__endasm; }\n"
+    )
+    out = lower(src)
+    assert "; interrupts() here is a comment, not a call" in out
+
+
+def test_a_call_with_arguments_is_left_alone():
+    """Only the zero-argument Arduino spelling is the interrupt-enable bit."""
+    out = lower("void interrupts(int n){ (void)n; }\n"
+                "void setup(){ interrupts(1); }\nvoid loop(){}\n")
+    assert "interrupts(1)" in out
+    assert "EA" not in out
+
+
+# ----------------------------------------------------- newly closed gaps ---
+
+@pytest.mark.parametrize("call, needle", [
+    ("v = pow(2, 3);", "floating point"),
+    ("v = sqrt(9);", "floating point"),
+    ("v = sin(1);", "floating point"),
+    ("v = pgm_read_byte(p);", "__code"),
+    ("memcpy_P(a, b, 2);", "__code"),
+    ("v = pulseInLong(0, 1);", "timebase"),
+])
+def test_gaps_that_used_to_reach_sdcc_are_now_refused(call, needle):
+    """Each of these passed through and failed at link time with no reason."""
+    src = (f"unsigned long v; const char *p; char a[2], b[2];\n"
+           f"void setup(){{}}\nvoid loop(){{ {call} (void)v; }}\n")
+    with pytest.raises(CxxLowerError) as exc:
+        lower(src)
+    assert needle in str(exc.value)

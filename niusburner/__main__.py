@@ -125,6 +125,11 @@ def _cmd_setup(args: argparse.Namespace) -> int:
         )
         missing_required += 1
 
+    print("\ntool paths")
+    for label, value in config.describe():
+        print(f"  {label:20}  {value}")
+    print("  record one with       python -m niusburner setup --sdcc <path>")
+
     print("\nprogrammer")
     hid_ok = True
     try:

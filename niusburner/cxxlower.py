@@ -123,7 +123,61 @@ _CALL_REFUSED = {
         "yield() is the Arduino core's cooperative hook. There is no "
         "scheduler here; the call would do nothing."
     ),
+    "pulseInLong": (
+        "pulseInLong() measures against a microsecond timebase this runtime "
+        "does not have, the same as pulseIn(). Time the pin with a timer of "
+        "your own."
+    ),
+    "pgm_read_byte": (
+        "pgm_read_byte() is the AVR way to reach a separate program-memory "
+        "address space. The 8051 reads code memory directly: declare the "
+        "table `__code` and index it, `const __code unsigned char t[] = ...` "
+        "then `t[i]`."
+    ),
+    "pgm_read_word": (
+        "pgm_read_word() is AVR-only. Declare the table `__code` and index "
+        "it directly."
+    ),
+    "pgm_read_dword": (
+        "pgm_read_dword() is AVR-only. Declare the table `__code` and index "
+        "it directly."
+    ),
+    "memcpy_P": (
+        "memcpy_P() is AVR-only. A `__code` array is readable with plain "
+        "memcpy() on this part."
+    ),
+    "strcpy_P": (
+        "strcpy_P() is AVR-only. A `__code` string is readable with plain "
+        "strcpy() on this part."
+    ),
 }
+
+#: Floating point. SDCC can compile it, but every one of these drags in the
+#: soft-float library, and 8 KB of flash does not have room for it next to a
+#: sketch. Refusing names the cost instead of letting the linker report it.
+_FLOAT_MATH = (
+    "pow", "sqrt", "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
+    "exp", "log", "log10", "sinh", "cosh", "tanh", "ceil", "floor", "fabs",
+    "fmod", "modf", "frexp", "ldexp",
+)
+for _name in _FLOAT_MATH:
+    _CALL_REFUSED.setdefault(_name, (
+        f"{_name}() is floating point. On this part every float operation "
+        "goes through SDCC's software library, which does not fit next to a "
+        "sketch in 8 KB and has no fixed cost to reason about. Use integer "
+        "arithmetic, or a lookup table declared `__code`."
+    ))
+
+#: Calls with an exact 8051 spelling. Rewritten rather than refused, because
+#: the meaning carries over unchanged.
+_CALL_EMIT = {
+    # The global interrupt enable is one bit in the SFR space. `interrupts()`
+    # and `noInterrupts()` are that bit, so they lower rather than refuse.
+    "interrupts": "(EA = 1)",
+    "noInterrupts": "(EA = 0)",
+}
+
+_EMPTY_CALL = re.compile(r"\(\s*\)")
 
 _TYPE_WORDS = (
     ("uint8_t", "unsigned char"),
@@ -139,9 +193,17 @@ _TYPE_WORDS = (
 
 
 class CxxLowerError(ValueError):
-    def __init__(self, hit: str, detail: str = "") -> None:
+    """A refusal, and what kind it is.
+
+    `kind` decides how the caller phrases it. "cxx" is C++ the translator
+    will not carry into C; "board" is a peripheral this part does not have,
+    which is not a language problem and must not be reported as one.
+    """
+
+    def __init__(self, hit: str, detail: str = "", kind: str = "cxx") -> None:
         self.hit = hit
         self.detail = detail
+        self.kind = kind
         super().__init__(detail or hit)
 
 
@@ -575,10 +637,45 @@ def _check_headers(text: str, board=None) -> None:
         lower_inc = inc.lower().replace("\\", "/")
         for refused, detail in _HEADER_REFUSED.items():
             if name == refused or lower_inc.endswith(refused):
-                raise CxxLowerError(inc, detail)
+                raise CxxLowerError(inc, detail, kind="api")
         feature = _HEADER_FEATURE.get(name)
         if feature and (board is None or not board.provides(feature)):
-            raise CxxLowerError(inc, _feature_refusal(inc, feature, board))
+            raise CxxLowerError(
+                inc, _feature_refusal(inc, feature, board), kind="board")
+
+
+def _lower_direct_calls(text: str) -> str:
+    """Rewrite the calls that have an exact 8051 spelling.
+
+    Only the zero-argument form is rewritten, and only outside strings,
+    comments and assembly -- the same walker every other pass uses, so an
+    `interrupts` mnemonic operand inside __asm is left alone.
+    """
+    out: list[str] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        jumped = _skip_non_code(text, i)
+        if jumped != i:
+            out.append(text[i:jumped])
+            i = jumped
+            continue
+        match = _IDENT.match(text, i)
+        if not match:
+            out.append(text[i])
+            i += 1
+            continue
+        name = match.group(0)
+        emit = _CALL_EMIT.get(name)
+        if emit is not None:
+            call = _EMPTY_CALL.match(text, match.end())
+            if call:
+                out.append(emit)
+                i = call.end()
+                continue
+        out.append(name)
+        i = match.end()
+    return "".join(out)
 
 
 def _check_calls(text: str, board=None) -> None:
@@ -600,11 +697,12 @@ def _check_calls(text: str, board=None) -> None:
             j += 1
         if j < n and text[j] == "(":
             if name in _CALL_REFUSED:
-                raise CxxLowerError(name, _CALL_REFUSED[name])
+                raise CxxLowerError(name, _CALL_REFUSED[name], kind="api")
             feature = _CALL_FEATURE.get(name)
             if feature:
                 raise CxxLowerError(
-                    name, _feature_refusal(f"{name}()", feature, board))
+                    name, _feature_refusal(f"{name}()", feature, board),
+                    kind="board")
         i = match.end()
 
 
@@ -708,6 +806,7 @@ def lower_with_info(
     out = _replace_words(out, (("true", "1"), ("false", "0")))
     out = _replace_words(out, _TYPE_WORDS)
     out = _lower_struct_tags(out)
+    out = _lower_direct_calls(out)
     loaded = adapters if adapters is not None else adapter_mod.load_adapters(mounts)
     try:
         out, info = adapter_mod.rewrite(
@@ -727,6 +826,28 @@ def lower_with_info(
     if not out.startswith("/* niusburner:"):
         out = BANNER + out
     return out, info
+
+
+def check_text(text: str, *, board=None) -> str:
+    """Board checks and API rewrites that apply to any Arduino sketch.
+
+    Lowering C++ is conditional on the sketch actually being C++. These are
+    not. A peripheral the part does not have is missing whether or not the
+    sketch spells anything in C++, and `interrupts()` needs the same rewrite
+    either way -- so a plain-C .ino gets the refusal with its reason instead
+    of an undefined symbol from the linker.
+    """
+    _check_headers(text, board)
+    _check_calls(text, board)
+    return _lower_direct_calls(text)
+
+
+def check_sketch(sk: Sketch, *, board=None) -> Sketch:
+    """`check_text` over a Sketch, leaving `lowered` alone when nothing moved."""
+    new_text = check_text(sk.text, board=board)
+    if new_text == sk.text:
+        return sk
+    return replace(sk, text=new_text)
 
 
 def lower_text(
@@ -815,7 +936,9 @@ def main(argv: list[str] | None = None) -> int:
         board = get_board(args.board)
         sk = resolve_sketch(args.sketch)
         if cxx_reason(sk.text) is None:
-            text = sk.text
+            # Not C++, but still an Arduino sketch: the board checks and the
+            # API rewrites apply either way.
+            text = check_text(sk.text, board=board)
         else:
             text = lower_text(sk.text, mounts=args.mount or None, board=board)
     except CxxLowerError as exc:
