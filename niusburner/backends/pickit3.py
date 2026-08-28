@@ -47,11 +47,13 @@ _INSTALL_ROOTS = (
 #: ipecmd is chatty and most of it is banner. These are the lines that say
 #: something happened, and the ones that say something went wrong.
 _PROGRESS = re.compile(
-    r"(Programming|Verifying|Erasing|Program Memory|Configuration Memory|"
-    r"EEPROM|Programming/Verify complete|Device ID Revision)", re.I)
+    r"(Target device .* found|Target voltage detected|Device Revision|"
+    r"Programming|Verif|Erasing|Program Memory|Configuration Memory|"
+    r"EEData|Program complete|Read complete|Operation Succeeded)", re.I)
 _TROUBLE = re.compile(
-    r"(fail|error|unable|not found|no device|cannot|invalid|mismatch|"
-    r"target device was not found|check your connections)", re.I)
+    r"(fail|error|unable|no device|cannot|invalid|mismatch|"
+    r"target device was not found|check your connections|"
+    r"target device .* not found|Operation Aborted)", re.I)
 
 
 def supports_pk3(ipecmd: pathlib.Path) -> bool:
@@ -162,16 +164,59 @@ def _trouble(output: str) -> tuple[str, ...]:
     return tuple(unique[:6])
 
 
+def _bundled_jre(ipecmd: pathlib.Path) -> pathlib.Path | None:
+    """The JRE MPLAB X ships with itself, if this install has one.
+
+    ipecmd.exe is a launcher that finds a JRE through the registry, and on
+    a machine whose only Java is a modern JDK it simply reports "Unable to
+    locate JRE" and stops. The jar beside it runs fine on the 1.8 the
+    installer put in sys/java, so that is what is used when it is there.
+    """
+    try:
+        root = ipecmd.resolve().parents[2]      # <install>/mplab_platform/..
+    except IndexError:
+        return None
+    java = root / "sys" / "java"
+    if not java.is_dir():
+        return None
+    for child in sorted(java.iterdir(), reverse=True):
+        for name in ("java.exe", "java"):
+            candidate = child / "bin" / name
+            if candidate.is_file():
+                return candidate
+    return None
+
+
+def invocation(ipecmd: pathlib.Path) -> tuple[list[str], pathlib.Path]:
+    """How to run this ipecmd, and from where.
+
+    The jar has to run with the mplab_ipe directory as its working
+    directory or it cannot find its own configuration, and the locale is
+    pinned because the output is parsed: a localised install otherwise
+    reports success and failure in a language these patterns do not match.
+    """
+    home = ipecmd.resolve().parent
+    jar = home / "ipecmd.jar"
+    java = _bundled_jre(ipecmd)
+    if java is not None and jar.is_file():
+        return ([str(java), "-Duser.language=en", "-Duser.country=US",
+                 "-jar", str(jar)], home)
+    return ([str(ipecmd)], home)
+
+
 def _run(tool: pathlib.Path, args: list[str],
          cwd: pathlib.Path) -> tuple[int, str]:
+    prefix, home = invocation(tool)
     try:
-        done = subprocess.run([str(tool), *args], cwd=cwd,
-                              capture_output=True, text=True, timeout=300)
+        done = subprocess.run(prefix + args, cwd=str(home),
+                              capture_output=True, timeout=300)
     except FileNotFoundError:
         return 1, f"could not run {tool}"
     except subprocess.TimeoutExpired:
         return 1, "ipecmd did not finish within 300 s"
-    return done.returncode, (done.stdout or "") + (done.stderr or "")
+    # Whatever the console codepage is, never crash on it.
+    raw = (done.stdout or b"") + (done.stderr or b"")
+    return done.returncode, raw.decode("utf-8", "replace")
 
 
 _HINTS = (
