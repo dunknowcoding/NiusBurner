@@ -26,6 +26,62 @@
 #define _XTAL_FREQ 20000000UL
 #endif
 
+/*
+ * Configuration word.
+ *
+ * A mid-range PIC latches its oscillator, watchdog and programming mode
+ * from a word at 0x2007 rather than from anything the program does at run
+ * time, and an image that leaves it out is programmed onto whatever the
+ * erased part already holds -- all ones. That is the watchdog on, the
+ * oscillator in RC mode and low-voltage programming enabled, so a sketch
+ * built without this block resets roughly every 18 ms whatever clock is
+ * fitted, and RB3 is not an I/O pin.
+ *
+ * WDTE off is the one that matters most: nothing in this runtime clears
+ * the watchdog, because a sketch that wants one should ask for it.
+ * LVP off gives RB3 back and matches how this toolchain programs the
+ * part. The oscillator follows the clock the board declares, since XT
+ * cannot start a 20 MHz crystal and HS is wasteful below 4 MHz.
+ *
+ * A sketch that needs its own settings defines NIUS_NO_CONFIG and supplies
+ * a full set; two config blocks in one program is an error, not a merge.
+ */
+#ifndef NIUS_NO_CONFIG
+
+#if _XTAL_FREQ > 4000000UL
+#pragma config FOSC = HS
+#elif _XTAL_FREQ > 200000UL
+#pragma config FOSC = XT
+#else
+#pragma config FOSC = LP
+#endif
+
+#pragma config WDTE = OFF
+
+/*
+ * On-chip debugging takes two of these bits away from the sketch. The
+ * debug module needs its own bit set, and it refuses to attach while the
+ * power-up timer is enabled, because the timer holds the part in reset
+ * past the point where the tool expects to have it. Both are only worth
+ * paying for while a tool is attached, so a plain build keeps the power-up
+ * timer and leaves the debug bit clear.
+ */
+#ifdef NIUS_PIC_ICD
+#pragma config PWRTE = OFF
+#pragma config DEBUG = ON
+#else
+#pragma config PWRTE = ON
+#pragma config DEBUG = OFF
+#endif
+
+#pragma config BOREN = ON
+#pragma config LVP = OFF
+#pragma config CPD = OFF
+#pragma config WRT = OFF
+#pragma config CP = OFF
+
+#endif /* NIUS_NO_CONFIG */
+
 static unsigned long g_ms;
 static unsigned long g_seed = 1;
 

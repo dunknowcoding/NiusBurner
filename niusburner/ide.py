@@ -104,12 +104,29 @@ MENUS = (
         ("none", "Interrupt power by hand (default)", "none"),
         ("soft", "Sketch reboots itself into the bootloader", "soft"),
     )),
+    ("icd", "On-chip debug", (
+        ("off", "Off (default)", "off"),
+        ("on", "Configure for an attached debug tool", "on"),
+    )),
     ("compiler", "Compiler", (
         ("auto", "Auto-detect SDCC (default)", "auto"),
         ("configured", "Use the path from `niusburner setup --sdcc`",
          "configured"),
     )),
 )
+
+
+#: Which menus a board actually has a use for. An inert Tools entry is
+#: worse than an absent one: it invites a choice that changes nothing.
+#: Rebooting into a bootloader and switching a rail to reach one are both
+#: only meaningful for a part programmed through its own bootloader, and
+#: the debug configuration bits exist only on the PIC parts.
+_MENU_OWNERS = {"entry": "stcgal", "reset": "stcgal", "icd": "pickit3"}
+
+
+def _menu_applies(key: str, board) -> bool:
+    owner = _MENU_OWNERS.get(key)
+    return owner is None or board.programmer == owner
 
 
 def render_boards_txt(family: str = "mcs51") -> str:
@@ -141,11 +158,10 @@ def render_boards_txt(family: str = "mcs51") -> str:
     # A menu declared with no board offering choices renders as an empty
     # Tools entry, so the bootloader-entry menu is declared only where at
     # least one board can actually use it.
-    soft_entry = any(b.programmer == "stcgal"
-                     for b in boards_mod.all_boards().values()
-                     if b.family == family)
+    family_boards = [b for b in boards_mod.all_boards().values()
+                     if b.family == family]
     out += ["menu.%s=%s" % (key, label) for key, label, _ in MENUS
-            if key != "entry" or soft_entry]
+            if any(_menu_applies(key, b) for b in family_boards)]
     out.append("")
 
     for board in boards_mod.all_boards().values():
@@ -183,10 +199,7 @@ def render_boards_txt(family: str = "mcs51") -> str:
             "",
         ]
         for key, _, choices in MENUS:
-            # Only a part programmed through its own bootloader can be asked
-            # to reboot into it. On an ISP part the choice would be inert,
-            # and an inert menu entry is worse than an absent one.
-            if key == "entry" and board.programmer != "stcgal":
+            if not _menu_applies(key, board):
                 continue
             for name, label, value in choices:
                 out.append("%s.menu.%s.%s=%s" % (board.id, key, name, label))
@@ -239,13 +252,15 @@ def resolve_compiler(choice: str, family: str = "mcs51") -> Path | None:
 
 def cmd_compile(sketch: Path, build_path: Path, board: str,
                 optimize: str = "size", debug: str = "none",
-                compiler_choice: str = "auto", entry: str = "none") -> int:
+                compiler_choice: str = "auto", entry: str = "none",
+                icd: str = "off") -> int:
     from . import boards as boards_mod
 
     out = build_path / "niusburner"
     optimize = _menu(optimize, ("size", "speed", "none"), "size")
     debug_symbols = _menu(debug, ("none", "symbols"), "none") == "symbols"
     isp_entry = _menu(entry, ("none", "soft"), "none") == "soft"
+    on_chip_debug = _menu(icd, ("off", "on"), "off") == "on"
     # No banner here: the upload tool prints it once, and Verify runs in a
     # separate process that would otherwise repeat the whole thing.
     stage(0, "Compiling", f"target {board}")
@@ -256,7 +271,7 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
         result = workflow.compile_plan(
             plan, out, compiler=compiler,
             optimize=optimize, debug_symbols=debug_symbols,
-            isp_entry=isp_entry)
+            isp_entry=isp_entry, icd=on_chip_debug)
     except (OSError, ValueError, KeyError) as exc:
         error(str(exc), title="compile failed")
         return 1
@@ -265,7 +280,8 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     spec = plan.board
     note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
          + (", debug symbols" if debug_symbols else "")
-         + (", bootloader entry" if isp_entry else ""))
+         + (", bootloader entry" if isp_entry else "")
+         + (", on-chip debug config" if on_chip_debug else ""))
     if spec.family == "pic16":
         detail = (f"flash {result.program_words}/{spec.code_size} words "
                   f"({100 * result.program_words / spec.code_size:.1f}%)  "
@@ -290,6 +306,13 @@ def cmd_flash(image: Path, board: str, programmer: str = "",
         error(str(exc), title="unknown board")
         return 1
     wanted = (programmer or spec.programmer).strip() or spec.programmer
+    # "<name>_power" is not a different programmer: it is the same
+    # transport with the programmer supplying the target's rail instead of
+    # the board having its own. Splitting it here keeps the board's
+    # declared programmer the thing that has to match.
+    supply_power = wanted.endswith("_power")
+    if supply_power:
+        wanted = wanted[:-len("_power")]
     if wanted != spec.programmer:
         error(
             f"Tools > Programmer is set to {wanted}, but {spec.id} is "
@@ -317,6 +340,7 @@ def cmd_flash(image: Path, board: str, programmer: str = "",
             target=spec.part, image=image, confirm=spec.part,
             programmer=spec.programmer, port=port,
             reset_pin=_menu(reset_pin, ("dtr", "rts"), ""),
+            power=supply_power,
             state_policy="replace",
         )
     except (OSError, ValueError) as exc:
@@ -397,7 +421,8 @@ def arduino_main(argv: list[str]) -> int:
                 optimize=rest[3] if len(rest) > 3 else "size",
                 debug=rest[4] if len(rest) > 4 else "none",
                 compiler_choice=rest[5] if len(rest) > 5 else "auto",
-                entry=rest[6] if len(rest) > 6 else "none")
+                entry=rest[6] if len(rest) > 6 else "none",
+                icd=rest[7] if len(rest) > 7 else "off")
         if cmd == "preproc":
             return cmd_preproc(Path(rest[0]), Path(rest[1]))
         if cmd == "dummy-o":

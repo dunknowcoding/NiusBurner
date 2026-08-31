@@ -29,6 +29,20 @@ def _no_port(programmer: str) -> int:
     return 2
 
 
+_KNOWN_PROGRAMMERS = ("usbisp_hid", "stcgal", "pickit3")
+
+
+def _unknown_programmer(name: str) -> int:
+    """Refuse a programmer this backend does not drive.
+
+    Falling through to the default would hand a PIC to the 8051 ISP
+    driver, which is a wiring mistake acted on rather than reported.
+    """
+    print(f"refused: unknown programmer {name!r}; "
+          f"expected one of {', '.join(_KNOWN_PROGRAMMERS)}", file=sys.stderr)
+    return 2
+
+
 def _cmd_probe(args: argparse.Namespace) -> int:
     if args.confirm != args.target:
         print("refused: --confirm must match target", file=sys.stderr)
@@ -42,6 +56,8 @@ def _cmd_probe(args: argparse.Namespace) -> int:
     if args.programmer == "pickit3":
         from niusburner.backends.pickit3 import probe as pk_probe
         return pk_probe(args.target, power=args.power)
+    if args.programmer not in ("", "usbisp_hid"):
+        return _unknown_programmer(args.programmer)
     from niusburner.backends.usbisp_hid import probe
     return probe(args.target)
 
@@ -67,6 +83,8 @@ def _cmd_burn(args: argparse.Namespace) -> int:
         from niusburner.backends.pickit3 import flash as pk_flash
         return pk_flash(image, args.target, power=args.power,
                         run=not args.hold_reset)
+    if args.programmer not in ("", "usbisp_hid"):
+        return _unknown_programmer(args.programmer)
     from niusburner.backends.usbisp_hid import flash
     return flash(image, args.target, run=not args.hold_reset)
 
@@ -78,6 +96,8 @@ def _cmd_reset(args: argparse.Namespace) -> int:
     if args.programmer == "pickit3":
         from niusburner.backends.pickit3 import reset as pk_reset
         return pk_reset(args.target, power=args.power)
+    if args.programmer not in ("", "usbisp_hid"):
+        return _unknown_programmer(args.programmer)
     from niusburner.backends.usbisp_hid import reset
     return reset(args.target)
 

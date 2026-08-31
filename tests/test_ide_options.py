@@ -264,3 +264,37 @@ def test_a_serial_bootloader_board_asks_the_ide_for_a_port():
     text = (PLATFORM / "boards.txt").read_text(encoding="utf-8")
     assert "stc89c52rc.upload.require_upload_port=true" in text
     assert "at89s52.upload.require_upload_port=false" in text
+
+
+def test_menu_applies_follows_the_programmer():
+    """A Tools menu is only offered where the board can act on it."""
+    from niusburner import boards as boards_mod
+    from niusburner.ide import _menu_applies
+
+    stc = boards_mod.get_board("stc89c52rc")
+    at89 = boards_mod.get_board("at89s52")
+    pic = boards_mod.get_board("pic16f877a")
+
+    # Rebooting into a bootloader, and switching a rail to reach one, are
+    # bootloader-part ideas.
+    assert _menu_applies("entry", stc) and not _menu_applies("entry", at89)
+    assert not _menu_applies("entry", pic)
+    assert _menu_applies("reset", stc) and not _menu_applies("reset", pic)
+    # The debug configuration bits exist only on the PIC parts.
+    assert _menu_applies("icd", pic) and not _menu_applies("icd", stc)
+    # Everything else is offered everywhere.
+    for board in (stc, at89, pic):
+        assert _menu_applies("optimize", board)
+
+
+def test_on_chip_debug_is_refused_off_pic16(tmp_path):
+    """The option sets PIC configuration bits; nothing else has them."""
+    import pytest
+    from niusburner import workflow
+
+    sketch = tmp_path / "s"
+    sketch.mkdir()
+    (sketch / "s.ino").write_text("void setup(){} void loop(){}\n")
+    plan = workflow.plan_compile(sketch, "stc89c52rc", output=tmp_path / "o")
+    with pytest.raises(ValueError, match="PIC16 feature"):
+        workflow.compile_plan(plan, tmp_path / "o", icd=True)

@@ -14,7 +14,7 @@
 
 menu.optimize=Optimize
 menu.debug=Debug info
-menu.reset=Power switch
+menu.icd=On-chip debug
 menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
@@ -45,12 +45,10 @@ pic16f877a.menu.debug.none.build.nb_debug=none
 pic16f877a.menu.debug.symbols=Symbols and listings
 pic16f877a.menu.debug.symbols.build.nb_debug=symbols
 
-pic16f877a.menu.reset.none=None - interrupt power by hand (default)
-pic16f877a.menu.reset.none.build.nb_reset=none
-pic16f877a.menu.reset.dtr=Adapter DTR switches VDD
-pic16f877a.menu.reset.dtr.build.nb_reset=dtr
-pic16f877a.menu.reset.rts=Adapter RTS switches VDD
-pic16f877a.menu.reset.rts.build.nb_reset=rts
+pic16f877a.menu.icd.off=Off (default)
+pic16f877a.menu.icd.off.build.nb_icd=off
+pic16f877a.menu.icd.on=Configure for an attached debug tool
+pic16f877a.menu.icd.on.build.nb_icd=on
 
 pic16f877a.menu.compiler.auto=Auto-detect SDCC (default)
 pic16f877a.menu.compiler.auto.build.nb_compiler=auto

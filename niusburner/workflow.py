@@ -344,6 +344,7 @@ def compile_plan(
     optimize: str = "size",
     debug_symbols: bool = False,
     isp_entry: bool = False,
+    icd: bool = False,
 ) -> Mcs51Build:
     output.mkdir(parents=True, exist_ok=True)
     if plan.generated is not None:
@@ -360,6 +361,12 @@ def compile_plan(
         unit = runtime_dir(plan.board.family) / OPTION_UNITS["isp_entry"]
         if unit not in sources:
             sources.append(unit)
+    if icd:
+        if plan.board.family != "pic16":
+            raise ValueError(
+                "on-chip debug configuration is a PIC16 feature; "
+                f"{plan.board.id} is {plan.board.family}")
+        defines.append("NIUS_PIC_ICD")
     if plan.board.family == "mcs51" and plan.board.f_cpu:
         osc = f"NIUS_FOSC={plan.board.f_cpu}UL"
         if osc not in defines:

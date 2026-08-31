@@ -278,7 +278,8 @@ def _cmd_compile(args: argparse.Namespace) -> int:
             plan, output, compiler=args.compiler,
             optimize=getattr(args, "optimize", "size"),
             debug_symbols=getattr(args, "debug_symbols", False),
-            isp_entry=getattr(args, "bootloader_entry", False))
+            isp_entry=getattr(args, "bootloader_entry", False),
+            icd=getattr(args, "on_chip_debug", False))
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"compile failed: {exc}", file=sys.stderr)
         return 2
@@ -296,7 +297,8 @@ def _cmd_upload(args: argparse.Namespace) -> int:
             plan, output, compiler=args.compiler,
             optimize=getattr(args, "optimize", "size"),
             debug_symbols=getattr(args, "debug_symbols", False),
-            isp_entry=getattr(args, "bootloader_entry", False))
+            isp_entry=getattr(args, "bootloader_entry", False),
+            icd=getattr(args, "on_chip_debug", False))
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f"compile failed: {exc}", file=sys.stderr)
         return 2
@@ -464,6 +466,11 @@ def _add_sketch_flags(parser: argparse.ArgumentParser) -> None:
                         default="size",
                         help="what SDCC spends its effort on (default: size, "
                              "because flash runs out before cycles do)")
+    parser.add_argument("--on-chip-debug", action="store_true",
+                        dest="on_chip_debug",
+                        help="set the PIC configuration bits an attached "
+                             "Microchip debug tool requires (debug enabled, "
+                             "power-up timer off)")
     parser.add_argument("--bootloader-entry", action="store_true",
                         dest="bootloader_entry",
                         help="build the sketch so the host can ask it to "

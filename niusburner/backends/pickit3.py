@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import pathlib
 import re
+import tempfile
 import shutil
 import subprocess
 
@@ -50,6 +51,16 @@ _PROGRESS = re.compile(
     r"(Target device .* found|Target voltage detected|Device Revision|"
     r"Programming|Verif|Erasing|Program Memory|Configuration Memory|"
     r"EEData|Program complete|Read complete|Operation Succeeded)", re.I)
+#: The one line that proves the programmer reached the target rather than
+#: merely opening. `-P<part> -TPPK3` on its own never contacts the part --
+#: it validates arguments and succeeds against a wrong part number too.
+_FOUND = re.compile(r"Target device .* found", re.I)
+#: What ipecmd prints when it finished the job. The verdict has to rest on
+#: this rather than on whether any error-shaped line appeared: a PICkit 3
+#: that was last asked to power the target keeps that setting, so the next
+#: run reports the refusal, recovers, programs and verifies cleanly -- and
+#: reading the refusal as failure turns a good upload into a red error.
+_SUCCESS = re.compile(r"(Operation Succeeded|Verify Succeeded)", re.I)
 _TROUBLE = re.compile(
     r"(fail|error|unable|no device|cannot|invalid|mismatch|"
     r"target device was not found|check your connections|"
@@ -227,6 +238,23 @@ _HINTS = (
     "programmer-app firmware",
 )
 
+#: Some failures have one obvious cause, and a generic hint list buries it.
+_SPECIFIC_HINTS = (
+    ("cannot supply power to the target",
+     "this board has its own supply: select the plain PICkit 3 programmer, "
+     "not the one that powers the target"),
+    ("Invalid Device ID",
+     "the part answering is not the one selected -- check the board choice "
+     "and pin 1 of the ICSP header"),
+)
+
+
+def _hints_for(output: str) -> tuple[str, ...]:
+    """Lead with the hint that matches what actually went wrong."""
+    lead = tuple(hint for needle, hint in _SPECIFIC_HINTS
+                 if needle.lower() in output.lower())
+    return lead + _HINTS
+
 
 def probe(target: str, power: bool = False) -> int:
     """Read the device ID. Programs nothing."""
@@ -235,14 +263,21 @@ def probe(target: str, power: bool = False) -> int:
         return _missing()
     banner(f"PIC Flash Console - Target: {target}")
     stage(0, "Connecting", "PICkit 3 over ICSP")
-    args = [f"-P{target}", "-TPPK3"]
-    if power:
-        args.append("-W")
-    code, output = _run(tool, args, pathlib.Path.cwd())
-    if code != 0 or _trouble(output):
+    # Reading the configuration word is the cheapest operation that makes
+    # the tool talk to the silicon: a bare connect reports success even
+    # with nothing on the header, and even against the wrong part number.
+    # The read goes to a scratch file nobody looks at; the device ID line
+    # it prints on the way is the answer.
+    with tempfile.TemporaryDirectory() as scratch:
+        args = [f"-P{target}", "-TPPK3",
+                "-GCF" + str(pathlib.Path(scratch) / "id.hex")]
+        if power:
+            args.append("-W")
+        code, output = _run(tool, args, pathlib.Path(scratch))
+    if code != 0 or not _FOUND.search(output):
         error("the programmer did not identify the part",
               title="no answer over ICSP",
-              hints=_HINTS, details=_trouble(output))
+              hints=_hints_for(output), details=_trouble(output))
         return 1
     _report(output)
     stage(100, "Connected", target)
@@ -276,9 +311,10 @@ def flash(image: pathlib.Path, target: str, power: bool = False,
     stage(20, "Programming", image.name)
     code, output = _run(tool, args, image.parent)
     problems = _trouble(output)
-    if code != 0 or problems:
+    if code != 0 or not _SUCCESS.search(output):
         error("ipecmd did not report a clean program and verify",
-              title="programming failed", hints=_HINTS, details=problems)
+              title="programming failed", hints=_hints_for(output),
+              details=problems)
         _report(output)
         return 1
     _report(output)
@@ -306,7 +342,7 @@ def reset(target: str, power: bool = False) -> int:
     code, output = _run(tool, args, pathlib.Path.cwd())
     if code != 0:
         error("could not release the part", title="reset failed",
-              hints=_HINTS, details=_trouble(output))
+              hints=_hints_for(output), details=_trouble(output))
         return 1
     info(f"reset  {target} released from reset")
     return 0

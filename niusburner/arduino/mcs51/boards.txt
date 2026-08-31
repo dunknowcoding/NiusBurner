@@ -46,13 +46,6 @@ at89s52.menu.debug.none.build.nb_debug=none
 at89s52.menu.debug.symbols=Symbols and listings
 at89s52.menu.debug.symbols.build.nb_debug=symbols
 
-at89s52.menu.reset.none=None - interrupt power by hand (default)
-at89s52.menu.reset.none.build.nb_reset=none
-at89s52.menu.reset.dtr=Adapter DTR switches VDD
-at89s52.menu.reset.dtr.build.nb_reset=dtr
-at89s52.menu.reset.rts=Adapter RTS switches VDD
-at89s52.menu.reset.rts.build.nb_reset=rts
-
 at89s52.menu.compiler.auto=Auto-detect SDCC (default)
 at89s52.menu.compiler.auto.build.nb_compiler=auto
 at89s52.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
@@ -85,13 +78,6 @@ at89s51.menu.debug.none=None (default)
 at89s51.menu.debug.none.build.nb_debug=none
 at89s51.menu.debug.symbols=Symbols and listings
 at89s51.menu.debug.symbols.build.nb_debug=symbols
-
-at89s51.menu.reset.none=None - interrupt power by hand (default)
-at89s51.menu.reset.none.build.nb_reset=none
-at89s51.menu.reset.dtr=Adapter DTR switches VDD
-at89s51.menu.reset.dtr.build.nb_reset=dtr
-at89s51.menu.reset.rts=Adapter RTS switches VDD
-at89s51.menu.reset.rts.build.nb_reset=rts
 
 at89s51.menu.compiler.auto=Auto-detect SDCC (default)
 at89s51.menu.compiler.auto.build.nb_compiler=auto
@@ -126,13 +112,6 @@ at89s53.menu.debug.none.build.nb_debug=none
 at89s53.menu.debug.symbols=Symbols and listings
 at89s53.menu.debug.symbols.build.nb_debug=symbols
 
-at89s53.menu.reset.none=None - interrupt power by hand (default)
-at89s53.menu.reset.none.build.nb_reset=none
-at89s53.menu.reset.dtr=Adapter DTR switches VDD
-at89s53.menu.reset.dtr.build.nb_reset=dtr
-at89s53.menu.reset.rts=Adapter RTS switches VDD
-at89s53.menu.reset.rts.build.nb_reset=rts
-
 at89s53.menu.compiler.auto=Auto-detect SDCC (default)
 at89s53.menu.compiler.auto.build.nb_compiler=auto
 at89s53.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
@@ -165,13 +144,6 @@ at89s8252.menu.debug.none=None (default)
 at89s8252.menu.debug.none.build.nb_debug=none
 at89s8252.menu.debug.symbols=Symbols and listings
 at89s8252.menu.debug.symbols.build.nb_debug=symbols
-
-at89s8252.menu.reset.none=None - interrupt power by hand (default)
-at89s8252.menu.reset.none.build.nb_reset=none
-at89s8252.menu.reset.dtr=Adapter DTR switches VDD
-at89s8252.menu.reset.dtr.build.nb_reset=dtr
-at89s8252.menu.reset.rts=Adapter RTS switches VDD
-at89s8252.menu.reset.rts.build.nb_reset=rts
 
 at89s8252.menu.compiler.auto=Auto-detect SDCC (default)
 at89s8252.menu.compiler.auto.build.nb_compiler=auto
@@ -206,13 +178,6 @@ at89s8253.menu.debug.none.build.nb_debug=none
 at89s8253.menu.debug.symbols=Symbols and listings
 at89s8253.menu.debug.symbols.build.nb_debug=symbols
 
-at89s8253.menu.reset.none=None - interrupt power by hand (default)
-at89s8253.menu.reset.none.build.nb_reset=none
-at89s8253.menu.reset.dtr=Adapter DTR switches VDD
-at89s8253.menu.reset.dtr.build.nb_reset=dtr
-at89s8253.menu.reset.rts=Adapter RTS switches VDD
-at89s8253.menu.reset.rts.build.nb_reset=rts
-
 at89s8253.menu.compiler.auto=Auto-detect SDCC (default)
 at89s8253.menu.compiler.auto.build.nb_compiler=auto
 at89s8253.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
@@ -245,13 +210,6 @@ at89c2051.menu.debug.none=None (default)
 at89c2051.menu.debug.none.build.nb_debug=none
 at89c2051.menu.debug.symbols=Symbols and listings
 at89c2051.menu.debug.symbols.build.nb_debug=symbols
-
-at89c2051.menu.reset.none=None - interrupt power by hand (default)
-at89c2051.menu.reset.none.build.nb_reset=none
-at89c2051.menu.reset.dtr=Adapter DTR switches VDD
-at89c2051.menu.reset.dtr.build.nb_reset=dtr
-at89c2051.menu.reset.rts=Adapter RTS switches VDD
-at89c2051.menu.reset.rts.build.nb_reset=rts
 
 at89c2051.menu.compiler.auto=Auto-detect SDCC (default)
 at89c2051.menu.compiler.auto.build.nb_compiler=auto

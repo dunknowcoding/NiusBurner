@@ -72,7 +72,7 @@ def burn_command(*, target: str, image: pathlib.Path, confirm: str,
                  config: pathlib.Path | None = None,
                  hold_reset: bool = False,
                  programmer: str = "", port: str = "",
-                 reset_pin: str = "") -> list[str]:
+                 reset_pin: str = "", power: bool = False) -> list[str]:
     if not target or confirm != target:
         raise ValueError("confirm must exactly match target")
     if state_policy not in {"replace", "restore"}:
@@ -97,6 +97,10 @@ def burn_command(*, target: str, image: pathlib.Path, confirm: str,
             command += ["--port", port]
         if reset_pin:
             command += ["--reset-pin", reset_pin]
+        # Whether the programmer supplies the target's rail, rather than
+        # the board having its own.
+        if power:
+            command += ["--power"]
     else:
         if address:
             raise ValueError("restore uses a complete backup and no load address")
@@ -118,7 +122,8 @@ def reset(*, target: str, confirm: str) -> int:
 
 
 def probe_command(*, target: str, confirm: str, programmer: str = "",
-                  port: str = "", reset_pin: str = "") -> list[str]:
+                  port: str = "", reset_pin: str = "",
+                  power: bool = False) -> list[str]:
     if not target or confirm != target:
         raise ValueError("confirm must exactly match target")
     command = list(resolve_backend()) + ["probe", target, "--confirm", confirm]
@@ -128,6 +133,8 @@ def probe_command(*, target: str, confirm: str, programmer: str = "",
         command += ["--port", port]
     if reset_pin:
         command += ["--reset-pin", reset_pin]
+    if power:
+        command += ["--power"]
     return command
 
 

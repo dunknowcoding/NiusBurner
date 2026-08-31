@@ -77,6 +77,56 @@ tracked as an open task; do not assume it fits.
 
 ---
 
+## The configuration word
+
+A mid-range PIC takes its oscillator, watchdog and programming mode from a
+word at `0x2007`, latched at reset rather than set by anything the program
+does. An image that does not carry one is programmed onto whatever the
+erased part already holds — all ones — which is the watchdog **on**, the
+oscillator in RC mode and low-voltage programming **enabled**. Nothing in
+the runtime clears a watchdog, so such an image resets roughly every 18 ms
+whatever clock is fitted, and RB3 is not an I/O pin.
+
+Every build therefore emits one:
+
+| Bit | Value | Why |
+|-----|-------|-----|
+| `FOSC` | `HS` above 4 MHz, else `XT`/`LP` | follows the clock the board declares; `XT` cannot start a 20 MHz crystal |
+| `WDTE` | off | nothing here clears the watchdog; a sketch that wants one should ask |
+| `PWRTE` | on | holds reset while the supply settles |
+| `BOREN` | on | resets rather than running under-volted |
+| `LVP` | off | gives RB3 back, and matches how this toolchain programs the part |
+| `CP` / `CPD` / `WRT` | off | nothing here needs the part locked |
+
+A sketch needing its own settings defines `NIUS_NO_CONFIG` and supplies a
+complete set. Two config blocks in one program is an error, not a merge.
+
+Read back what actually landed with `niusburner probe --board pic16f877a`;
+the programmer reports the device ID it found, and a wrong board selection
+fails with `Invalid Device ID` rather than quietly succeeding.
+
+## On-chip debug
+
+`--on-chip-debug` (**Tools > On-chip debug** in the IDE) builds with the two
+configuration bits an attached Microchip debug tool requires: the debug bit
+set, and the power-up timer off, because that timer holds the part in reset
+past the point where the tool expects to have it. A default build leaves the
+power-up timer on and the debug bit clear, which is what you want for a part
+running on its own.
+
+**It needs a clock.** The debug executive is code that runs *on the target*,
+so it cannot answer until the oscillator does. On a board with no crystal
+fitted the image programs and verifies normally and the tool then reports
+`The target device is not ready for debugging` — that is the missing
+oscillator, not the programmer. Programming itself is unaffected either way,
+because ICSP is clocked by the programmer rather than by the part.
+
+A bare PIC16F877A also has no on-chip debug module of its own; Microchip
+sells a debug header for this family. Everything above applies once a clock
+and a supported debug path are present.
+
+---
+
 ## PIC12F675 — out of scope, and why
 
 **1 KB of flash and 64 bytes of RAM.** NiusDisplay cannot run on it in any
