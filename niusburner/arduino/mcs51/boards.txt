@@ -18,8 +18,8 @@ menu.entry=Bootloader entry
 menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
-# 2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired.
-at89c2051.name=AT89C2051 (2 KB, compile only)
+# 2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired. No Timer 2, so Serial tops out at 57600 rather than 115200.
+at89c2051.name=AT89C2051 (2 KB, compile only) [experimental]
 at89c2051.upload.tool=niusburner
 at89c2051.upload.protocol=nano_at89c2051
 at89c2051.upload.maximum_size=2048
@@ -46,8 +46,8 @@ at89c2051.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89c2051.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
-# 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-at89c51.name=AT89C51 (4 KB, compile only)
+# 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it. No Timer 2, so Serial tops out at 57600 rather than 115200.
+at89c51.name=AT89C51 (4 KB, compile only) [experimental]
 at89c51.upload.tool=niusburner
 at89c51.upload.protocol=parallel_hv
 at89c51.upload.maximum_size=4096
@@ -75,7 +75,7 @@ at89c51.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 8 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-at89c52.name=AT89C52 (8 KB, compile only)
+at89c52.name=AT89C52 (8 KB, compile only) [experimental]
 at89c52.upload.tool=niusburner
 at89c52.upload.protocol=parallel_hv
 at89c52.upload.maximum_size=8192
@@ -103,7 +103,7 @@ at89c52.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 20 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-at89c55.name=AT89C55 (20 KB, compile only)
+at89c55.name=AT89C55 (20 KB, compile only) [experimental]
 at89c55.upload.tool=niusburner
 at89c55.upload.protocol=parallel_hv
 at89c55.upload.maximum_size=20480
@@ -130,8 +130,8 @@ at89c55.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89c55.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
-# 2 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, and there is no Timer 2, so Serial.begin() above 9600 has no baud source.
-at89s2051.name=AT89S2051 (2 KB, USB-ISP)
+# 2 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, so most pin numbers address ports this package does not have. No Timer 2, so Serial tops out at 57600 rather than 115200.
+at89s2051.name=AT89S2051 (2 KB, USB-ISP) [experimental]
 at89s2051.upload.tool=niusburner
 at89s2051.upload.protocol=usbisp_hid
 at89s2051.upload.maximum_size=2048
@@ -158,8 +158,8 @@ at89s2051.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s2051.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
-# 4 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, and there is no Timer 2, so Serial.begin() above 9600 has no baud source.
-at89s4051.name=AT89S4051 (4 KB, USB-ISP)
+# 4 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, so most pin numbers address ports this package does not have. No Timer 2, so Serial tops out at 57600 rather than 115200.
+at89s4051.name=AT89S4051 (4 KB, USB-ISP) [experimental]
 at89s4051.upload.tool=niusburner
 at89s4051.upload.protocol=usbisp_hid
 at89s4051.upload.maximum_size=4096
@@ -186,7 +186,7 @@ at89s4051.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s4051.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
-# 4 KB flash. Same USB-ISP HID route as AT89S52.
+# 4 KB flash. Same USB-ISP HID route as AT89S52. No Timer 2, so Serial tops out at 57600 rather than 115200.
 at89s51.name=AT89S51 (4 KB, USB-ISP)
 at89s51.upload.tool=niusburner
 at89s51.upload.protocol=usbisp_hid
@@ -271,7 +271,7 @@ at89s53.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 8 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool.
-at89s8252.name=AT89S8252 (8 KB, USB-ISP)
+at89s8252.name=AT89S8252 (8 KB, USB-ISP) [experimental]
 at89s8252.upload.tool=niusburner
 at89s8252.upload.protocol=usbisp_hid
 at89s8252.upload.maximum_size=8192
@@ -298,8 +298,8 @@ at89s8252.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s8252.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
-# 12 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool.
-at89s8253.name=AT89S8253 (12 KB, USB-ISP)
+# 12 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool. The vendor tables put this part in the page-programmed class; this backend writes a byte at a time.
+at89s8253.name=AT89S8253 (12 KB, USB-ISP) [experimental]
 at89s8253.upload.tool=niusburner
 at89s8253.upload.protocol=usbisp_hid
 at89s8253.upload.maximum_size=12288
@@ -327,7 +327,7 @@ at89s8253.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # SST, 20 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-sst89e54.name=SST89E54 (20 KB, compile only)
+sst89e54.name=SST89E54 (20 KB, compile only) [experimental]
 sst89e54.upload.tool=niusburner
 sst89e54.upload.protocol=parallel_hv
 sst89e54.upload.maximum_size=20480
@@ -355,7 +355,7 @@ sst89e54.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # SST, 64 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-sst89e564.name=SST89E564 (64 KB, compile only)
+sst89e564.name=SST89E564 (64 KB, compile only) [experimental]
 sst89e564.upload.tool=niusburner
 sst89e564.upload.protocol=parallel_hv
 sst89e564.upload.maximum_size=65536
@@ -463,7 +463,7 @@ stc89c52rc.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 12 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
-stc89c53rc.name=STC89C53RC (12 KB, serial bootloader)
+stc89c53rc.name=STC89C53RC (12 KB, serial bootloader) [experimental]
 stc89c53rc.upload.tool=niusburner
 stc89c53rc.upload.protocol=stcgal
 stc89c53rc.upload.maximum_size=12288
@@ -503,7 +503,7 @@ stc89c53rc.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 16 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
-stc89c54rd.name=STC89C54RD (16 KB, serial bootloader)
+stc89c54rd.name=STC89C54RD (16 KB, serial bootloader) [experimental]
 stc89c54rd.upload.tool=niusburner
 stc89c54rd.upload.protocol=stcgal
 stc89c54rd.upload.maximum_size=16384
@@ -543,7 +543,7 @@ stc89c54rd.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 32 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
-stc89c58rd.name=STC89C58RD (32 KB, serial bootloader)
+stc89c58rd.name=STC89C58RD (32 KB, serial bootloader) [experimental]
 stc89c58rd.upload.tool=niusburner
 stc89c58rd.upload.protocol=stcgal
 stc89c58rd.upload.maximum_size=32768
@@ -583,7 +583,7 @@ stc89c58rd.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 4 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
-stc90c51rc.name=STC90C51RC (4 KB, serial bootloader)
+stc90c51rc.name=STC90C51RC (4 KB, serial bootloader) [experimental]
 stc90c51rc.upload.tool=niusburner
 stc90c51rc.upload.protocol=stcgal
 stc90c51rc.upload.maximum_size=4096
@@ -663,7 +663,7 @@ stc90c52rc.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 32 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
-stc90c58rd.name=STC90C58RD (32 KB, serial bootloader)
+stc90c58rd.name=STC90C58RD (32 KB, serial bootloader) [experimental]
 stc90c58rd.upload.tool=niusburner
 stc90c58rd.upload.protocol=stcgal
 stc90c58rd.upload.maximum_size=32768
@@ -702,8 +702,8 @@ stc90c58rd.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc90c58rd.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
-# Winbond, 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-w78e51.name=W78E51 (4 KB, compile only)
+# Winbond, 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it. No Timer 2, so Serial tops out at 57600 rather than 115200.
+w78e51.name=W78E51 (4 KB, compile only) [experimental]
 w78e51.upload.tool=niusburner
 w78e51.upload.protocol=parallel_hv
 w78e51.upload.maximum_size=4096
@@ -731,7 +731,7 @@ w78e51.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # Winbond, 8 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-w78e52.name=W78E52 (8 KB, compile only)
+w78e52.name=W78E52 (8 KB, compile only) [experimental]
 w78e52.upload.tool=niusburner
 w78e52.upload.protocol=parallel_hv
 w78e52.upload.maximum_size=8192
@@ -759,7 +759,7 @@ w78e52.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # Winbond, 16 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-w78e54.name=W78E54 (16 KB, compile only)
+w78e54.name=W78E54 (16 KB, compile only) [experimental]
 w78e54.upload.tool=niusburner
 w78e54.upload.protocol=parallel_hv
 w78e54.upload.maximum_size=16384
@@ -787,7 +787,7 @@ w78e54.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # Winbond, 32 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
-w78e58.name=W78E58 (32 KB, compile only)
+w78e58.name=W78E58 (32 KB, compile only) [experimental]
 w78e58.upload.tool=niusburner
 w78e58.upload.protocol=parallel_hv
 w78e58.upload.maximum_size=32768

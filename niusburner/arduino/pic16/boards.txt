@@ -17,7 +17,7 @@ menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
 # 1 K words, 18-pin, USART, comparators.
-pic16f627a.name=16F627A (1 K words, PICkit 3)
+pic16f627a.name=16F627A (1 K words, PICkit 3) [experimental]
 pic16f627a.upload.tool=niusburner
 pic16f627a.upload.protocol=pickit3
 pic16f627a.upload.maximum_size=1024
@@ -45,7 +45,7 @@ pic16f627a.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 2 K words, 18-pin, USART, comparators.
-pic16f628a.name=16F628A (2 K words, PICkit 3)
+pic16f628a.name=16F628A (2 K words, PICkit 3) [experimental]
 pic16f628a.upload.tool=niusburner
 pic16f628a.upload.protocol=pickit3
 pic16f628a.upload.maximum_size=2048
@@ -73,7 +73,7 @@ pic16f628a.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 4 K words, 18-pin, USART, comparators.
-pic16f648a.name=16F648A (4 K words, PICkit 3)
+pic16f648a.name=16F648A (4 K words, PICkit 3) [experimental]
 pic16f648a.upload.tool=niusburner
 pic16f648a.upload.protocol=pickit3
 pic16f648a.upload.maximum_size=4096
@@ -101,7 +101,7 @@ pic16f648a.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 1 K words, 18-pin, no USART and no analog.
-pic16f84a.name=16F84A (1 K words, PICkit 3)
+pic16f84a.name=16F84A (1 K words, PICkit 3) [experimental]
 pic16f84a.upload.tool=niusburner
 pic16f84a.upload.protocol=pickit3
 pic16f84a.upload.maximum_size=1024
@@ -129,7 +129,7 @@ pic16f84a.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 4 K words flash, 192 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.
-pic16f873.name=16F873 (4 K words, PICkit 3)
+pic16f873.name=16F873 (4 K words, PICkit 3) [experimental]
 pic16f873.upload.tool=niusburner
 pic16f873.upload.protocol=pickit3
 pic16f873.upload.maximum_size=4096
@@ -185,7 +185,7 @@ pic16f873a.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 4 K words flash, 192 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A.
-pic16f874.name=16F874 (4 K words, PICkit 3)
+pic16f874.name=16F874 (4 K words, PICkit 3) [experimental]
 pic16f874.upload.tool=niusburner
 pic16f874.upload.protocol=pickit3
 pic16f874.upload.maximum_size=4096
@@ -241,7 +241,7 @@ pic16f874a.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 8 K words flash, 368 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.
-pic16f876.name=16F876 (8 K words, PICkit 3)
+pic16f876.name=16F876 (8 K words, PICkit 3) [experimental]
 pic16f876.upload.tool=niusburner
 pic16f876.upload.protocol=pickit3
 pic16f876.upload.maximum_size=8192
@@ -297,7 +297,7 @@ pic16f876a.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 8 K words flash, 368 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A.
-pic16f877.name=16F877 (8 K words, PICkit 3)
+pic16f877.name=16F877 (8 K words, PICkit 3) [experimental]
 pic16f877.upload.tool=niusburner
 pic16f877.upload.protocol=pickit3
 pic16f877.upload.maximum_size=8192
@@ -353,7 +353,7 @@ pic16f877a.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 4 K words, 18-pin, USART, ANSEL analog select.
-pic16f88.name=16F88 (4 K words, PICkit 3)
+pic16f88.name=16F88 (4 K words, PICkit 3) [experimental]
 pic16f88.upload.tool=niusburner
 pic16f88.upload.protocol=pickit3
 pic16f88.upload.maximum_size=4096

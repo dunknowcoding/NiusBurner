@@ -23,6 +23,9 @@
 #endif
 
 void nius_serial_begin(unsigned long baud);
+
+/* 0 after begin() when this part cannot produce that rate. */
+extern unsigned char nius_serial_ok;
 void nius_serial_end(void);
 void nius_serial_write(unsigned char c);
 void nius_serial_flush(void);

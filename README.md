@@ -114,6 +114,12 @@ path.
 which no header here can drive. They compile and size correctly, and `upload`
 says plainly that the route is not wired: AT89C2051, AT89C51, AT89C52, AT89C55, SST89E54, SST89E564, W78E51, W78E52, W78E54, W78E58.
 
+Parts marked **⚠️ experimental** (28 of them) are in the catalog on the
+strength of their datasheet and their family: they compile and size
+correctly, but something on the path — a programming mode, a pin map, where
+a peripheral sits — is still an assumption. The Tools menu and
+`niusburner boards` both say which.
+
 `python -m niusburner boards` lists everything; `boards --features` says which
 peripherals each part has.
 

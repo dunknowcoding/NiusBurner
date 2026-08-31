@@ -202,6 +202,7 @@ program, the verify and the release from reset.
 | The PIC programmer refuses to power the target | The board already has its own supply. Select the plain PICkit 3 entry, not the one that powers the target. |
 | `sdcc not found` | Not on `PATH`. Re-run the installer with the PATH option, or `setup --sdcc <path>`. |
 | The Upload button says the part cannot be flashed | That part has no in-circuit programming interface at all; it needs a parallel programming socket. |
+| A part is marked **experimental** | It is in the catalog from its datasheet and family; some of the path is still an assumption. It compiles and sizes correctly — treat the first upload as a test of that. |
 
 `python -m niusburner detect` prints what was found and what was not, which
 is usually faster than guessing.

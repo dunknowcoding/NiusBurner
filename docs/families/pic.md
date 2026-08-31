@@ -81,19 +81,24 @@ tracked as an open task; do not assume it fits.
 
 | part | flash | RAM | ports | USART |
 |---|---|---|---|---|
-| 16F627A | 1 K words | 224 B | A-B | yes |
-| 16F628A | 2 K words | 224 B | A-B | yes |
-| 16F648A | 4 K words | 256 B | A-B | yes |
-| 16F84A | 1 K words | 68 B | A-B | — |
-| 16F873 | 4 K words | 192 B | A-C | yes |
+| 16F627A ⚠️ | 1 K words | 224 B | A-B | yes |
+| 16F628A ⚠️ | 2 K words | 224 B | A-B | yes |
+| 16F648A ⚠️ | 4 K words | 256 B | A-B | yes |
+| 16F84A ⚠️ | 1 K words | 68 B | A-B | — |
+| 16F873 ⚠️ | 4 K words | 192 B | A-C | yes |
 | 16F873A | 4 K words | 192 B | A-C | yes |
-| 16F874 | 4 K words | 192 B | A-E | yes |
+| 16F874 ⚠️ | 4 K words | 192 B | A-E | yes |
 | 16F874A | 4 K words | 192 B | A-E | yes |
-| 16F876 | 8 K words | 368 B | A-C | yes |
+| 16F876 ⚠️ | 8 K words | 368 B | A-C | yes |
 | 16F876A | 8 K words | 368 B | A-C | yes |
-| 16F877 | 8 K words | 368 B | A-E | yes |
+| 16F877 ⚠️ | 8 K words | 368 B | A-E | yes |
 | 16F877A | 8 K words | 368 B | A-E | yes |
-| 16F88 | 4 K words | 368 B | A-B | yes |
+| 16F88 ⚠️ | 4 K words | 368 B | A-B | yes |
+
+**⚠️ experimental** means the same as it does for the 8051 parts: the entry
+comes from the datasheet and the family, and something on the path — the
+pin map, where the USART sits, which register turns the analog pins off — is
+still an assumption. It compiles and sizes correctly.
 
 One runtime, compiled for the part in front of it. The family does not share
 one register map: the 40-pin members bring out ports A to E and the 18-pin

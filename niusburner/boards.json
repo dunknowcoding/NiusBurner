@@ -21,7 +21,7 @@
       "aliases": [
         "89c2051"
       ],
-      "note": "2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired.",
+      "note": "2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired. No Timer 2, so Serial tops out at 57600 rather than 115200.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -30,7 +30,9 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "timer2": false,
+      "experimental": true
     },
     "at89c51": {
       "part": "at89c51",
@@ -44,7 +46,7 @@
       "status": "supported",
       "signature": "",
       "aliases": [],
-      "note": "4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "note": "4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it. No Timer 2, so Serial tops out at 57600 rather than 115200.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -54,7 +56,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": false,
+      "experimental": true
     },
     "at89c52": {
       "part": "at89c52",
@@ -78,7 +82,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "at89c55": {
       "part": "at89c55",
@@ -102,7 +108,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "at89s2051": {
       "part": "at89s2051",
@@ -118,7 +126,7 @@
       "aliases": [
         "89s2051"
       ],
-      "note": "2 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, and there is no Timer 2, so Serial.begin() above 9600 has no baud source.",
+      "note": "2 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, so most pin numbers address ports this package does not have. No Timer 2, so Serial tops out at 57600 rather than 115200.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -128,7 +136,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": false,
+      "experimental": true
     },
     "at89s4051": {
       "part": "at89s4051",
@@ -144,7 +154,7 @@
       "aliases": [
         "89s4051"
       ],
-      "note": "4 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, and there is no Timer 2, so Serial.begin() above 9600 has no baud source.",
+      "note": "4 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, so most pin numbers address ports this package does not have. No Timer 2, so Serial tops out at 57600 rather than 115200.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -154,7 +164,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": false,
+      "experimental": true
     },
     "at89s51": {
       "part": "at89s51",
@@ -170,7 +182,7 @@
       "aliases": [
         "89s51"
       ],
-      "note": "4 KB flash. Same USB-ISP HID route as AT89S52.",
+      "note": "4 KB flash. Same USB-ISP HID route as AT89S52. No Timer 2, so Serial tops out at 57600 rather than 115200.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -179,7 +191,8 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "timer2": false
     },
     "at89s52": {
       "part": "at89s52",
@@ -205,7 +218,8 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "timer2": true
     },
     "at89s53": {
       "part": "at89s53",
@@ -231,7 +245,8 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "timer2": true
     },
     "at89s8252": {
       "part": "at89s8252",
@@ -257,7 +272,9 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "timer2": true,
+      "experimental": true
     },
     "at89s8253": {
       "part": "at89s8253",
@@ -274,7 +291,7 @@
       "aliases": [
         "89s8253"
       ],
-      "note": "12 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool.",
+      "note": "12 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool. The vendor tables put this part in the page-programmed class; this backend writes a byte at a time.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -283,7 +300,9 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "timer2": true,
+      "experimental": true
     },
     "sst89e54": {
       "part": "sst89e54",
@@ -307,7 +326,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "sst89e564": {
       "part": "sst89e564",
@@ -331,7 +352,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "stc89c51rc": {
       "part": "stc89c51rc",
@@ -356,7 +379,8 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true
     },
     "stc89c52rc": {
       "part": "stc89c52rc",
@@ -383,7 +407,8 @@
         "eeprom": "none"
       },
       "f_cpu": 11059200,
-      "signature": ""
+      "signature": "",
+      "timer2": true
     },
     "stc89c53rc": {
       "part": "stc89c53rc",
@@ -407,7 +432,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "stc89c54rd": {
       "part": "stc89c54rd",
@@ -431,7 +458,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "stc89c58rd": {
       "part": "stc89c58rd",
@@ -455,7 +484,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "stc90c51rc": {
       "part": "stc90c51rc",
@@ -479,7 +510,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "stc90c52rc": {
       "part": "stc90c52rc",
@@ -504,7 +537,8 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true
     },
     "stc90c58rd": {
       "part": "stc90c58rd",
@@ -528,7 +562,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "w78e51": {
       "part": "w78e51",
@@ -542,7 +578,7 @@
       "status": "supported",
       "signature": "",
       "aliases": [],
-      "note": "Winbond, 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "note": "Winbond, 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it. No Timer 2, so Serial tops out at 57600 rather than 115200.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -552,7 +588,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": false,
+      "experimental": true
     },
     "w78e52": {
       "part": "w78e52",
@@ -576,7 +614,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "w78e54": {
       "part": "w78e54",
@@ -600,7 +640,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "w78e58": {
       "part": "w78e58",
@@ -624,7 +666,9 @@
         "adc": "none",
         "eeprom": "none"
       },
-      "f_cpu": 11059200
+      "f_cpu": 11059200,
+      "timer2": true,
+      "experimental": true
     },
     "pic16f627a": {
       "part": "16F627A",
@@ -656,7 +700,8 @@
       "config_omit": [
         "WRT"
       ],
-      "usart": 2
+      "usart": 2,
+      "experimental": true
     },
     "pic16f628a": {
       "part": "16F628A",
@@ -688,7 +733,8 @@
       "config_omit": [
         "WRT"
       ],
-      "usart": 2
+      "usart": 2,
+      "experimental": true
     },
     "pic16f648a": {
       "part": "16F648A",
@@ -720,7 +766,8 @@
       "config_omit": [
         "WRT"
       ],
-      "usart": 2
+      "usart": 2,
+      "experimental": true
     },
     "pic16f84a": {
       "part": "16F84A",
@@ -754,7 +801,8 @@
         "LVP",
         "CPD",
         "WRT"
-      ]
+      ],
+      "experimental": true
     },
     "pic16f873": {
       "part": "16F873",
@@ -781,7 +829,8 @@
         "adc": "hardware",
         "eeprom": "hardware"
       },
-      "ports": 3
+      "ports": 3,
+      "experimental": true
     },
     "pic16f873a": {
       "part": "16F873A",
@@ -835,7 +884,8 @@
         "adc": "hardware",
         "eeprom": "hardware"
       },
-      "ports": 5
+      "ports": 5,
+      "experimental": true
     },
     "pic16f874a": {
       "part": "16F874A",
@@ -889,7 +939,8 @@
         "adc": "hardware",
         "eeprom": "hardware"
       },
-      "ports": 3
+      "ports": 3,
+      "experimental": true
     },
     "pic16f876a": {
       "part": "16F876A",
@@ -943,7 +994,8 @@
         "adc": "hardware",
         "eeprom": "hardware"
       },
-      "ports": 5
+      "ports": 5,
+      "experimental": true
     },
     "pic16f877a": {
       "part": "16F877A",
@@ -999,7 +1051,8 @@
       },
       "ports": 2,
       "analog": 3,
-      "usart": 3
+      "usart": 3,
+      "experimental": true
     }
   },
   "_peripherals": [

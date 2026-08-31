@@ -61,9 +61,10 @@ def _cmd_boards(args: argparse.Namespace) -> int:
         return 0
     for board in catalog.values():
         flash = f"{board.code_size // 1024} KB"
+        mark = "experimental" if board.experimental else ""
         print(
             f"  {board.id:{width}}  {flash:6}  {board.programmer:16}  "
-            f"{board.status:12}  {board.note}"
+            f"{mark:12}  {board.note}"
         )
     print("\ncompile + flash:  python -m niusburner upload <sketch> --board at89s52 --yes")
     print("peripherals:      python -m niusburner boards --features")

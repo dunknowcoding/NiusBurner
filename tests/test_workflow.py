@@ -283,16 +283,50 @@ def test_example_serial_is_lowered_and_links_uart():
     assert "nius_serial_begin(9600)" in plan.sketch.text
 
 
-def test_serial_timer2_reload_matches_at89s52_datasheet():
-    """9600 is Timer 1 TH1=0xFD; 115200 is Timer 2 Fosc/32."""
-    src = (ROOT / "niusburner" / "adapters" / "Arduino" / "mcs51" / "nius_serial.c").read_text(
-        encoding="utf-8")
-    assert "32UL * 115200UL" in src
-    assert "16UL * baud" not in src
-    assert "0x20" in src
-    fosc = 11059200
-    assert 256 - fosc // (384 * 9600) == 0xFD
-    assert 65536 - fosc // (32 * 115200) == 0xFFFD
+def _mcs51_baud(baud: int, fosc: int = 11059200):
+    """The reload nius_serial_begin() picks, in Python.
+
+    Mirrors the runtime exactly: Timer 1 first at SMOD 0 then SMOD 1, and
+    only an exact division accepted, because a nearest-reload rule sends at
+    a rate nobody asked for.
+    """
+    base0, base1 = fosc // 384, fosc // 192
+    if 0 < baud <= 65535:
+        for base, smod in ((base0, 0), (base1, 1)):
+            reload_ = base // baud
+            if 1 <= reload_ <= 256 and reload_ * baud == base:
+                return ("timer1", smod, 256 - reload_)
+    if baud in (38400, 115200):
+        return ("timer2", 0, 65536 - fosc // (32 * baud))
+    return ("refused", 0, 0)
+
+
+def test_serial_baud_matches_the_at89s52_datasheet():
+    """9600 is Timer 1 TH1=0xFD; 115200 is Timer 2 RCAP2=0xFFFD."""
+    assert _mcs51_baud(9600) == ("timer1", 0, 0xFD)
+    assert _mcs51_baud(115200) == ("timer2", 0, 0xFFFD)
+
+
+def test_serial_honours_the_rate_it_is_given():
+    """Every standard rate gets its own reload, not 9600's."""
+    seen = {b: _mcs51_baud(b) for b in
+            (1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200)}
+    assert all(kind != "refused" for kind, _, _ in seen.values())
+    # Distinct rates must not collapse onto one reload.
+    assert len({v for v in seen.values()}) == len(seen)
+    # SMOD is what puts 19200 and 57600 within Timer 1's reach.
+    assert seen[19200][:2] == ("timer1", 1)
+    assert seen[57600][:2] == ("timer1", 1)
+
+
+def test_serial_refuses_a_rate_it_cannot_produce():
+    """A rate with no exact reload is reported, not approximated."""
+    assert _mcs51_baud(31250)[0] == "refused"
+    src = (ROOT / "niusburner" / "adapters" / "Arduino" / "mcs51"
+           / "nius_serial.c").read_text(encoding="utf-8")
+    assert "nius_serial_ok" in src, "the failure has to be reportable"
+    # The Timer 2 generator only exists on parts that have the timer.
+    assert "#if NIUS_HAS_TIMER2" in src
 
 
 def test_sketch_directory_includes_sibling_asm(tmp_path: pathlib.Path):

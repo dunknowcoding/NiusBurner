@@ -56,6 +56,14 @@ class Board:
     config_omit: tuple[str, ...] = ()
     #: Where the USART appears: 1 RC6/RC7, 2 RB2/RB1, 3 RB2/RB5.
     usart: int = 1
+    #: 8051 only: whether the part has a Timer 2 to generate baud.
+    timer2: bool = True
+    #: True when this part is in the catalog on the strength of
+    #: its datasheet and family, with some part of the path still
+    #: an assumption. See docs/families/.
+    experimental: bool = False
+    #: stcgal's name for the bootloader generation.
+    protocol: str = "stc89"
     peripherals: tuple[tuple[str, str], ...] = ()
 
     #: Programmers this tool can actually drive. A board whose programmer is
@@ -107,6 +115,9 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             analog=int(entry.get("analog", 1)),
             config_omit=tuple(entry.get("config_omit", ())),
             usart=int(entry.get("usart", 1)),
+            timer2=bool(entry.get("timer2", True)),
+            experimental=bool(entry.get("experimental", False)),
+            protocol=str(entry.get("protocol", "stc89")),
             signature=str(entry.get("signature", "")),
             note=str(entry.get("note", "")),
             aliases=tuple(entry.get("aliases") or ()),

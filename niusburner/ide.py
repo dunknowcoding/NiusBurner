@@ -170,8 +170,11 @@ def render_boards_txt(family: str = "mcs51") -> str:
         out += [
             "# %s" % ("-" * 70),
             "# %s" % board.note,
-            "%s.name=%s (%s, %s)" % (
-                board.id, board.part.upper(), size, how),
+            # The marker rides in the menu name because that is the only
+            # place the IDE shows anything about a board before it is used.
+            "%s.name=%s (%s, %s)%s" % (
+                board.id, board.part.upper(), size, how,
+                " [experimental]" if board.experimental else ""),
             "%s.upload.tool=niusburner" % board.id,
             "%s.upload.protocol=%s" % (board.id, board.programmer),
             "%s.upload.maximum_size=%d" % (board.id, board.code_size),

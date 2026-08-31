@@ -4,11 +4,21 @@
  * Copyright 2026 dunknowcoding (NiusRobotLab)
  * SPDX-License-Identifier: Apache-2.0
  *
- * 9600 uses Timer 1 mode 2 (TH1=0xFD at 11.0592 MHz, SMOD=0). That is the
- * textbook AT89S52 recipe. Timer 2 as baud generator was emitting at 2x
- * (Fosc/16 instead of the datasheet Fosc/32) and T2OE can steal P1.0.
+ * Timer 1 in mode 2 is the textbook generator: baud = Fosc / (384 * (256 -
+ * TH1)), and SMOD in PCON doubles that. Between them they cover everything
+ * up to 57600 at 11.0592 MHz. 115200 needs a finer divider than an 8-bit
+ * reload can express, which is what Timer 2 is for: RCAP2 = 65536 -
+ * Fosc / (32 * baud).
  *
- * 115200 uses Timer 2 with RCAP2 = 65536 - Fosc/(32*baud) = 0xFFFD.
+ * Not every 8051 has a Timer 2 -- the 4 KB and 20-pin parts do not -- so
+ * that branch is compiled in only where it exists, and a rate that needs it
+ * is reported as unreachable rather than quietly set to something else.
+ *
+ * A reload is only accepted if the rate it actually produces is within 2 %
+ * of the one asked for. Picking the nearest reload without checking is how
+ * a request for 19200 ends up transmitting at 28800.
+ *
+ * T2OE (T2MOD bit 1) clocks P1.0 and must stay 0 on a no-XRAM DIP-40.
  */
 
 #include "nius_serial.h"
@@ -29,6 +39,30 @@ __sfr __at(0xC9) T2MOD;
 #define NIUS_FOSC 11059200UL
 #endif
 
+/* Whether this part has a Timer 2 to use as a baud generator. */
+#ifndef NIUS_HAS_TIMER2
+#define NIUS_HAS_TIMER2 1
+#endif
+
+/*
+ * Timer 1 mode 2 divides Fosc by 384 (SMOD=0) or 192 (SMOD=1) and then by
+ * the reload. Folding the first division into a constant leaves a 16-bit
+ * divide at run time instead of a 32-bit one: this core has neither
+ * instruction, and SDCC's 32-bit routine costs about a thousand machine
+ * cycles and several hundred bytes.
+ */
+#define NIUS_T1_BASE0 ((unsigned int)(NIUS_FOSC / 384UL))
+#define NIUS_T1_BASE1 ((unsigned int)(NIUS_FOSC / 192UL))
+/* Timer 2 reload for a rate Timer 1 cannot reach. */
+#define NIUS_T2_RC(b) ((unsigned int)(65536UL - (NIUS_FOSC / (32UL * (b)))))
+
+/*
+ * Set to 0 by nius_serial_begin() when the requested rate cannot be
+ * produced on this part. A sketch cannot be told over a UART that its UART
+ * is misconfigured, so the flag is the only honest report available.
+ */
+unsigned char nius_serial_ok = 1;
+
 void nius_serial_begin(unsigned long baud)
 {
 #ifdef __SDCC
@@ -38,22 +72,71 @@ void nius_serial_begin(unsigned long baud)
     RI = 0;
     T2MOD = 0x00;
 
-    if (baud == 115200UL) {
-        unsigned int reload = (unsigned int)(65536UL - (NIUS_FOSC / (32UL * 115200UL)));
-        TR1 = 0;
-        RCAP2H = (unsigned char)(reload >> 8);
-        RCAP2L = (unsigned char)reload;
-        TH2 = RCAP2H;
-        TL2 = RCAP2L;
-        T2CON = 0x34; /* RCLK + TCLK + TR2 */
-    } else {
-        /* Mode 1 SMOD=0: baud = Fosc / (384 * (256-TH1)). 9600 -> 0xFD. */
-        T2CON = 0x00;
-        PCON &= 0x7F;
-        TMOD = (unsigned char)((TMOD & 0x0F) | 0x20);
-        TH1 = (unsigned char)(256UL - (NIUS_FOSC / (384UL * 9600UL)));
-        TL1 = TH1;
-        TR1 = 1;
+    {
+        unsigned int want = (unsigned int)baud;
+        unsigned int reload = 0;
+        unsigned char smod = 0;
+        unsigned char placed = 0;
+
+        nius_serial_ok = 1;
+
+        /*
+         * Only an exact division is accepted. Taking the nearest reload
+         * without checking is how a request for 38400 at 11.0592 MHz ends
+         * up transmitting at 28800: the rate is simply not available from
+         * an 8-bit reload, and saying so beats sending at the wrong speed.
+         */
+        if (baud != 0UL && baud <= 65535UL) {
+            reload = NIUS_T1_BASE0 / want;
+            if (reload >= 1U && reload <= 256U
+                && (unsigned long)reload * want == (unsigned long)NIUS_T1_BASE0) {
+                placed = 1;
+            } else {
+                reload = NIUS_T1_BASE1 / want;
+                if (reload >= 1U && reload <= 256U
+                    && (unsigned long)reload * want
+                       == (unsigned long)NIUS_T1_BASE1) {
+                    smod = 1;
+                    placed = 1;
+                }
+            }
+        }
+
+        if (placed) {
+#if NIUS_HAS_TIMER2
+            T2CON = 0x00;
+#endif
+            if (smod)
+                PCON |= 0x80;
+            else
+                PCON &= 0x7F;
+            TMOD = (unsigned char)((TMOD & 0x0F) | 0x20);
+            TH1 = (unsigned char)(256U - reload);
+            TL1 = TH1;
+            TR1 = 1;
+        }
+#if NIUS_HAS_TIMER2
+        /*
+         * The rates an 8-bit reload cannot express. Both constants fold at
+         * compile time, so this costs a comparison rather than the 32-bit
+         * division a general form would need.
+         */
+        else if (baud == 115200UL || baud == 38400UL) {
+            unsigned int rc = (baud == 115200UL)
+                ? NIUS_T2_RC(115200UL) : NIUS_T2_RC(38400UL);
+
+            TR1 = 0;
+            PCON &= 0x7F;
+            RCAP2H = (unsigned char)(rc >> 8);
+            RCAP2L = (unsigned char)rc;
+            TH2 = RCAP2H;
+            TL2 = RCAP2L;
+            T2CON = 0x34;   /* RCLK + TCLK + TR2 */
+            placed = 1;
+        }
+#endif
+        if (!placed)
+            nius_serial_ok = 0;
     }
     TI = 1;
 #ifdef NIUS_ISP_ENTRY

@@ -369,6 +369,12 @@ def compile_plan(
                       f"NIUS_PIC_USART={plan.board.usart}", *omitted):
             if macro not in defines:
                 defines.append(macro)
+    if plan.board.family == "mcs51":
+        # A part with no Timer 2 must not have the Timer 2 baud generator
+        # compiled in: those SFR addresses simply are not there.
+        macro = f"NIUS_HAS_TIMER2={1 if plan.board.timer2 else 0}"
+        if macro not in defines:
+            defines.append(macro)
     if plan.board.family == "mcs51" and plan.board.f_cpu:
         osc = f"NIUS_FOSC={plan.board.f_cpu}UL"
         if osc not in defines:

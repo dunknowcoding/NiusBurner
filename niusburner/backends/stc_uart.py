@@ -37,6 +37,22 @@ PROTOCOLS = {
 
 DEFAULT_BAUD = 19200
 
+
+def _protocol(target: str) -> str:
+    """The bootloader generation *target* speaks, per the catalog.
+
+    The generations are not interchangeable, so this must follow the part
+    rather than assume the one this module was written against.
+    """
+    try:
+        from .. import boards as boards_mod
+    except ImportError:
+        return PROTOCOLS["stc89"]
+    for board in boards_mod.all_boards().values():
+        if board.part.lower() == target.lower():
+            return PROTOCOLS.get(board.protocol, PROTOCOLS["stc89"])
+    return PROTOCOLS["stc89"]
+
 #: How the board's power is interrupted, when something can do it.
 #:
 #: An STC89 enters its bootloader on power-on and on nothing else: there is
@@ -244,7 +260,7 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
              "bootloader is entered on power-on only")
         info("the surest order is to remove power first, start this, then "
              "restore it -- the listening window is short and opens once")
-    cmd = tool + ["-P", PROTOCOLS["stc89"], "-p", port,
+    cmd = tool + ["-P", _protocol(target), "-p", port,
                   "-b", str(baud), "-l", str(HANDSHAKE_BAUD), "-D"]
     cmd += cycle
     note(" ".join(cmd))
@@ -296,7 +312,7 @@ def flash(image: pathlib.Path, target: str, port: str,
              "bootloader is entered on power-on only")
         info("the surest order is to remove power first, start this, then "
              "restore it -- the listening window is short and opens once")
-    cmd = tool + ["-P", PROTOCOLS["stc89"], "-p", port,
+    cmd = tool + ["-P", _protocol(target), "-p", port,
                   "-b", str(baud), "-l", str(HANDSHAKE_BAUD)]
     cmd += cycle
     cmd += [str(image)]
