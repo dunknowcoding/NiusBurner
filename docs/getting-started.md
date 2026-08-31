@@ -36,7 +36,124 @@ circuit, power and the ISP header for about $6, and saves a lot of wiring.
 
 ---
 
-## 2. Install the compiler
+## 2. Install Python (Windows first)
+
+NiusBurner is a Python program. The Arduino IDE calls it to compile and to
+program, so Python has to be there — but **nothing gets installed into
+Python**. There is no `pip install`, no virtual environment, no packages to
+manage. `setup` writes down which Python you ran it with and where this
+folder is, and the IDE uses those two facts from then on.
+
+**Python 3.10 or newer.** That is the only requirement.
+
+### Windows
+
+Windows is where this goes wrong, and it always goes wrong the same way.
+
+> ### ⚠️ The `python` already on your PC probably is not Python
+>
+> A clean Windows ships an **App execution alias**: a zero-byte placeholder
+> named `python.exe` that opens the Microsoft Store instead of running
+> anything. Type `python` and a Store page appears, or the window just
+> closes. It is not Python and it will never work.
+>
+> You can see it for what it is:
+>
+> ```
+> where python
+> ```
+>
+> If the answer contains `AppData\Local\Microsoft\WindowsApps`, that is the
+> placeholder, not an interpreter.
+
+**Install the real thing** from <https://www.python.org/downloads/>. Take the
+64-bit Windows installer.
+
+On the installer's first page, before pressing Install:
+
+- ✅ **Tick "Add python.exe to PATH".** This is the single most important
+  click in this document. Without it `python` keeps finding the Store
+  placeholder, and every instruction here looks broken.
+- "Install Now" is fine. Administrator rights are not needed — the per-user
+  install works.
+
+Then **open a new terminal** — one that was already open still has the old
+PATH — and check:
+
+```
+python --version
+```
+
+You want `Python 3.10` or higher. If you still get a Store page or an error,
+use the launcher the installer always registers:
+
+```
+py -3 --version
+```
+
+If `py -3` works and `python` does not, either use `py -3` in place of
+`python` everywhere below, or switch the placeholder off:
+**Settings → Apps → Advanced app settings → App execution aliases**, and turn
+off both **python.exe** and **python3.exe**.
+
+### If you already have several Pythons
+
+Anaconda, Miniconda, the Microsoft Store, a python.org install, one that came
+bundled with another program — a normal machine ends up with two or three.
+That is fine and you do not have to remove any of them. One rule matters:
+
+> **The Python you run `setup` with is the Python the Arduino IDE will use.**
+
+`setup` records that interpreter's full path, so the IDE never guesses and
+never depends on PATH afterwards. Check which one you are about to use:
+
+```
+python -c "import sys; print(sys.executable)"
+```
+
+If that is the one you want, carry on. If not, run `setup` with the one you
+do want, by its full path:
+
+```
+"C:\Users\you\AppData\Local\Programs\Python\Python312\python.exe" -m niusburner setup
+```
+
+Conda users: activating the environment first works the same way, and that
+environment's interpreter is what gets recorded.
+
+**If you later move, upgrade or uninstall that Python, re-run `setup`.** It
+is the one thing that needs saying twice, and it takes a second. Otherwise
+the IDE reports that it cannot find the tool, naming the path that went away.
+
+### Linux and macOS
+
+Almost always present already, and almost always new enough:
+
+```bash
+python3 --version
+```
+
+If it is older than 3.10: `sudo apt install python3` on Debian and Ubuntu,
+`brew install python` on macOS. Use `python3` rather than `python` in the
+commands below — on these systems a bare `python` is often Python 2, or
+missing entirely.
+
+### Then, once
+
+From the folder you downloaded NiusBurner into:
+
+```
+python -m niusburner setup
+```
+
+That copies the board packages into your Arduino sketchbook, records the
+interpreter and this folder, and prints what it found and what is missing.
+That is the whole installation. Re-run it whenever you move the folder,
+change Python, or pull a newer version.
+
+---
+
+## 3. Install the compiler
 
 ### SDCC — for the 8051 parts
 
@@ -78,7 +195,7 @@ python -m niusburner setup --xc8 "C:\Program Files\Microchip\xc8\v3.00\bin\xc8-c
 
 ---
 
-## 3. Install the programmer software and drivers
+## 4. Install the programmer software and drivers
 
 ### USB-ISP (8051)
 
@@ -130,7 +247,7 @@ appears, get the vendor driver from
 
 ---
 
-## 4. Wire it up
+## 5. Wire it up
 
 ### 8051 — ISP header
 
@@ -165,13 +282,22 @@ has power, which is the safe behaviour.
 
 ---
 
-## 5. Set up the Arduino IDE
+## 6. Set up the Arduino IDE
+
+You already did this in §2:
 
 ```bash
-python -m niusburner setup --sketchbook ~/Documents/Arduino
+python -m niusburner setup
 ```
 
-That writes a board package into the sketchbook. Restart the IDE, then:
+It finds your sketchbook by itself. Pass `--sketchbook` only if you keep it
+somewhere `setup` would not look:
+
+```bash
+python -m niusburner setup --sketchbook "D:\my sketches"
+```
+
+Restart the IDE, then:
 
 1. **Tools → Board → NiusBurner 8051 (SDCC)** (or **NiusBurner PIC (XC8)**),
    and pick your part.
@@ -182,11 +308,15 @@ That writes a board package into the sketchbook. Restart the IDE, then:
 
 **Verify** compiles. **Upload** erases and programs. There is no third step.
 
+The IDE does not need Python on its PATH and does not need NiusBurner
+installed into Python — `setup` recorded the interpreter's full path, and the
+board package uses that.
+
 Full menu reference: [arduino-ide.md](arduino-ide.md).
 
 ---
 
-## 6. First upload
+## 7. First upload
 
 ```bash
 python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
@@ -204,9 +334,14 @@ program, the verify and the release from reset.
 | `no ISP acknowledge` | Pin 1 reversed, no crystal, or the part is an AT89**C** rather than an AT89**S**. |
 | Signature reads `FF FF FF` or `00 00 00` | The target has no power, or MISO is not connected. |
 | Verify passes, the part does nothing | **EA (pin 31) is not tied to VCC**, or there is no crystal. |
-| `Could not find device` from the PIC tools | MPLAB X 6.x or newer. See the warning in §3. |
+| `Could not find device` from the PIC tools | MPLAB X 6.x or newer. See the warning in §4. |
 | The PIC programmer refuses to power the target | The board already has its own supply. Select the plain PICkit 3 entry, not the one that powers the target. |
 | `sdcc not found` | Not on `PATH`. Re-run the installer with the PATH option, or `setup --sdcc <path>`. |
+| Typing `python` opens the Microsoft Store | That is the Windows placeholder, not Python. See [§2](#2-install-python-windows-first). |
+| `python` is not recognised as a command | Python was installed without **Add python.exe to PATH**. Use `py -3` instead, or re-run the installer and tick it. |
+| The IDE says it cannot import niusburner, naming a path | The recorded Python or folder moved. Re-run `python -m niusburner setup`. |
+| It worked from the terminal but not from the IDE | `setup` was run with a different Python than you expected. Check `python -c "import sys; print(sys.executable)"` and re-run `setup` with the one you want. |
+| You moved or renamed the NiusBurner folder | Re-run `python -m niusburner setup` from its new location. |
 | The Upload button says the part cannot be flashed | That part has no in-circuit programming interface at all; it needs a parallel programming socket. |
 | A part is marked **experimental** | It is in the catalog from its datasheet and family; some of the path is still an assumption. It compiles and sizes correctly — treat the first upload as a test of that. |
 

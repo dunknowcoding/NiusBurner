@@ -44,6 +44,34 @@ jobs:
           print(f"{len(catalog)} boards")
           PY
 
+      - name: Every data file is actually packaged
+        run: |
+          python - <<'PY'
+          import pathlib, tomllib
+          cfg = tomllib.loads(pathlib.Path("pyproject.toml").read_text())
+          patterns = cfg["tool"]["setuptools"]["package-data"]["niusburner"]
+          root = pathlib.Path("niusburner")
+          packaged = {p for pat in patterns for p in root.glob(pat) if p.is_file()}
+          on_disk = {p for p in root.rglob("*")
+                     if p.is_file() and p.suffix not in (".py", ".pyc")
+                     and "__pycache__" not in str(p)}
+          missing = sorted(str(p) for p in on_disk - packaged)
+          if missing:
+              raise SystemExit(
+                  "these files would be left out of an installed copy:
+  "
+                  + "
+  ".join(missing)
+                  + "
+
+Widen package-data in pyproject.toml. An editable
+"
+                    "install reads the source tree, so this is invisible
+"
+                    "from a working checkout.")
+          print(f"{len(on_disk)} data files, all packaged")
+          PY
+
       - name: Generated board packages are current
         run: |
           python - <<'PY'

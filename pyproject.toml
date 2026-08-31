@@ -18,16 +18,20 @@ niusprog    = "niusburner.prog:main"
 include = ["niusburner*"]
 
 [tool.setuptools.package-data]
+# Every pattern here is family-agnostic on purpose. The previous list named
+# mcs51 explicitly, so adding the PIC families left their runtimes and board
+# packages out of an installed copy entirely -- an omission invisible from a
+# working tree, because an editable install reads the source directory. CI
+# checks this list against what is actually on disk.
 niusburner = [
-    "toolchains.json",
-    "boards.json",
-    "adapters/*/adapter.json",
-    "adapters/*/mcs51/*.c",
-    "adapters/*/mcs51/*.h",
-    "arduino/mcs51/*.txt",
-    "arduino/mcs51/cores/niusburner/*",
-    "arduino/mcs51/variants/standard/*",
-    "arduino/mcs51/tools/*",
+    "*.json",
+    "adapters/*/*.json",
+    "adapters/*/*/*.c",
+    "adapters/*/*/*.h",
+    "arduino/*/*.txt",
+    "arduino/*/cores/niusburner/*",
+    "arduino/*/variants/*/*",
+    "arduino/*/tools/*",
 ]
 
 [tool.pytest.ini_options]

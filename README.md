@@ -46,24 +46,29 @@ unchanged.
 ## Quick start
 
 ```bash
-pip install -e .                  # from a clone
-python -m niusburner setup        # find the compilers and programmers
+git clone https://github.com/dunknowcoding/NiusBurner
+cd NiusBurner
+python -m niusburner setup        # installs the IDE board packages, finds the tools
 python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
 ```
+
+**There is nothing to install.** No `pip install`, no virtual environment:
+`setup` records which Python it ran under and where this directory is, and
+the Arduino IDE uses those. Python 3.10 or newer is the only prerequisite.
 
 New to this? [**docs/getting-started.md**](docs/getting-started.md) covers the
 hardware to buy, the drivers and compilers to install, and how to wire both
 families — including the one MPLAB X version trap that costs PIC users an
 afternoon.
 
-For the IDE, `setup` also installs the board package:
+`setup` finds your sketchbook by itself; pass `--sketchbook` only if you
+keep it somewhere unusual. Then restart the IDE, pick **Tools → Board →
+NiusBurner**, and press **Upload**. That is the whole path.
 
-```bash
-python -m niusburner setup --sketchbook ~/Documents/Arduino
-```
-
-Then **Tools → Board → NiusBurner** and press **Upload**. That is the whole
-path.
+On Windows, the one thing worth reading first is
+[which Python to install](docs/getting-started.md#2-install-python-windows-first),
+because the default `python` on a clean Windows is a Store placeholder that
+does nothing.
 
 ## Supported parts
 
