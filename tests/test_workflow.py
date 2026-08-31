@@ -344,6 +344,41 @@ def test_example_asm_blink_compiles_with_sdcc(tmp_path: pathlib.Path):
     assert (out / "firmware.ihx").is_file()
 
 
+def test_sketch_interrupt_definition_emits_real_vector(tmp_path: pathlib.Path):
+    from niusburner import build
+    if build.find_sdcc() is None:
+        pytest.skip("needs SDCC")
+    folder = tmp_path / "timer_irq"
+    folder.mkdir()
+    (folder / "timer_irq.ino").write_text(
+        "void timer0_isr(void) __interrupt(1) {}\n"
+        "void setup(void) {}\nvoid loop(void) {}\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+    plan = workflow.plan_compile(folder, "at89s52", output=out)
+    workflow.compile_plan(plan, out)
+    from niusburner.backends.usbisp_hid import _parse_ihx
+    flash = _parse_ihx(out / "firmware.ihx")
+    assert flash[0x000B] == 0x02  # LJMP timer0_isr at the Timer 0 vector.
+
+
+def test_commented_interrupt_example_does_not_create_vector_wrapper(tmp_path):
+    folder = tmp_path / "commented_irq"
+    folder.mkdir()
+    (folder / "commented_irq.ino").write_text(
+        "/* void ghost(void) __interrupt(1) {} */\n"
+        "void setup(void) {}\nvoid loop(void) {}\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+    plan = workflow.plan_compile(folder, "at89s52", output=out)
+    sources = workflow._runtime_with_sketch_vectors(
+        plan, out, list(plan.sources), isp_entry=False)
+    assert sources == list(plan.sources)
+    assert not (out / "nius_sketch_vectors.c").exists()
+
+
 def test_burn_command_passes_hold_reset_through():
     import pathlib
     from niusburner import flash as flash_mod

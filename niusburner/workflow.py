@@ -275,6 +275,67 @@ def _plan_without_display(
 OPTION_UNITS = {"isp_entry": "nius_ispentry.c"}
 
 
+_INTERRUPT_HANDLER = re.compile(
+    r"\bvoid\s+([A-Za-z_]\w*)\s*\(\s*(?:void)?\s*\)\s*"
+    r"__interrupt\s*\(\s*(\d+)\s*\)\s*\{"
+)
+
+
+def _runtime_with_sketch_vectors(
+    plan: CompilePlan,
+    output: Path,
+    sources: list[Path],
+    *,
+    isp_entry: bool,
+) -> list[Path]:
+    """Put sketch ISR prototypes beside main() so SDCC emits their vectors.
+
+    SDCC only creates an MCS-51 vector for handlers declared in the
+    translation unit that owns main(). Arduino-shaped sketches keep main() in
+    nius_sketch.c, so merely defining an ISR in sketch.c compiles its body but
+    previously left the corresponding silicon vector empty.
+    """
+    if plan.board.family != "mcs51" or plan.runtime != "sketch":
+        return sources
+    handlers = [
+        (name, int(vector))
+        for name, vector in _INTERRUPT_HANDLER.findall(
+            cxxlower._code_words(plan.sketch.text))
+    ]
+    if not handlers:
+        return sources
+    vectors: dict[int, str] = {}
+    for name, vector in handlers:
+        if vector > 5:
+            raise ValueError(f"AT89S52 interrupt vector {vector} is outside 0..5")
+        if vector in vectors:
+            raise ValueError(
+                f"interrupt vector {vector} is defined by both "
+                f"{vectors[vector]} and {name}")
+        vectors[vector] = name
+    if isp_entry and 4 in vectors:
+        raise ValueError(
+            "interrupt vector 4 is already used by the optional UART "
+            "bootloader-entry handler")
+
+    runtime = (runtime_dir(plan.board.family) / RUNTIME_UNIT).resolve()
+    if runtime not in {source.resolve() for source in sources}:
+        return sources
+    wrapper = output / "nius_sketch_vectors.c"
+    declarations = "".join(
+        f"void {name}(void) __interrupt({vector});\n"
+        for name, vector in sorted(handlers, key=lambda item: item[1])
+    )
+    wrapper.write_text(
+        "/* Generated: sketch interrupt declarations must share main(). */\n"
+        + declarations
+        + runtime.read_text(encoding="utf-8"),
+        encoding="utf-8",
+        newline="\n",
+    )
+    return [wrapper if source.resolve() == runtime else source for source in sources]
+
+
 def compile_plan(
     plan: CompilePlan,
     output: Path,
@@ -303,6 +364,8 @@ def compile_plan(
         osc = f"NIUS_FOSC={plan.board.f_cpu}UL"
         if osc not in defines:
             defines.append(osc)
+    sources = _runtime_with_sketch_vectors(
+        plan, output, sources, isp_entry=isp_entry)
     if plan.board.family == "pic16":
         from . import build_pic
 
