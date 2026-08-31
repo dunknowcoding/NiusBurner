@@ -418,7 +418,7 @@ def _print_usage(plan, result) -> None:
     factor of two.
     """
     board = plan.board
-    if board.is_pic:
+    if board.is_pic_family:
         words = result.program_words
         stage(int(100 * words / board.code_size), "Flash",
               f"{words}/{board.code_size} {board.program_unit}")
@@ -494,6 +494,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--xc8", type=pathlib.Path,
                    help="record where the XC8 driver (xc8-cc) is, for PIC "
                         "boards")
+    p.add_argument("--xc16", type=pathlib.Path,
+                   help="record where the XC16 driver (xc16-gcc) is, for "
+                        "16-bit PIC boards")
     p.add_argument("--pickit3", type=pathlib.Path,
                    help="record where ipecmd is -- the command-line "
                         "programmer that drives a PICkit 3")

@@ -8,7 +8,7 @@ Write a sketch that looks like Arduino. Press Upload. It lands on an 8051 or a P
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Parts](https://img.shields.io/badge/parts-49-green.svg)](#supported-parts)
+[![Parts](https://img.shields.io/badge/parts-58-green.svg)](#supported-parts)
 [![Toolchains](https://img.shields.io/badge/toolchains-never%20vendored-orange.svg)](docs/toolchains.md)
 
 </div>
@@ -140,6 +140,23 @@ does nothing.
 | 18F4520 ⚠️ | 32 KB | 1536 B | A-E |
 | 18F4550 ⚠️ | 32 KB | 2048 B | A-E |
 | 18F4620 ⚠️ | 64 KB | 3968 B | A-E |
+
+**dsPIC30F over ICSP** — 16-bit core, written by a PICkit 3, compiled by XC16.
+
+| part | flash | RAM | ports | UART |
+|---|---|---|---|---|
+| dsPIC30F2010 ⚠️ | 7 KB | 512 B | BCDEF | yes |
+| dsPIC30F2011 ⚠️ | 7 KB | 1024 B | BCD | yes |
+| dsPIC30F2012 ⚠️ | 7 KB | 1024 B | BCDF | yes |
+| dsPIC30F3012 ⚠️ | 15 KB | 2048 B | BCD | yes |
+| dsPIC30F3013 ⚠️ | 15 KB | 2048 B | BCDF | yes |
+| dsPIC30F3014 ⚠️ | 15 KB | 2048 B | ABCDF | yes |
+| dsPIC30F4011 ⚠️ | 31 KB | 2048 B | BCDEF | yes |
+| dsPIC30F4012 ⚠️ | 31 KB | 2048 B | BCDEF | yes |
+| dsPIC30F4013 ⚠️ | 31 KB | 2048 B | ABCDF | yes |
+
+Ports are named rather than counted here: several of these parts have no
+PORTA at all, and one skips PORTE.
 
 **Compile only** — these parts are written in a parallel programming socket,
 which no header here can drive. They compile and size correctly, and `upload`

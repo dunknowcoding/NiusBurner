@@ -1409,6 +1409,267 @@
       "usart": 1,
       "experimental": true,
       "config_profile": 2
+    },
+    "dspic30f2010": {
+      "part": "30F2010",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 7936,
+      "iram_size": 512,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f2010"
+      ],
+      "note": "7 KB flash, 512 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "BCDEF",
+      "experimental": true,
+      "config_profile": 2
+    },
+    "dspic30f2011": {
+      "part": "30F2011",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 7936,
+      "iram_size": 1024,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f2011"
+      ],
+      "note": "7 KB flash, 1024 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCD. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "BCD",
+      "experimental": true,
+      "config_profile": 1
+    },
+    "dspic30f2012": {
+      "part": "30F2012",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 7936,
+      "iram_size": 1024,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f2012"
+      ],
+      "note": "7 KB flash, 1024 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDF. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "BCDF",
+      "experimental": true,
+      "config_profile": 1
+    },
+    "dspic30f3012": {
+      "part": "30F3012",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 16128,
+      "iram_size": 2048,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f3012"
+      ],
+      "note": "15 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCD. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "BCD",
+      "experimental": true,
+      "config_profile": 1
+    },
+    "dspic30f3013": {
+      "part": "30F3013",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 16128,
+      "iram_size": 2048,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f3013"
+      ],
+      "note": "15 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDF. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "BCDF",
+      "experimental": true,
+      "config_profile": 1
+    },
+    "dspic30f3014": {
+      "part": "30F3014",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 16128,
+      "iram_size": 2048,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f3014"
+      ],
+      "note": "15 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports ABCDF. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "ABCDF",
+      "experimental": true,
+      "config_profile": 1
+    },
+    "dspic30f4011": {
+      "part": "30F4011",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 32512,
+      "iram_size": 2048,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f4011"
+      ],
+      "note": "31 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "BCDEF",
+      "experimental": true,
+      "config_profile": 2
+    },
+    "dspic30f4012": {
+      "part": "30F4012",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 32512,
+      "iram_size": 2048,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f4012"
+      ],
+      "note": "31 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "BCDEF",
+      "experimental": true,
+      "config_profile": 2
+    },
+    "dspic30f4013": {
+      "part": "30F4013",
+      "family": "pic24",
+      "compiler": "xc16",
+      "code_size": 32512,
+      "iram_size": 2048,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 7372800,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "30f4013"
+      ],
+      "note": "31 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports ABCDF. UART1 on fixed pins.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "none"
+      },
+      "ports_present": "ABCDF",
+      "experimental": true,
+      "config_profile": 1
     }
   },
   "_peripherals": [

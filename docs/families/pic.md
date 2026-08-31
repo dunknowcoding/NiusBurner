@@ -156,6 +156,56 @@ which is a larger piece of work than widening an existing one.
 
 ---
 
+## dsPIC30F — the 16-bit parts
+
+Same programmer, different compiler: XC16 rather than XC8, and an ELF that
+goes through `xc16-bin2hex` to become the HEX a PICkit 3 wants. Program
+memory is counted in bytes.
+
+| part | flash | RAM | ports | UART |
+|---|---|---|---|---|
+| dsPIC30F2010 ⚠️ | 7 KB | 512 B | BCDEF | yes |
+| dsPIC30F2011 ⚠️ | 7 KB | 1024 B | BCD | yes |
+| dsPIC30F2012 ⚠️ | 7 KB | 1024 B | BCDF | yes |
+| dsPIC30F3012 ⚠️ | 15 KB | 2048 B | BCD | yes |
+| dsPIC30F3013 ⚠️ | 15 KB | 2048 B | BCDF | yes |
+| dsPIC30F3014 ⚠️ | 15 KB | 2048 B | ABCDF | yes |
+| dsPIC30F4011 ⚠️ | 31 KB | 2048 B | BCDEF | yes |
+| dsPIC30F4012 ⚠️ | 31 KB | 2048 B | BCDEF | yes |
+| dsPIC30F4013 ⚠️ | 31 KB | 2048 B | ABCDF | yes |
+
+Three things differ from the 8-bit parts enough to matter.
+
+**Ports are named, not counted.** A dsPIC30F4013 brings out A, B, C, D and
+F — no E — and several of these parts have no PORTA at all. The catalog
+carries the set, and the runtime compiles in only the ports the package
+actually bonds out.
+
+**Writes go to the latch.** `LATx` exists so that a read-modify-write on one
+pin cannot disturb its neighbours, which is the classic PIC hazard; `PORTx`
+is only read.
+
+**The configuration bits are spelled two ways.** Most of the family folds
+the oscillator into `FOSFPR`; the 30F2010, 30F4011 and 30F4012 split it into
+`FOS` and `FPR`. Same decision, different name, and naming the wrong one is
+a compile error — so the catalog picks the spelling. Both come from the
+compiler's own configuration tables rather than from a datasheet reading.
+
+### What is deliberately not here
+
+**PIC24F, PIC24H, PIC24E and dsPIC33.** They route the UART through
+Peripheral Pin Select, which makes the physical pin a property of the board
+rather than of the part. A runtime cannot guess it, and a `Serial` that
+silently goes nowhere is worse than no `Serial`. dsPIC30F has fixed pins,
+which is why it is the family that is here.
+
+**PIC32.** It has a C++ compiler — `xc32-g++` ships in the same toolchain —
+and an established Arduino core in chipKIT. This tool exists for parts that
+have neither. Adding PIC32 would duplicate work that is already done better
+elsewhere.
+
+---
+
 ## The configuration word
 
 A mid-range PIC takes its oscillator, watchdog and programming mode from a

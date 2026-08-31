@@ -1,0 +1,70 @@
+# NiusBurner PIC24 — Arduino IDE board package (XC8 + PICkit 3).
+#
+# Copyright 2026 dunknowcoding (NiusRobotLab)
+# SPDX-License-Identifier: Apache-2.0
+#
+# Installed into the sketchbook by `python -m niusburner setup`:
+#   <sketchbook>/hardware/niusrobotlab/pic24/
+#
+# Verify runs XC8 through NiusBurner. Upload drives a PICkit 3 over ICSP,
+# through ipecmd from an MPLAB X 5.x install -- 6.x removed support for that
+# programmer. This is not a C++ Arduino core: XC8 has no C++ mode for these
+# parts. Sketch assembly is pic-as, not AVR GNU as.
+
+name=NiusBurner PIC24 (XC16)
+version=0.5.0
+
+# All recipes go through tools/nb_host — Arduino on Windows cannot use `echo`.
+# python.path is written by setup so the interpreter that has niusburner is used.
+# Verify compiles the whole sketch folder (C, BASIC C++, and .S / __asm) via
+# SDCC + sdas8051. recipe.S.o is a dummy because prebuild already assembled.
+
+# Board menu choices ride along as extra arguments. Anything the IDE does
+# not define expands to an empty string, which the host reads as "default".
+build.nb_optimize=size
+build.nb_compiler=auto
+build.nb_reset=none
+build.nb_entry=none
+recipe.hooks.prebuild.1.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" compile "{build.source.path}" "{build.path}" "{build.nb_board}" "{build.nb_optimize}" "{build.nb_compiler}" "{build.nb_entry}"
+recipe.hooks.prebuild.1.pattern="{runtime.platform.path}/tools/nb_host" compile "{build.source.path}" "{build.path}" "{build.nb_board}" "{build.nb_optimize}" "{build.nb_compiler}" "{build.nb_entry}"
+
+preproc.includes.flags=
+recipe.preproc.includes=
+preproc.macros.flags=
+recipe.preproc.macros.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" preproc "{source_file}" "{preprocessed_file_path}"
+recipe.preproc.macros.pattern="{runtime.platform.path}/tools/nb_host" preproc "{source_file}" "{preprocessed_file_path}"
+
+recipe.c.o.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" dummy-o "{object_file}"
+recipe.c.o.pattern="{runtime.platform.path}/tools/nb_host" dummy-o "{object_file}"
+recipe.cpp.o.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" dummy-o "{object_file}"
+recipe.cpp.o.pattern="{runtime.platform.path}/tools/nb_host" dummy-o "{object_file}"
+recipe.S.o.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" dummy-o "{object_file}"
+recipe.S.o.pattern="{runtime.platform.path}/tools/nb_host" dummy-o "{object_file}"
+
+recipe.ar.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" dummy-ar "{archive_file_path}"
+recipe.ar.pattern="{runtime.platform.path}/tools/nb_host" dummy-ar "{archive_file_path}"
+
+recipe.c.combine.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" dummy-o "{build.path}/{build.project_name}.elf"
+recipe.c.combine.pattern="{runtime.platform.path}/tools/nb_host" dummy-o "{build.path}/{build.project_name}.elf"
+
+recipe.objcopy.hex.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" hex "{build.path}" "{build.project_name}"
+recipe.objcopy.hex.pattern="{runtime.platform.path}/tools/nb_host" hex "{build.path}" "{build.project_name}"
+recipe.objcopy.eep.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" dummy-o "{build.path}/{build.project_name}.eep"
+recipe.objcopy.eep.pattern="{runtime.platform.path}/tools/nb_host" dummy-o "{build.path}/{build.project_name}.eep"
+
+recipe.size.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" size "{build.path}"
+recipe.size.pattern="{runtime.platform.path}/tools/nb_host" size "{build.path}"
+recipe.size.regex=Sketch uses ([0-9]+) bytes
+recipe.size.regex.data=^$
+
+tools.niusburner.cmd.windows={runtime.platform.path}/tools/nb_host.bat
+tools.niusburner.cmd={runtime.platform.path}/tools/nb_host
+tools.niusburner.upload.params.verbose=
+tools.niusburner.upload.params.quiet=
+tools.niusburner.upload.pattern.windows="{cmd.windows}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}" "pickit3" "{serial.port}" "{build.nb_reset}"
+tools.niusburner.upload.pattern="{cmd}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}" "pickit3" "{serial.port}" "{build.nb_reset}"
+tools.niusburner.program.params.verbose=
+tools.niusburner.program.params.quiet=
+program.nb_programmer=pickit3
+tools.niusburner.program.pattern.windows="{cmd.windows}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}" "{program.nb_programmer}" "{serial.port}" "{build.nb_reset}"
+tools.niusburner.program.pattern="{cmd}" flash "{build.path}/{build.project_name}.hex" "{build.nb_board}" "{program.nb_programmer}" "{serial.port}" "{build.nb_reset}"

@@ -373,6 +373,13 @@ def compile_plan(
                       *omitted):
             if macro not in defines:
                 defines.append(macro)
+    if plan.board.is_pic24:
+        # Ports are named rather than counted here, so the runtime gets a
+        # mask: a dsPIC30F4013 has A, B, C, D and F, with no E.
+        for macro in (f"NIUS_PIC24_PORTS=0x{plan.board.port_mask:02X}",
+                      f"NIUS_PIC24_CONFIG={plan.board.config_profile}"):
+            if macro not in defines:
+                defines.append(macro)
     if plan.board.family == "mcs51":
         # A part with no Timer 2 must not have the Timer 2 baud generator
         # compiled in: those SFR addresses simply are not there.
@@ -385,6 +392,22 @@ def compile_plan(
             defines.append(osc)
     sources = _runtime_with_sketch_vectors(
         plan, output, sources, isp_entry=isp_entry)
+    if plan.board.is_pic24:
+        from . import build_pic24
+
+        return build_pic24.build_pic24(
+            sources,
+            list(plan.includes),
+            output,
+            compiler=compiler,
+            part=plan.board.part,
+            family=plan.board.family,
+            f_cpu=plan.board.f_cpu,
+            program_size=plan.board.code_size,
+            data_size=plan.board.iram_size,
+            defines=defines,
+            optimize=optimize,
+        )
     if plan.board.is_pic:
         from . import build_pic
 

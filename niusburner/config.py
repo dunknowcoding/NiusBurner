@@ -51,6 +51,7 @@ def save(data: dict) -> Path:
 TOOLS = {
     "sdcc": "the SDCC driver, for 8051 boards",
     "xc8": "the XC8 driver (xc8-cc), for PIC boards",
+    "xc16": "the XC16 driver (xc16-gcc), for 16-bit PIC boards",
     "pickit3": "ipecmd, the command-line programmer that drives a PICkit 3",
 }
 
@@ -89,6 +90,7 @@ def set_tool(name: str, path: Path) -> Path:
 _NAMES = {
     "sdcc": ("sdcc.exe", "sdcc"),
     "xc8": ("xc8-cc.exe", "xc8-cc"),
+    "xc16": ("xc16-gcc.exe", "xc16-gcc"),
     "pickit3": ("ipecmd.exe", "ipecmd", "ipecmd.jar"),
 }
 

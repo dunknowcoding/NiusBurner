@@ -27,7 +27,7 @@ PLATFORM_SRC = PLATFORM_ROOT / "mcs51"
 #: One Arduino board package per architecture. The IDE keys its
 #: whole toolchain off the architecture directory name, so these
 #: cannot be merged into one package however similar they look.
-ARCHITECTURES = ("mcs51", "pic16", "pic18")
+ARCHITECTURES = ("mcs51", "pic16", "pic18", "pic24")
 VENDOR = "niusrobotlab"
 ARCHITECTURE = "mcs51"
 
@@ -219,7 +219,8 @@ def _menu(value: str | None, allowed: tuple[str, ...], default: str) -> str:
 
 
 #: Which recordable tool compiles for which family.
-COMPILER_FOR = {"mcs51": "sdcc", "pic16": "xc8", "pic18": "xc8"}
+COMPILER_FOR = {"mcs51": "sdcc", "pic16": "xc8", "pic18": "xc8",
+                "pic24": "xc16"}
 
 
 def resolve_compiler(choice: str, family: str = "mcs51") -> Path | None:
@@ -270,7 +271,7 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     spec = plan.board
     note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
          + (", bootloader entry" if isp_entry else ""))
-    if spec.is_pic:
+    if spec.is_pic_family:
         detail = (f"flash {result.program_words}/{spec.code_size} "
                   f"{spec.program_unit} "
                   f"({100 * result.program_words / spec.code_size:.1f}%)  "

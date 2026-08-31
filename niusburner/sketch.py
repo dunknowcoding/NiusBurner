@@ -23,11 +23,13 @@ ADAPTERS = HERE / "adapters"
 ARDUINO_MCS51 = ADAPTERS / "Arduino" / "mcs51"
 ARDUINO_PIC16 = ADAPTERS / "Arduino" / "pic16"
 ARDUINO_PIC18 = ADAPTERS / "Arduino" / "pic18"
+ARDUINO_PIC24 = ADAPTERS / "Arduino" / "pic24"
 
 #: The Arduino runtime is per instruction set, not per part: one
 #: directory of C for every board in a family.
 ARDUINO_RUNTIME = {"mcs51": ARDUINO_MCS51, "pic16": ARDUINO_PIC16,
-                   "pic18": ARDUINO_PIC18}
+                   "pic18": ARDUINO_PIC18,
+                   "pic24": ARDUINO_PIC24}
 
 
 def runtime_dir(family: str):

@@ -66,6 +66,9 @@ class Board:
     protocol: str = "stc89"
     #: PIC18 only: which configuration-bit spelling the part uses.
     config_profile: int = 1
+    #: pic24 only: which ports the package bonds out, e.g. "ABCDF".
+    #: A count cannot describe it -- a dsPIC30F4013 skips E.
+    ports_present: str = ""
     #: 8-pin PICs name their port GPIO/TRISIO, not PORTA/TRISA.
     gpio_style: bool = False
     #: 0 crystal, 1 internal RC as INTRCIO, 2 internal as INTOSCIO.
@@ -84,6 +87,34 @@ class Board:
     @property
     def is_pic(self) -> bool:
         return self.family in self.PIC_FAMILIES
+
+    @property
+    def is_pic_family(self) -> bool:
+        """Any PIC, whichever compiler builds it.
+
+        `is_pic` is narrower on purpose: it means "XC8 builds this", which
+        is what selects the compiler. This one means "the build result is
+        shaped like a PIC's", which is what selects how it is reported.
+        """
+        return self.family.startswith("pic")
+
+    @property
+    def is_pic24(self) -> bool:
+        """A 16-bit PIC, built by XC16 rather than XC8."""
+        return self.family == "pic24"
+
+    @property
+    def port_mask(self) -> int:
+        """Ports as one bit each, A upwards.
+
+        Contiguous families give a count and the mask follows from it; a
+        16-bit part names the ports it actually has, because they are not
+        a contiguous run.
+        """
+        if self.ports_present:
+            return sum(1 << (ord(name.upper()) - ord("A"))
+                       for name in self.ports_present)
+        return (1 << self.ports) - 1
 
     @property
     def program_unit(self) -> str:
@@ -145,6 +176,7 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             experimental=bool(entry.get("experimental", False)),
             protocol=str(entry.get("protocol", "stc89")),
             config_profile=int(entry.get("config_profile", 1)),
+            ports_present=str(entry.get("ports_present", "")),
             gpio_style=bool(entry.get("gpio_style", False)),
             internal_osc=int(entry.get("internal_osc", 0)),
             signature=str(entry.get("signature", "")),

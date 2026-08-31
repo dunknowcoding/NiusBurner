@@ -1,0 +1,268 @@
+# NiusBurner pic24 boards.
+#
+# Copyright 2026 dunknowcoding (NiusRobotLab)
+# SPDX-License-Identifier: Apache-2.0
+#
+# Generated from niusburner/boards.json by `python -m niusburner setup`.
+# Edit the catalog, not this file.
+#
+# Defaults are the safe answer, not the fastest one: Size, because
+# these parts run out of room long before cycles;
+# because symbols cost build time and disk rather than flash; and
+# auto-detection, because a compiler is normally where its own
+# installer put it.
+
+menu.optimize=Optimize
+menu.compiler=Compiler
+
+# ----------------------------------------------------------------------
+# 7 KB flash, 512 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
+dspic30f2010.name=30F2010 (7 KB, PICkit 3) [experimental]
+dspic30f2010.upload.tool=niusburner
+dspic30f2010.upload.protocol=pickit3
+dspic30f2010.upload.maximum_size=7936
+dspic30f2010.upload.maximum_data_size=512
+dspic30f2010.upload.require_upload_port=false
+dspic30f2010.build.mcu=30F2010
+dspic30f2010.build.f_cpu=7372800L
+dspic30f2010.build.board=30F2010
+dspic30f2010.build.core=niusburner
+dspic30f2010.build.variant=standard
+dspic30f2010.build.nb_board=dspic30f2010
+dspic30f2010.build.extra_flags=
+
+dspic30f2010.menu.optimize.size=Size (default)
+dspic30f2010.menu.optimize.size.build.nb_optimize=size
+dspic30f2010.menu.optimize.speed=Speed
+dspic30f2010.menu.optimize.speed.build.nb_optimize=speed
+dspic30f2010.menu.optimize.none=None
+dspic30f2010.menu.optimize.none.build.nb_optimize=none
+
+dspic30f2010.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f2010.menu.compiler.auto.build.nb_compiler=auto
+dspic30f2010.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f2010.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 7 KB flash, 1024 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCD. UART1 on fixed pins.
+dspic30f2011.name=30F2011 (7 KB, PICkit 3) [experimental]
+dspic30f2011.upload.tool=niusburner
+dspic30f2011.upload.protocol=pickit3
+dspic30f2011.upload.maximum_size=7936
+dspic30f2011.upload.maximum_data_size=1024
+dspic30f2011.upload.require_upload_port=false
+dspic30f2011.build.mcu=30F2011
+dspic30f2011.build.f_cpu=7372800L
+dspic30f2011.build.board=30F2011
+dspic30f2011.build.core=niusburner
+dspic30f2011.build.variant=standard
+dspic30f2011.build.nb_board=dspic30f2011
+dspic30f2011.build.extra_flags=
+
+dspic30f2011.menu.optimize.size=Size (default)
+dspic30f2011.menu.optimize.size.build.nb_optimize=size
+dspic30f2011.menu.optimize.speed=Speed
+dspic30f2011.menu.optimize.speed.build.nb_optimize=speed
+dspic30f2011.menu.optimize.none=None
+dspic30f2011.menu.optimize.none.build.nb_optimize=none
+
+dspic30f2011.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f2011.menu.compiler.auto.build.nb_compiler=auto
+dspic30f2011.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f2011.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 7 KB flash, 1024 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDF. UART1 on fixed pins.
+dspic30f2012.name=30F2012 (7 KB, PICkit 3) [experimental]
+dspic30f2012.upload.tool=niusburner
+dspic30f2012.upload.protocol=pickit3
+dspic30f2012.upload.maximum_size=7936
+dspic30f2012.upload.maximum_data_size=1024
+dspic30f2012.upload.require_upload_port=false
+dspic30f2012.build.mcu=30F2012
+dspic30f2012.build.f_cpu=7372800L
+dspic30f2012.build.board=30F2012
+dspic30f2012.build.core=niusburner
+dspic30f2012.build.variant=standard
+dspic30f2012.build.nb_board=dspic30f2012
+dspic30f2012.build.extra_flags=
+
+dspic30f2012.menu.optimize.size=Size (default)
+dspic30f2012.menu.optimize.size.build.nb_optimize=size
+dspic30f2012.menu.optimize.speed=Speed
+dspic30f2012.menu.optimize.speed.build.nb_optimize=speed
+dspic30f2012.menu.optimize.none=None
+dspic30f2012.menu.optimize.none.build.nb_optimize=none
+
+dspic30f2012.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f2012.menu.compiler.auto.build.nb_compiler=auto
+dspic30f2012.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f2012.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 15 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCD. UART1 on fixed pins.
+dspic30f3012.name=30F3012 (15 KB, PICkit 3) [experimental]
+dspic30f3012.upload.tool=niusburner
+dspic30f3012.upload.protocol=pickit3
+dspic30f3012.upload.maximum_size=16128
+dspic30f3012.upload.maximum_data_size=2048
+dspic30f3012.upload.require_upload_port=false
+dspic30f3012.build.mcu=30F3012
+dspic30f3012.build.f_cpu=7372800L
+dspic30f3012.build.board=30F3012
+dspic30f3012.build.core=niusburner
+dspic30f3012.build.variant=standard
+dspic30f3012.build.nb_board=dspic30f3012
+dspic30f3012.build.extra_flags=
+
+dspic30f3012.menu.optimize.size=Size (default)
+dspic30f3012.menu.optimize.size.build.nb_optimize=size
+dspic30f3012.menu.optimize.speed=Speed
+dspic30f3012.menu.optimize.speed.build.nb_optimize=speed
+dspic30f3012.menu.optimize.none=None
+dspic30f3012.menu.optimize.none.build.nb_optimize=none
+
+dspic30f3012.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f3012.menu.compiler.auto.build.nb_compiler=auto
+dspic30f3012.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f3012.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 15 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDF. UART1 on fixed pins.
+dspic30f3013.name=30F3013 (15 KB, PICkit 3) [experimental]
+dspic30f3013.upload.tool=niusburner
+dspic30f3013.upload.protocol=pickit3
+dspic30f3013.upload.maximum_size=16128
+dspic30f3013.upload.maximum_data_size=2048
+dspic30f3013.upload.require_upload_port=false
+dspic30f3013.build.mcu=30F3013
+dspic30f3013.build.f_cpu=7372800L
+dspic30f3013.build.board=30F3013
+dspic30f3013.build.core=niusburner
+dspic30f3013.build.variant=standard
+dspic30f3013.build.nb_board=dspic30f3013
+dspic30f3013.build.extra_flags=
+
+dspic30f3013.menu.optimize.size=Size (default)
+dspic30f3013.menu.optimize.size.build.nb_optimize=size
+dspic30f3013.menu.optimize.speed=Speed
+dspic30f3013.menu.optimize.speed.build.nb_optimize=speed
+dspic30f3013.menu.optimize.none=None
+dspic30f3013.menu.optimize.none.build.nb_optimize=none
+
+dspic30f3013.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f3013.menu.compiler.auto.build.nb_compiler=auto
+dspic30f3013.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f3013.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 15 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports ABCDF. UART1 on fixed pins.
+dspic30f3014.name=30F3014 (15 KB, PICkit 3) [experimental]
+dspic30f3014.upload.tool=niusburner
+dspic30f3014.upload.protocol=pickit3
+dspic30f3014.upload.maximum_size=16128
+dspic30f3014.upload.maximum_data_size=2048
+dspic30f3014.upload.require_upload_port=false
+dspic30f3014.build.mcu=30F3014
+dspic30f3014.build.f_cpu=7372800L
+dspic30f3014.build.board=30F3014
+dspic30f3014.build.core=niusburner
+dspic30f3014.build.variant=standard
+dspic30f3014.build.nb_board=dspic30f3014
+dspic30f3014.build.extra_flags=
+
+dspic30f3014.menu.optimize.size=Size (default)
+dspic30f3014.menu.optimize.size.build.nb_optimize=size
+dspic30f3014.menu.optimize.speed=Speed
+dspic30f3014.menu.optimize.speed.build.nb_optimize=speed
+dspic30f3014.menu.optimize.none=None
+dspic30f3014.menu.optimize.none.build.nb_optimize=none
+
+dspic30f3014.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f3014.menu.compiler.auto.build.nb_compiler=auto
+dspic30f3014.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f3014.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 31 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
+dspic30f4011.name=30F4011 (31 KB, PICkit 3) [experimental]
+dspic30f4011.upload.tool=niusburner
+dspic30f4011.upload.protocol=pickit3
+dspic30f4011.upload.maximum_size=32512
+dspic30f4011.upload.maximum_data_size=2048
+dspic30f4011.upload.require_upload_port=false
+dspic30f4011.build.mcu=30F4011
+dspic30f4011.build.f_cpu=7372800L
+dspic30f4011.build.board=30F4011
+dspic30f4011.build.core=niusburner
+dspic30f4011.build.variant=standard
+dspic30f4011.build.nb_board=dspic30f4011
+dspic30f4011.build.extra_flags=
+
+dspic30f4011.menu.optimize.size=Size (default)
+dspic30f4011.menu.optimize.size.build.nb_optimize=size
+dspic30f4011.menu.optimize.speed=Speed
+dspic30f4011.menu.optimize.speed.build.nb_optimize=speed
+dspic30f4011.menu.optimize.none=None
+dspic30f4011.menu.optimize.none.build.nb_optimize=none
+
+dspic30f4011.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f4011.menu.compiler.auto.build.nb_compiler=auto
+dspic30f4011.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f4011.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 31 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
+dspic30f4012.name=30F4012 (31 KB, PICkit 3) [experimental]
+dspic30f4012.upload.tool=niusburner
+dspic30f4012.upload.protocol=pickit3
+dspic30f4012.upload.maximum_size=32512
+dspic30f4012.upload.maximum_data_size=2048
+dspic30f4012.upload.require_upload_port=false
+dspic30f4012.build.mcu=30F4012
+dspic30f4012.build.f_cpu=7372800L
+dspic30f4012.build.board=30F4012
+dspic30f4012.build.core=niusburner
+dspic30f4012.build.variant=standard
+dspic30f4012.build.nb_board=dspic30f4012
+dspic30f4012.build.extra_flags=
+
+dspic30f4012.menu.optimize.size=Size (default)
+dspic30f4012.menu.optimize.size.build.nb_optimize=size
+dspic30f4012.menu.optimize.speed=Speed
+dspic30f4012.menu.optimize.speed.build.nb_optimize=speed
+dspic30f4012.menu.optimize.none=None
+dspic30f4012.menu.optimize.none.build.nb_optimize=none
+
+dspic30f4012.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f4012.menu.compiler.auto.build.nb_compiler=auto
+dspic30f4012.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f4012.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 31 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports ABCDF. UART1 on fixed pins.
+dspic30f4013.name=30F4013 (31 KB, PICkit 3) [experimental]
+dspic30f4013.upload.tool=niusburner
+dspic30f4013.upload.protocol=pickit3
+dspic30f4013.upload.maximum_size=32512
+dspic30f4013.upload.maximum_data_size=2048
+dspic30f4013.upload.require_upload_port=false
+dspic30f4013.build.mcu=30F4013
+dspic30f4013.build.f_cpu=7372800L
+dspic30f4013.build.board=30F4013
+dspic30f4013.build.core=niusburner
+dspic30f4013.build.variant=standard
+dspic30f4013.build.nb_board=dspic30f4013
+dspic30f4013.build.extra_flags=
+
+dspic30f4013.menu.optimize.size=Size (default)
+dspic30f4013.menu.optimize.size.build.nb_optimize=size
+dspic30f4013.menu.optimize.speed=Speed
+dspic30f4013.menu.optimize.speed.build.nb_optimize=speed
+dspic30f4013.menu.optimize.none=None
+dspic30f4013.menu.optimize.none.build.nb_optimize=none
+
+dspic30f4013.menu.compiler.auto=Auto-detect SDCC (default)
+dspic30f4013.menu.compiler.auto.build.nb_compiler=auto
+dspic30f4013.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+dspic30f4013.menu.compiler.configured.build.nb_compiler=configured
