@@ -69,6 +69,9 @@ class Board:
     #: pic24 only: which ports the package bonds out, e.g. "ABCDF".
     #: A count cannot describe it -- a dsPIC30F4013 skips E.
     ports_present: str = ""
+    #: 8051 only: oscillator periods per machine cycle. 12 on a
+    #: classic core, 1 on the STC15 and other 1T parts.
+    clocks_per_mc: int = 12
     #: 8-pin PICs name their port GPIO/TRISIO, not PORTA/TRISA.
     gpio_style: bool = False
     #: 0 crystal, 1 internal RC as INTRCIO, 2 internal as INTOSCIO.
@@ -177,6 +180,7 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             protocol=str(entry.get("protocol", "stc89")),
             config_profile=int(entry.get("config_profile", 1)),
             ports_present=str(entry.get("ports_present", "")),
+            clocks_per_mc=int(entry.get("clocks_per_mc", 12)),
             gpio_style=bool(entry.get("gpio_style", False)),
             internal_osc=int(entry.get("internal_osc", 0)),
             signature=str(entry.get("signature", "")),

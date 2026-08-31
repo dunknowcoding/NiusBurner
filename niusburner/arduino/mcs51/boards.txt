@@ -382,6 +382,126 @@ sst89e564.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 sst89e564.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
+# 60 KB flash, 2 KB SRAM. Same 1T core and bootloader generation. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.
+stc15f2k60s2.name=STC15F2K60S2 (60 KB, serial bootloader) [experimental]
+stc15f2k60s2.upload.tool=niusburner
+stc15f2k60s2.upload.protocol=stcgal
+stc15f2k60s2.upload.maximum_size=61440
+stc15f2k60s2.upload.maximum_data_size=256
+stc15f2k60s2.upload.require_upload_port=true
+stc15f2k60s2.build.mcu=stc15f2k60s2
+stc15f2k60s2.build.f_cpu=11059200L
+stc15f2k60s2.build.board=STC15F2K60S2
+stc15f2k60s2.build.core=niusburner
+stc15f2k60s2.build.variant=standard
+stc15f2k60s2.build.nb_board=stc15f2k60s2
+stc15f2k60s2.build.extra_flags=
+
+stc15f2k60s2.menu.optimize.size=Size (default)
+stc15f2k60s2.menu.optimize.size.build.nb_optimize=size
+stc15f2k60s2.menu.optimize.speed=Speed
+stc15f2k60s2.menu.optimize.speed.build.nb_optimize=speed
+stc15f2k60s2.menu.optimize.none=None
+stc15f2k60s2.menu.optimize.none.build.nb_optimize=none
+
+stc15f2k60s2.menu.reset.none=None - interrupt power by hand (default)
+stc15f2k60s2.menu.reset.none.build.nb_reset=none
+stc15f2k60s2.menu.reset.dtr=Adapter DTR switches VDD
+stc15f2k60s2.menu.reset.dtr.build.nb_reset=dtr
+stc15f2k60s2.menu.reset.rts=Adapter RTS switches VDD
+stc15f2k60s2.menu.reset.rts.build.nb_reset=rts
+
+stc15f2k60s2.menu.entry.none=Interrupt power by hand (default)
+stc15f2k60s2.menu.entry.none.build.nb_entry=none
+stc15f2k60s2.menu.entry.soft=Sketch reboots itself into the bootloader
+stc15f2k60s2.menu.entry.soft.build.nb_entry=soft
+
+stc15f2k60s2.menu.compiler.auto=Auto-detect SDCC (default)
+stc15f2k60s2.menu.compiler.auto.build.nb_compiler=auto
+stc15f2k60s2.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+stc15f2k60s2.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 4 KB flash. Same 1T core and bootloader as the STC15W408AS. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.
+stc15w404as.name=STC15W404AS (4 KB, serial bootloader) [experimental]
+stc15w404as.upload.tool=niusburner
+stc15w404as.upload.protocol=stcgal
+stc15w404as.upload.maximum_size=4096
+stc15w404as.upload.maximum_data_size=256
+stc15w404as.upload.require_upload_port=true
+stc15w404as.build.mcu=stc15w404as
+stc15w404as.build.f_cpu=11059200L
+stc15w404as.build.board=STC15W404AS
+stc15w404as.build.core=niusburner
+stc15w404as.build.variant=standard
+stc15w404as.build.nb_board=stc15w404as
+stc15w404as.build.extra_flags=
+
+stc15w404as.menu.optimize.size=Size (default)
+stc15w404as.menu.optimize.size.build.nb_optimize=size
+stc15w404as.menu.optimize.speed=Speed
+stc15w404as.menu.optimize.speed.build.nb_optimize=speed
+stc15w404as.menu.optimize.none=None
+stc15w404as.menu.optimize.none.build.nb_optimize=none
+
+stc15w404as.menu.reset.none=None - interrupt power by hand (default)
+stc15w404as.menu.reset.none.build.nb_reset=none
+stc15w404as.menu.reset.dtr=Adapter DTR switches VDD
+stc15w404as.menu.reset.dtr.build.nb_reset=dtr
+stc15w404as.menu.reset.rts=Adapter RTS switches VDD
+stc15w404as.menu.reset.rts.build.nb_reset=rts
+
+stc15w404as.menu.entry.none=Interrupt power by hand (default)
+stc15w404as.menu.entry.none.build.nb_entry=none
+stc15w404as.menu.entry.soft=Sketch reboots itself into the bootloader
+stc15w404as.menu.entry.soft.build.nb_entry=soft
+
+stc15w404as.menu.compiler.auto=Auto-detect SDCC (default)
+stc15w404as.menu.compiler.auto.build.nb_compiler=auto
+stc15w404as.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+stc15w404as.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 8 KB flash, 8-pin to 28-pin. 1T core: one clock per machine cycle, so it runs a given instruction stream about twelve times faster than an STC89 at the same clock. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.
+stc15w408as.name=STC15W408AS (8 KB, serial bootloader) [experimental]
+stc15w408as.upload.tool=niusburner
+stc15w408as.upload.protocol=stcgal
+stc15w408as.upload.maximum_size=8192
+stc15w408as.upload.maximum_data_size=256
+stc15w408as.upload.require_upload_port=true
+stc15w408as.build.mcu=stc15w408as
+stc15w408as.build.f_cpu=11059200L
+stc15w408as.build.board=STC15W408AS
+stc15w408as.build.core=niusburner
+stc15w408as.build.variant=standard
+stc15w408as.build.nb_board=stc15w408as
+stc15w408as.build.extra_flags=
+
+stc15w408as.menu.optimize.size=Size (default)
+stc15w408as.menu.optimize.size.build.nb_optimize=size
+stc15w408as.menu.optimize.speed=Speed
+stc15w408as.menu.optimize.speed.build.nb_optimize=speed
+stc15w408as.menu.optimize.none=None
+stc15w408as.menu.optimize.none.build.nb_optimize=none
+
+stc15w408as.menu.reset.none=None - interrupt power by hand (default)
+stc15w408as.menu.reset.none.build.nb_reset=none
+stc15w408as.menu.reset.dtr=Adapter DTR switches VDD
+stc15w408as.menu.reset.dtr.build.nb_reset=dtr
+stc15w408as.menu.reset.rts=Adapter RTS switches VDD
+stc15w408as.menu.reset.rts.build.nb_reset=rts
+
+stc15w408as.menu.entry.none=Interrupt power by hand (default)
+stc15w408as.menu.entry.none.build.nb_entry=none
+stc15w408as.menu.entry.soft=Sketch reboots itself into the bootloader
+stc15w408as.menu.entry.soft.build.nb_entry=soft
+
+stc15w408as.menu.compiler.auto=Auto-detect SDCC (default)
+stc15w408as.menu.compiler.auto.build.nb_compiler=auto
+stc15w408as.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+stc15w408as.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
 # 4 KB flash. Same UART bootloader as the STC89C52RC.
 stc89c51rc.name=STC89C51RC (4 KB, serial bootloader)
 stc89c51rc.upload.tool=niusburner

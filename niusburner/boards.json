@@ -356,6 +356,96 @@
       "timer2": true,
       "experimental": true
     },
+    "stc15f2k60s2": {
+      "part": "stc15f2k60s2",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 61440,
+      "iram_size": 256,
+      "xram_size": 1792,
+      "model": "small",
+      "programmer": "stcgal",
+      "protocol": "stc15",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "15f2k60s2"
+      ],
+      "f_cpu": 11059200,
+      "clocks_per_mc": 1,
+      "timer2": false,
+      "note": "60 KB flash, 2 KB SRAM. Same 1T core and bootloader generation. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "experimental": true
+    },
+    "stc15w404as": {
+      "part": "stc15w404as",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 4096,
+      "iram_size": 256,
+      "xram_size": 256,
+      "model": "small",
+      "programmer": "stcgal",
+      "protocol": "stc15",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "15w404as"
+      ],
+      "f_cpu": 11059200,
+      "clocks_per_mc": 1,
+      "timer2": false,
+      "note": "4 KB flash. Same 1T core and bootloader as the STC15W408AS. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "experimental": true
+    },
+    "stc15w408as": {
+      "part": "stc15w408as",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 256,
+      "model": "small",
+      "programmer": "stcgal",
+      "protocol": "stc15",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "15w408as"
+      ],
+      "f_cpu": 11059200,
+      "clocks_per_mc": 1,
+      "timer2": false,
+      "note": "8 KB flash, 8-pin to 28-pin. 1T core: one clock per machine cycle, so it runs a given instruction stream about twelve times faster than an STC89 at the same clock. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "experimental": true
+    },
     "stc89c51rc": {
       "part": "stc89c51rc",
       "family": "mcs51",

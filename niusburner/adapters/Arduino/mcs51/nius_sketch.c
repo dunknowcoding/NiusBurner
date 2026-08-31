@@ -4,9 +4,10 @@
  * Copyright 2026 dunknowcoding (NiusRobotLab)
  * SPDX-License-Identifier: Apache-2.0
  *
- * Timing is busy-wait, calibrated against NIUS_FOSC. The 8051 core divides
- * the crystal by 12, so one machine cycle is 12/Fosc -- 1.085 us at
- * 11.0592 MHz. NIUS_SPIN_MC below is what one pass of nius_spin() costs in
+ * Timing is busy-wait, calibrated against NIUS_FOSC. A classic 8051 core
+ * divides the crystal by 12, so one machine cycle is 12/Fosc -- 1.085 us at
+ * 11.0592 MHz. The 1T parts divide by one instead; NIUS_CLOCKS_PER_MC
+ * carries that. NIUS_SPIN_MC below is what one pass of nius_spin() costs in
  * machine cycles, fitted by timing delay(1000) over the UART; refit it if
  * the SDCC version or the memory model changes.
  *
@@ -55,7 +56,25 @@
 #define NIUS_DELAY_MC_Q8 16428UL          /* 64.17 machine cycles */
 #endif
 
-#define NIUS_MC_PER_MS    (NIUS_FOSC / 12000UL)
+/*
+ * How many oscillator periods one machine cycle costs. A classic 8051
+ * divides by 12; the 1T parts in this family run the same instruction set
+ * at one clock per cycle, and everything below is written in machine
+ * cycles, so this is the only place the difference belongs.
+ *
+ * It does not rescale NIUS_SPIN_MC. That is the cost of the spin loop in
+ * machine cycles, fitted on a 12-clock core, and a 1T core does not
+ * execute the same opcodes in the same number of cycles. On such a part
+ * the constant is an estimate until it is refitted there, which is why
+ * those boards are marked experimental.
+ */
+#ifndef NIUS_CLOCKS_PER_MC
+#define NIUS_CLOCKS_PER_MC 12UL
+#endif
+
+#define NIUS_CLOCKS_PER_MS (NIUS_CLOCKS_PER_MC * 1000UL)
+
+#define NIUS_MC_PER_MS    (NIUS_FOSC / NIUS_CLOCKS_PER_MS)
 
 /*
  * Machine cycles per millisecond is not an integer: 11.0592 MHz gives 921.6,
@@ -63,7 +82,7 @@
  * recovered later. Carry it in Q8 instead, computed without overflowing a
  * 32-bit constant expression at any clock this part can run.
  */
-#define NIUS_MC_PER_MS_Q8     (((NIUS_FOSC / 12000UL) * 256UL) + (((NIUS_FOSC % 12000UL) * 256UL) / 12000UL))
+#define NIUS_MC_PER_MS_Q8 (((NIUS_FOSC / NIUS_CLOCKS_PER_MS) * 256UL) + (((NIUS_FOSC % NIUS_CLOCKS_PER_MS) * 256UL) / NIUS_CLOCKS_PER_MS))
 
 /* What is left for spinning once the loop's own overhead is paid, Q8. */
 #define NIUS_SPIN_BUDGET_Q8 (NIUS_MC_PER_MS_Q8 - NIUS_DELAY_MC_Q8)
