@@ -359,14 +359,18 @@ def compile_plan(
         unit = runtime_dir(plan.board.family) / OPTION_UNITS["isp_entry"]
         if unit not in sources:
             sources.append(unit)
-    if plan.board.family == "pic16":
+    if plan.board.is_pic:
         # Which ports the package brings out: naming a port the part does
         # not have is a compile error, not a dead store.
         omitted = [f"NIUS_PIC_CFG_{name.upper()}=0"
                    for name in plan.board.config_omit]
         for macro in (f"NIUS_PIC_PORTS={plan.board.ports}",
                       f"NIUS_PIC_ANALOG={plan.board.analog}",
-                      f"NIUS_PIC_USART={plan.board.usart}", *omitted):
+                      f"NIUS_PIC_USART={plan.board.usart}",
+                      f"NIUS_PIC18_CONFIG={plan.board.config_profile}",
+                      f"NIUS_PIC_GPIO_STYLE={1 if plan.board.gpio_style else 0}",
+                      f"NIUS_PIC_OSC_INTERNAL={plan.board.internal_osc}",
+                      *omitted):
             if macro not in defines:
                 defines.append(macro)
     if plan.board.family == "mcs51":
@@ -381,16 +385,17 @@ def compile_plan(
             defines.append(osc)
     sources = _runtime_with_sketch_vectors(
         plan, output, sources, isp_entry=isp_entry)
-    if plan.board.family == "pic16":
+    if plan.board.is_pic:
         from . import build_pic
 
-        return build_pic.build_pic16(
+        return build_pic.build_pic(
             sources,
             list(plan.includes),
             output,
             compiler=compiler,
             part=plan.board.part,
             f_cpu=plan.board.f_cpu,
+            family=plan.board.family,
             program_size=plan.board.code_size,
             data_size=plan.board.iram_size,
             defines=defines,

@@ -27,7 +27,7 @@ PLATFORM_SRC = PLATFORM_ROOT / "mcs51"
 #: One Arduino board package per architecture. The IDE keys its
 #: whole toolchain off the architecture directory name, so these
 #: cannot be merged into one package however similar they look.
-ARCHITECTURES = ("mcs51", "pic16")
+ARCHITECTURES = ("mcs51", "pic16", "pic18")
 VENDOR = "niusrobotlab"
 ARCHITECTURE = "mcs51"
 
@@ -160,7 +160,7 @@ def render_boards_txt(family: str = "mcs51") -> str:
             continue
         # A PIC16 instruction is one 14-bit word, so its size is quoted in
         # words. Calling that a kilobyte would be wrong by more than two.
-        if board.family == "pic16":
+        if board.program_unit == "words":
             size = "%d K words" % (board.code_size // 1024)
         else:
             size = "%d KB" % (board.code_size // 1024)
@@ -219,7 +219,7 @@ def _menu(value: str | None, allowed: tuple[str, ...], default: str) -> str:
 
 
 #: Which recordable tool compiles for which family.
-COMPILER_FOR = {"mcs51": "sdcc", "pic16": "xc8"}
+COMPILER_FOR = {"mcs51": "sdcc", "pic16": "xc8", "pic18": "xc8"}
 
 
 def resolve_compiler(choice: str, family: str = "mcs51") -> Path | None:
@@ -270,8 +270,9 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     spec = plan.board
     note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
          + (", bootloader entry" if isp_entry else ""))
-    if spec.family == "pic16":
-        detail = (f"flash {result.program_words}/{spec.code_size} words "
+    if spec.is_pic:
+        detail = (f"flash {result.program_words}/{spec.code_size} "
+                  f"{spec.program_unit} "
                   f"({100 * result.program_words / spec.code_size:.1f}%)  "
                   f"ram {result.data_bytes}/{spec.iram_size} B")
     else:

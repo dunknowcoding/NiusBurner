@@ -79,8 +79,13 @@ tracked as an open task; do not assume it fits.
 
 ## Parts
 
+### PIC10/12/16 — XC8, 14-bit core
+
 | part | flash | RAM | ports | USART |
 |---|---|---|---|---|
+| 12F629 ⚠️ | 1 K words | 64 B | GPIO | — |
+| 12F675 ⚠️ | 1 K words | 64 B | GPIO | — |
+| 12F683 ⚠️ | 2 K words | 128 B | GPIO | — |
 | 16F627A ⚠️ | 1 K words | 224 B | A-B | yes |
 | 16F628A ⚠️ | 2 K words | 224 B | A-B | yes |
 | 16F648A ⚠️ | 4 K words | 256 B | A-B | yes |
@@ -95,22 +100,59 @@ tracked as an open task; do not assume it fits.
 | 16F877A | 8 K words | 368 B | A-E | yes |
 | 16F88 ⚠️ | 4 K words | 368 B | A-B | yes |
 
-**⚠️ experimental** means the same as it does for the 8051 parts: the entry
-comes from the datasheet and the family, and something on the path — the
-pin map, where the USART sits, which register turns the analog pins off — is
-still an assumption. It compiles and sizes correctly.
+### PIC18 — XC8, 16-bit core
 
-One runtime, compiled for the part in front of it. The family does not share
-one register map: the 40-pin members bring out ports A to E and the 18-pin
-ones stop at B; the analog pins are turned off through ADCON1, CMCON or
-ANSEL depending on the part; the USART appears on RC6/RC7 or on PORTB; and
-the 16F84A implements neither brown-out nor low-voltage programming, so those
-configuration bits must not be named at all.
+| part | flash | RAM | ports |
+|---|---|---|---|
+| 18F252 ⚠️ | 32 KB | 1536 B | A-C |
+| 18F2520 ⚠️ | 32 KB | 1536 B | A-C |
+| 18F2550 ⚠️ | 32 KB | 2048 B | A-C |
+| 18F2620 ⚠️ | 64 KB | 3968 B | A-C |
+| 18F452 ⚠️ | 32 KB | 1536 B | A-E |
+| 18F4520 ⚠️ | 32 KB | 1536 B | A-E |
+| 18F4550 ⚠️ | 32 KB | 2048 B | A-E |
+| 18F4620 ⚠️ | 64 KB | 3968 B | A-E |
 
-All of that is in the catalog rather than in the code, because naming a
-register a part does not have is a compile error, not a pin that quietly
-does nothing. A part with no USART refuses `Serial` at translation time with
-that reason, instead of failing later in the compiler.
+PIC18 program memory is counted in **bytes**; a mid-range PIC16 instruction
+is one 14-bit **word**. Both are shown in the unit the compiler reports, so
+the numbers can be compared with a datasheet without halving or doubling
+anything.
+
+**⚠️ experimental** means the entry comes from the datasheet and the family,
+with something on the path still an assumption. It compiles and sizes
+correctly.
+
+### One runtime, compiled for the part in front of it
+
+The family does not share one register map, and naming a register a part
+does not have is a compile error rather than a pin that quietly does
+nothing. So the catalog carries the differences and the runtime is built for
+the part:
+
+| What varies | Values seen across the family |
+|---|---|
+| Ports bonded out | A–E on 40-pin, A–B on 18-pin, and the 8-pin parts call their single port `GPIO`/`TRISIO` rather than `PORTA`/`TRISA` |
+| Port pull-ups | `OPTION_REG.nRBPU` on the PORTB parts, `nGPPU` on the 8-pin ones, `INTCON2.RBPU` on PIC18 |
+| Turning the analog pins off | `ADCON1`, `CMCON`, `ANSEL`, both together, or nothing to do |
+| Where the USART sits | RC6/RC7, RB2/RB1, or RB2/RB5 |
+| Configuration bits | The 16F84A implements neither brown-out nor low-voltage programming; the 16F62xA have no flash write protection |
+| Oscillator setting | `HS`/`XT`/`LP` for a crystal, and `INTRCIO` or `INTOSCIO` for the same internal oscillator depending on the part |
+| PIC18 configuration | The 18F4550 line spells them `FOSC`/`BOR`, the 18F4520 line `OSC`/`BOREN`, and the 18F452 line has neither `PBADEN` nor `MCLRE` |
+
+A part with no USART refuses `Serial` at translation time, naming the part
+and the peripheral, instead of failing later in the compiler.
+
+### PIC24, dsPIC33 and PIC32
+
+**Not supported yet.** `niusburner detect` finds XC16 and XC32 if they are
+installed, because knowing a compiler is present is useful, but no board in
+the catalog uses them.
+
+What is missing is a runtime, not a compiler: those cores have a different
+port model, a different UART, no `__delay_ms`, and — on most PIC24FJ parts —
+peripheral pin select, so the UART has to be routed to pins before it
+exists. Adding them means a new runtime and a new build driver per family,
+which is a larger piece of work than widening an existing one.
 
 ---
 

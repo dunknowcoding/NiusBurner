@@ -25,7 +25,8 @@ again after installing anything.
 | Menu | Choices | Default |
 |---|---|---|
 | **Board → NiusBurner 8051 (SDCC)** | 25 parts: AT89S, AT89C, STC89/90, W78E, SST89 | AT89S52 |
-| **Board → NiusBurner PIC (XC8)** | 13 parts: PIC16F84A, 16F62xA, 16F88, 16F87x and the A revisions | PIC16F877A | PIC16F877A |
+| **Board → NiusBurner PIC (XC8)** | 16 parts: PIC12F6xx, PIC16F84A/62xA/88/87x | PIC16F877A |
+| **Board → NiusBurner PIC18 (XC8)** | 8 parts: 18F2550/4550, 18F2520/4520, 18F2620/4620, 18F252/452 | PIC18F4550 |
 | **Programmer** | USB-ISP HID (03EB:C8B4), USBasp, Nano 12 V | USB-ISP HID |
 | **Optimize** | Size, Speed, None | **Size** |
 | **Compiler** | Auto-detect SDCC, configured path | Auto-detect |

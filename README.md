@@ -8,7 +8,7 @@ Write a sketch that looks like Arduino. Press Upload. It lands on an 8051 or a P
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Parts](https://img.shields.io/badge/parts-38-green.svg)](#supported-parts)
+[![Parts](https://img.shields.io/badge/parts-49-green.svg)](#supported-parts)
 [![Toolchains](https://img.shields.io/badge/toolchains-never%20vendored-orange.svg)](docs/toolchains.md)
 
 </div>
@@ -92,29 +92,47 @@ path.
 | STC90C52RC | 8 KB | 256 B |
 | STC90C58RD | 32 KB | 256 B |
 
-**PIC over ICSP** — written by a PICkit 3.
+**PIC over ICSP** — written by a PICkit 3, compiled by XC8.
+
+*PIC10/12/16 (14-bit core), flash in words:*
+
+| part | flash | RAM | ports | USART |
+|---|---|---|---|---|
+| 12F629 ⚠️ | 1 K words | 64 B | GPIO | — |
+| 12F675 ⚠️ | 1 K words | 64 B | GPIO | — |
+| 12F683 ⚠️ | 2 K words | 128 B | GPIO | — |
+| 16F627A ⚠️ | 1 K words | 224 B | A-B | yes |
+| 16F628A ⚠️ | 2 K words | 224 B | A-B | yes |
+| 16F648A ⚠️ | 4 K words | 256 B | A-B | yes |
+| 16F84A ⚠️ | 1 K words | 68 B | A-B | — |
+| 16F873 ⚠️ | 4 K words | 192 B | A-C | yes |
+| 16F873A | 4 K words | 192 B | A-C | yes |
+| 16F874 ⚠️ | 4 K words | 192 B | A-E | yes |
+| 16F874A | 4 K words | 192 B | A-E | yes |
+| 16F876 ⚠️ | 8 K words | 368 B | A-C | yes |
+| 16F876A | 8 K words | 368 B | A-C | yes |
+| 16F877 ⚠️ | 8 K words | 368 B | A-E | yes |
+| 16F877A | 8 K words | 368 B | A-E | yes |
+| 16F88 ⚠️ | 4 K words | 368 B | A-B | yes |
+
+*PIC18 (16-bit core), flash in bytes:*
 
 | part | flash | RAM | ports |
 |---|---|---|---|
-| 16F627A | 1 K words | 224 B | A-B |
-| 16F628A | 2 K words | 224 B | A-B |
-| 16F648A | 4 K words | 256 B | A-B |
-| 16F84A | 1 K words | 68 B | A-B |
-| 16F873 | 4 K words | 192 B | A-C |
-| 16F873A | 4 K words | 192 B | A-C |
-| 16F874 | 4 K words | 192 B | A-E |
-| 16F874A | 4 K words | 192 B | A-E |
-| 16F876 | 8 K words | 368 B | A-C |
-| 16F876A | 8 K words | 368 B | A-C |
-| 16F877 | 8 K words | 368 B | A-E |
-| 16F877A | 8 K words | 368 B | A-E |
-| 16F88 | 4 K words | 368 B | A-B |
+| 18F252 ⚠️ | 32 KB | 1536 B | A-C |
+| 18F2520 ⚠️ | 32 KB | 1536 B | A-C |
+| 18F2550 ⚠️ | 32 KB | 2048 B | A-C |
+| 18F2620 ⚠️ | 64 KB | 3968 B | A-C |
+| 18F452 ⚠️ | 32 KB | 1536 B | A-E |
+| 18F4520 ⚠️ | 32 KB | 1536 B | A-E |
+| 18F4550 ⚠️ | 32 KB | 2048 B | A-E |
+| 18F4620 ⚠️ | 64 KB | 3968 B | A-E |
 
 **Compile only** — these parts are written in a parallel programming socket,
 which no header here can drive. They compile and size correctly, and `upload`
 says plainly that the route is not wired: AT89C2051, AT89C51, AT89C52, AT89C55, SST89E54, SST89E564, W78E51, W78E52, W78E54, W78E58.
 
-Parts marked **⚠️ experimental** (28 of them) are in the catalog on the
+Parts marked **⚠️ experimental** (39 of them) are in the catalog on the
 strength of their datasheet and their family: they compile and size
 correctly, but something on the path — a programming mode, a pin map, where
 a peripheral sits — is still an assumption. The Tools menu and

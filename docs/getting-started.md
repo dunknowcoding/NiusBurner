@@ -30,8 +30,8 @@ circuit, power and the ISP header for about $6, and saves a lot of wiring.
 | Item | Roughly | What to look for |
 |---|---|---|
 | **PICkit 3** | $10–20 | Clones work. It enumerates as **VID `04D8` / PID `900A`**. |
-| **PIC16F877A (or any part in the table)** | $2–4 | DIP-40. |
-| **20 MHz crystal + 2 × 22 pF** | under $1 | The 16F87x family has no internal oscillator either. The 18-pin parts (16F628A, 16F88) *do*, and can run without one. |
+| **A PIC** | $1–4 | Any part in the tables in [families/pic.md](families/pic.md): PIC16F877A (DIP-40) and PIC16F628A (DIP-18) are the common ones, PIC18F4550 if you want more room, PIC12F675 for something tiny. |
+| **20 MHz crystal + 2 × 22 pF** | under $1 | Needed by the 16F87x and PIC18 parts. The 18-pin (16F628A, 16F88) and 8-pin (12F6xx) parts have an internal oscillator and run without one. |
 | **5-pin ICSP header** | — | MCLR, VDD, VSS, PGD, PGC. Most PIC boards bring it out already. |
 
 ---
@@ -63,8 +63,14 @@ required; there is no way around that, and nothing here tries to script it.
 The free tier is unoptimised but complete — every part in the table compiles
 under it.
 
-Install to the default location. NiusBurner finds it, or you can record the
-path yourself:
+XC8 covers PIC10, PIC12, PIC16 and PIC18 — every part this tool programs.
+XC16 (PIC24/dsPIC33) and XC32 (PIC32) are recognised by `detect` if you have
+them, but no board here uses them yet; see
+[families/pic.md](families/pic.md).
+
+Install to the default location. NiusBurner finds it under the usual
+Microchip directories, under `EMBD_TOOLCHAINS`, or under
+`C:\embd_toolchains` — or you can record the path yourself:
 
 ```bash
 python -m niusburner setup --xc8 "C:\Program Files\Microchip\xc8\v3.00\bin\xc8-cc.exe"

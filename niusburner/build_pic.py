@@ -126,13 +126,14 @@ def _sha256(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build_pic16(
+def build_pic(
     sources: list[pathlib.Path],
     includes: list[pathlib.Path],
     output: pathlib.Path,
     *,
     compiler: pathlib.Path | None = None,
     part: str = "16F877A",
+    family: str = "pic16",
     f_cpu: int = 20000000,
     program_size: int = 8192,
     data_size: int = 368,
@@ -188,7 +189,7 @@ def build_pic16(
     import json
 
     manifest.write_text(json.dumps({
-        "family": "pic16",
+        "family": family,
         "part": part,
         "compiler": driver.name,
         "version": version.splitlines()[0] if version else "",
@@ -215,3 +216,7 @@ def build_pic16(
         optimize=optimize,
         version=version.splitlines()[0] if version else "",
     )
+
+
+#: The former name, kept so an out-of-tree caller keeps working.
+build_pic16 = build_pic

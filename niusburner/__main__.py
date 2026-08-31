@@ -418,10 +418,10 @@ def _print_usage(plan, result) -> None:
     factor of two.
     """
     board = plan.board
-    if board.family == "pic16":
+    if board.is_pic:
         words = result.program_words
         stage(int(100 * words / board.code_size), "Flash",
-              f"{words}/{board.code_size} words")
+              f"{words}/{board.code_size} {board.program_unit}")
         stage(int(100 * result.data_bytes / board.iram_size), "RAM",
               f"{result.data_bytes}/{board.iram_size} B")
         if result.eeprom_bytes:

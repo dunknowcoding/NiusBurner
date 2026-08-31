@@ -85,10 +85,16 @@ def test_detection_paths_point_outside_this_repository():
                 for key in ("path", "glob"):
                     if key not in sub:
                         continue
-                    value = pathlib.Path(sub[key])
+                    raw = sub[key]
+                    value = pathlib.Path(raw)
                     assert not value.is_absolute() or ROOT not in value.parents, (
                         f"{name} expects a tool inside the repository")
-                    assert value.is_absolute(), (
+                    # A POSIX root is absolute even when the tests run on
+                    # Windows, where pathlib would say otherwise: the rules
+                    # are shared across platforms and must be readable as
+                    # such.
+                    rooted = value.is_absolute() or raw.startswith(("/", "${"))
+                    assert rooted, (
                         f"{name} uses a relative tool path; it would resolve "
                         "against the working directory")
 

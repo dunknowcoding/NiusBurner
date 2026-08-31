@@ -1,5 +1,5 @@
 /*
- * The Arduino API on a mid-range PIC16.
+ * The Arduino API on a PIC18.
  *
  * Copyright 2026 dunknowcoding (NiusRobotLab)
  * SPDX-License-Identifier: Apache-2.0
@@ -27,83 +27,53 @@
 #endif
 
 /*
- * Configuration word.
+ * Configuration.
  *
- * A mid-range PIC latches its oscillator, watchdog and programming mode
- * from a word at 0x2007 rather than from anything the program does at run
- * time, and an image that leaves it out is programmed onto whatever the
- * erased part already holds -- all ones. That is the watchdog on, the
- * oscillator in RC mode and low-voltage programming enabled, so a sketch
- * built without this block resets roughly every 18 ms whatever clock is
- * fitted, and RB3 is not an I/O pin.
+ * A PIC18 latches its oscillator, watchdog and programming mode the same
+ * way a PIC16 does, and an image that leaves the bits out is programmed
+ * onto whatever the erased part holds -- watchdog on, low-voltage
+ * programming enabled, and RB5 taken away from the sketch.
  *
- * WDTE off is the one that matters most: nothing in this runtime clears
- * the watchdog, because a sketch that wants one should ask for it.
- * LVP off gives RB3 back and matches how this toolchain programs the
- * part. The oscillator follows the clock the board declares, since XT
- * cannot start a 20 MHz crystal and HS is wasteful below 4 MHz.
+ * The spelling is not consistent across the family, which is why this is a
+ * numbered profile rather than one block: the 18F4550 line calls the
+ * oscillator FOSC and the brown-out BOR, while the 18F4520 line calls them
+ * OSC and BOREN. Naming a bit a part does not have is an error, so the
+ * catalog picks the profile that matches.
  *
  * A sketch that needs its own settings defines NIUS_NO_CONFIG and supplies
- * a full set; two config blocks in one program is an error, not a merge.
+ * a complete set.
  */
+#ifndef NIUS_PIC18_CONFIG
+#define NIUS_PIC18_CONFIG 1
+#endif
+
 #ifndef NIUS_NO_CONFIG
 
-/*
- * A part with no oscillator pins bonded out has to run from its internal
- * RC, and selecting a crystal mode on one leaves it with no clock at all.
- */
-#ifndef NIUS_PIC_OSC_INTERNAL
-#define NIUS_PIC_OSC_INTERNAL 0
-#endif
-
-#if NIUS_PIC_OSC_INTERNAL == 1
-#pragma config FOSC = INTRCIO
-#elif NIUS_PIC_OSC_INTERNAL == 2
-/* Same oscillator, a later spelling of the same setting. */
-#pragma config FOSC = INTOSCIO
-#elif _XTAL_FREQ > 4000000UL
+#if NIUS_PIC18_CONFIG == 1
+/* 18F2550 / 18F4550: FOSC, BOR, and PORTB digital on reset via PBADEN. */
 #pragma config FOSC = HS
-#elif _XTAL_FREQ > 200000UL
-#pragma config FOSC = XT
-#else
-#pragma config FOSC = LP
-#endif
-
-/*
- * Not every member of the family implements every bit. The 16F84A has no
- * brown-out, no low-voltage programming and no data protection; the
- * 16F62xA have no flash write protection. Naming a bit a part does not
- * have is an error rather than a no-op, so the catalog says which to
- * leave out.
- */
-#ifndef NIUS_PIC_CFG_BOREN
-#define NIUS_PIC_CFG_BOREN 1
-#endif
-#ifndef NIUS_PIC_CFG_LVP
-#define NIUS_PIC_CFG_LVP 1
-#endif
-#ifndef NIUS_PIC_CFG_CPD
-#define NIUS_PIC_CFG_CPD 1
-#endif
-#ifndef NIUS_PIC_CFG_WRT
-#define NIUS_PIC_CFG_WRT 1
-#endif
-
-#pragma config WDTE = OFF
-#pragma config PWRTE = ON
-#pragma config CP = OFF
-
-#if NIUS_PIC_CFG_BOREN
-#pragma config BOREN = ON
-#endif
-#if NIUS_PIC_CFG_LVP
+#pragma config WDT = OFF
 #pragma config LVP = OFF
-#endif
-#if NIUS_PIC_CFG_CPD
-#pragma config CPD = OFF
-#endif
-#if NIUS_PIC_CFG_WRT
-#pragma config WRT = OFF
+#pragma config PWRT = ON
+#pragma config BOR = OFF
+#pragma config PBADEN = OFF
+#pragma config MCLRE = ON
+#elif NIUS_PIC18_CONFIG == 2
+/* 18F2520 / 18F4520 / 18F2620 / 18F4620: OSC and BOREN. */
+#pragma config OSC = HS
+#pragma config WDT = OFF
+#pragma config LVP = OFF
+#pragma config PWRT = ON
+#pragma config BOREN = OFF
+#pragma config PBADEN = OFF
+#pragma config MCLRE = ON
+#elif NIUS_PIC18_CONFIG == 3
+/* 18F252 / 18F452: the older set, with no PBADEN and no MCLRE. */
+#pragma config OSC = HS
+#pragma config WDT = OFF
+#pragma config LVP = OFF
+#pragma config PWRT = ON
+#pragma config BOR = OFF
 #endif
 
 #endif /* NIUS_NO_CONFIG */
@@ -127,23 +97,6 @@ static unsigned long g_seed = 1;
 #endif
 
 /*
- * The 8-pin parts do not call their single port A. It is GPIO, its
- * direction register is TRISIO, and the names PORTA and TRISA do not
- * exist for them at all -- so the port style is a switch rather than a
- * count of one.
- */
-#ifndef NIUS_PIC_GPIO_STYLE
-#define NIUS_PIC_GPIO_STYLE 0
-#endif
-#if NIUS_PIC_GPIO_STYLE
-#define NIUS_PORT0  GPIO
-#define NIUS_TRIS0  TRISIO
-#else
-#define NIUS_PORT0  PORTA
-#define NIUS_TRIS0  TRISA
-#endif
-
-/*
  * Which register makes the analog-capable pins digital at start-up:
  * 1 ADCON1, 2 CMCON, 3 ANSEL, 0 for a part with no analog at all. Naming
  * the wrong one is a compile error, so the catalog picks.
@@ -163,7 +116,7 @@ void pinMode(unsigned char pin, unsigned char mode)
      * port -- so INPUT_PULLUP is INPUT plus that enable.
      */
     switch (PORT_OF(pin)) {
-    case 0: if (mode == OUTPUT) NIUS_TRIS0 &= (unsigned char)~mask; else NIUS_TRIS0 |= mask; break;
+    case 0: if (mode == OUTPUT) TRISA &= (unsigned char)~mask; else TRISA |= mask; break;
 #if NIUS_PIC_PORTS > 1
     case 1: if (mode == OUTPUT) TRISB &= (unsigned char)~mask; else TRISB |= mask; break;
 #endif
@@ -178,18 +131,8 @@ void pinMode(unsigned char pin, unsigned char mode)
 #endif
     default: break;
     }
-    /*
-     * The pull-ups are enabled for a whole port at once, by a bit that is
-     * active low. Which port, and what the bit is called, follows the same
-     * split as the port names: GPIO on the 8-pin parts, PORTB elsewhere.
-     */
-#if NIUS_PIC_GPIO_STYLE
-    if (mode == INPUT_PULLUP && PORT_OF(pin) == 0)
-        OPTION_REGbits.nGPPU = 0;
-#else
     if (mode == INPUT_PULLUP && PORT_OF(pin) == 1)
-        OPTION_REGbits.nRBPU = 0;
-#endif
+        INTCON2bits.RBPU = 0;   /* active low: 0 enables the PORTB pull-ups */
 }
 
 void digitalWrite(unsigned char pin, unsigned char value)
@@ -197,18 +140,18 @@ void digitalWrite(unsigned char pin, unsigned char value)
     unsigned char mask = (unsigned char)(1u << BIT_OF(pin));
 
     switch (PORT_OF(pin)) {
-    case 0: if (value) NIUS_PORT0 |= mask; else NIUS_PORT0 &= (unsigned char)~mask; break;
+    case 0: if (value) LATA |= mask; else LATA &= (unsigned char)~mask; break;
 #if NIUS_PIC_PORTS > 1
-    case 1: if (value) PORTB |= mask; else PORTB &= (unsigned char)~mask; break;
+    case 1: if (value) LATB |= mask; else LATB &= (unsigned char)~mask; break;
 #endif
 #if NIUS_PIC_PORTS > 2
-    case 2: if (value) PORTC |= mask; else PORTC &= (unsigned char)~mask; break;
+    case 2: if (value) LATC |= mask; else LATC &= (unsigned char)~mask; break;
 #endif
 #if NIUS_PIC_PORTS > 3
-    case 3: if (value) PORTD |= mask; else PORTD &= (unsigned char)~mask; break;
+    case 3: if (value) LATD |= mask; else LATD &= (unsigned char)~mask; break;
 #endif
 #if NIUS_PIC_PORTS > 4
-    case 4: if (value) PORTE |= mask; else PORTE &= (unsigned char)~mask; break;
+    case 4: if (value) LATE |= mask; else LATE &= (unsigned char)~mask; break;
 #endif
     default: break;
     }
@@ -219,7 +162,7 @@ unsigned char digitalRead(unsigned char pin)
     unsigned char mask = (unsigned char)(1u << BIT_OF(pin));
 
     switch (PORT_OF(pin)) {
-    case 0: return (unsigned char)((NIUS_PORT0 & mask) ? 1 : 0);
+    case 0: return (unsigned char)((PORTA & mask) ? 1 : 0);
 #if NIUS_PIC_PORTS > 1
     case 1: return (unsigned char)((PORTB & mask) ? 1 : 0);
 #endif
@@ -338,16 +281,7 @@ void main(void)
      * the sketch runs. A sketch that wants the converter sets ADCON1
      * itself in setup(), which runs after this.
      */
-#if NIUS_PIC_ANALOG == 1
-    ADCON1 = 0x06;              /* every PORTA/PORTE pin digital */
-#elif NIUS_PIC_ANALOG == 2
-    CMCON = 0x07;               /* comparators off, PORTA digital */
-#elif NIUS_PIC_ANALOG == 3
-    ANSEL = 0x00;               /* every analog select off */
-#elif NIUS_PIC_ANALOG == 4
-    ANSEL = 0x00;               /* the 8-pin parts have both */
-    CMCON = 0x07;
-#endif
+    ADCON1 = 0x0F;              /* every analog pin digital */
     setup();
     for (;;)
         loop();

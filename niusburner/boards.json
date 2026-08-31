@@ -670,6 +670,114 @@
       "timer2": true,
       "experimental": true
     },
+    "pic12f629": {
+      "part": "12F629",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 1024,
+      "iram_size": 64,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 4000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "12f629"
+      ],
+      "note": "1 K words, 8-pin, internal 4 MHz oscillator. One port, called GPIO. No USART and no converter.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "none",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "hardware"
+      },
+      "ports": 1,
+      "analog": 2,
+      "usart": 1,
+      "config_omit": [
+        "LVP",
+        "WRT"
+      ],
+      "experimental": true,
+      "gpio_style": true,
+      "internal_osc": 1
+    },
+    "pic12f675": {
+      "part": "12F675",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 1024,
+      "iram_size": 64,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 4000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "12f675"
+      ],
+      "note": "1 K words, 8-pin, internal 4 MHz oscillator. One port, called GPIO. No USART.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "none",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 1,
+      "analog": 4,
+      "usart": 1,
+      "config_omit": [
+        "LVP",
+        "WRT"
+      ],
+      "experimental": true,
+      "gpio_style": true,
+      "internal_osc": 1
+    },
+    "pic12f683": {
+      "part": "12F683",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 2048,
+      "iram_size": 128,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 4000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "12f683"
+      ],
+      "note": "2 K words, 8-pin, internal oscillator. One port, called GPIO. No USART.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "none",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 1,
+      "analog": 3,
+      "usart": 1,
+      "config_omit": [
+        "LVP",
+        "WRT"
+      ],
+      "experimental": true,
+      "gpio_style": true,
+      "internal_osc": 2
+    },
     "pic16f627a": {
       "part": "16F627A",
       "family": "pic16",
@@ -1053,6 +1161,254 @@
       "analog": 3,
       "usart": 3,
       "experimental": true
+    },
+    "pic18f252": {
+      "part": "18F252",
+      "family": "pic18",
+      "compiler": "xc8",
+      "code_size": 32768,
+      "iram_size": 1536,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "18f252"
+      ],
+      "note": "32 KB flash, 1536 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 3,
+      "analog": 1,
+      "usart": 1,
+      "experimental": true,
+      "config_profile": 3
+    },
+    "pic18f2520": {
+      "part": "18F2520",
+      "family": "pic18",
+      "compiler": "xc8",
+      "code_size": 32768,
+      "iram_size": 1536,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "18f2520"
+      ],
+      "note": "32 KB flash, 1536 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 3,
+      "analog": 1,
+      "usart": 1,
+      "experimental": true,
+      "config_profile": 2
+    },
+    "pic18f2550": {
+      "part": "18F2550",
+      "family": "pic18",
+      "compiler": "xc8",
+      "code_size": 32768,
+      "iram_size": 2048,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "18f2550"
+      ],
+      "note": "32 KB flash, 2048 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 3,
+      "analog": 1,
+      "usart": 1,
+      "experimental": true,
+      "config_profile": 1
+    },
+    "pic18f2620": {
+      "part": "18F2620",
+      "family": "pic18",
+      "compiler": "xc8",
+      "code_size": 65536,
+      "iram_size": 3968,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "18f2620"
+      ],
+      "note": "64 KB flash, 3968 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 3,
+      "analog": 1,
+      "usart": 1,
+      "experimental": true,
+      "config_profile": 2
+    },
+    "pic18f452": {
+      "part": "18F452",
+      "family": "pic18",
+      "compiler": "xc8",
+      "code_size": 32768,
+      "iram_size": 1536,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "18f452"
+      ],
+      "note": "32 KB flash, 1536 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 5,
+      "analog": 1,
+      "usart": 1,
+      "experimental": true,
+      "config_profile": 3
+    },
+    "pic18f4520": {
+      "part": "18F4520",
+      "family": "pic18",
+      "compiler": "xc8",
+      "code_size": 32768,
+      "iram_size": 1536,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "18f4520"
+      ],
+      "note": "32 KB flash, 1536 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 5,
+      "analog": 1,
+      "usart": 1,
+      "experimental": true,
+      "config_profile": 2
+    },
+    "pic18f4550": {
+      "part": "18F4550",
+      "family": "pic18",
+      "compiler": "xc8",
+      "code_size": 32768,
+      "iram_size": 2048,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "18f4550"
+      ],
+      "note": "32 KB flash, 2048 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 5,
+      "analog": 1,
+      "usart": 1,
+      "experimental": true,
+      "config_profile": 1
+    },
+    "pic18f4620": {
+      "part": "18F4620",
+      "family": "pic18",
+      "compiler": "xc8",
+      "code_size": 65536,
+      "iram_size": 3968,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "18f4620"
+      ],
+      "note": "64 KB flash, 3968 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 5,
+      "analog": 1,
+      "usart": 1,
+      "experimental": true,
+      "config_profile": 2
     }
   },
   "_peripherals": [

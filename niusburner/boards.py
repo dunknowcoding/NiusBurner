@@ -64,11 +64,37 @@ class Board:
     experimental: bool = False
     #: stcgal's name for the bootloader generation.
     protocol: str = "stc89"
+    #: PIC18 only: which configuration-bit spelling the part uses.
+    config_profile: int = 1
+    #: 8-pin PICs name their port GPIO/TRISIO, not PORTA/TRISA.
+    gpio_style: bool = False
+    #: 0 crystal, 1 internal RC as INTRCIO, 2 internal as INTOSCIO.
+    internal_osc: int = 0
     peripherals: tuple[tuple[str, str], ...] = ()
 
     #: Programmers this tool can actually drive. A board whose programmer is
     #: not here compiles, and says plainly that the route is not wired.
     DRIVEN = ("usbisp_hid", "stcgal", "pickit3")
+
+    #: Families built by XC8 and programmed over ICSP. They share a
+    #: runtime shape and differ in registers, not in how they are
+    #: compiled or flashed.
+    PIC_FAMILIES = ("pic16", "pic18")
+
+    @property
+    def is_pic(self) -> bool:
+        return self.family in self.PIC_FAMILIES
+
+    @property
+    def program_unit(self) -> str:
+        """What the compiler counts program memory in for this family.
+
+        A mid-range PIC instruction is one 14-bit word and XC8 counts
+        words; a PIC18 instruction is byte-addressed and it counts
+        bytes. Calling either by the other's name is wrong by a
+        factor of two.
+        """
+        return "words" if self.family == "pic16" else "bytes"
 
     @property
     def flashable(self) -> bool:
@@ -118,6 +144,9 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             timer2=bool(entry.get("timer2", True)),
             experimental=bool(entry.get("experimental", False)),
             protocol=str(entry.get("protocol", "stc89")),
+            config_profile=int(entry.get("config_profile", 1)),
+            gpio_style=bool(entry.get("gpio_style", False)),
+            internal_osc=int(entry.get("internal_osc", 0)),
             signature=str(entry.get("signature", "")),
             note=str(entry.get("note", "")),
             aliases=tuple(entry.get("aliases") or ()),

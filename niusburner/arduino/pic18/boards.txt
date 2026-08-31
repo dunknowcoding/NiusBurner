@@ -1,0 +1,240 @@
+# NiusBurner pic18 boards.
+#
+# Copyright 2026 dunknowcoding (NiusRobotLab)
+# SPDX-License-Identifier: Apache-2.0
+#
+# Generated from niusburner/boards.json by `python -m niusburner setup`.
+# Edit the catalog, not this file.
+#
+# Defaults are the safe answer, not the fastest one: Size, because
+# these parts run out of room long before cycles;
+# because symbols cost build time and disk rather than flash; and
+# auto-detection, because a compiler is normally where its own
+# installer put it.
+
+menu.optimize=Optimize
+menu.compiler=Compiler
+
+# ----------------------------------------------------------------------
+# 32 KB flash, 1536 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
+pic18f252.name=18F252 (32 KB, PICkit 3) [experimental]
+pic18f252.upload.tool=niusburner
+pic18f252.upload.protocol=pickit3
+pic18f252.upload.maximum_size=32768
+pic18f252.upload.maximum_data_size=1536
+pic18f252.upload.require_upload_port=false
+pic18f252.build.mcu=18F252
+pic18f252.build.f_cpu=20000000L
+pic18f252.build.board=18F252
+pic18f252.build.core=niusburner
+pic18f252.build.variant=standard
+pic18f252.build.nb_board=pic18f252
+pic18f252.build.extra_flags=
+
+pic18f252.menu.optimize.size=Size (default)
+pic18f252.menu.optimize.size.build.nb_optimize=size
+pic18f252.menu.optimize.speed=Speed
+pic18f252.menu.optimize.speed.build.nb_optimize=speed
+pic18f252.menu.optimize.none=None
+pic18f252.menu.optimize.none.build.nb_optimize=none
+
+pic18f252.menu.compiler.auto=Auto-detect SDCC (default)
+pic18f252.menu.compiler.auto.build.nb_compiler=auto
+pic18f252.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic18f252.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 32 KB flash, 1536 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
+pic18f2520.name=18F2520 (32 KB, PICkit 3) [experimental]
+pic18f2520.upload.tool=niusburner
+pic18f2520.upload.protocol=pickit3
+pic18f2520.upload.maximum_size=32768
+pic18f2520.upload.maximum_data_size=1536
+pic18f2520.upload.require_upload_port=false
+pic18f2520.build.mcu=18F2520
+pic18f2520.build.f_cpu=20000000L
+pic18f2520.build.board=18F2520
+pic18f2520.build.core=niusburner
+pic18f2520.build.variant=standard
+pic18f2520.build.nb_board=pic18f2520
+pic18f2520.build.extra_flags=
+
+pic18f2520.menu.optimize.size=Size (default)
+pic18f2520.menu.optimize.size.build.nb_optimize=size
+pic18f2520.menu.optimize.speed=Speed
+pic18f2520.menu.optimize.speed.build.nb_optimize=speed
+pic18f2520.menu.optimize.none=None
+pic18f2520.menu.optimize.none.build.nb_optimize=none
+
+pic18f2520.menu.compiler.auto=Auto-detect SDCC (default)
+pic18f2520.menu.compiler.auto.build.nb_compiler=auto
+pic18f2520.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic18f2520.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 32 KB flash, 2048 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
+pic18f2550.name=18F2550 (32 KB, PICkit 3) [experimental]
+pic18f2550.upload.tool=niusburner
+pic18f2550.upload.protocol=pickit3
+pic18f2550.upload.maximum_size=32768
+pic18f2550.upload.maximum_data_size=2048
+pic18f2550.upload.require_upload_port=false
+pic18f2550.build.mcu=18F2550
+pic18f2550.build.f_cpu=20000000L
+pic18f2550.build.board=18F2550
+pic18f2550.build.core=niusburner
+pic18f2550.build.variant=standard
+pic18f2550.build.nb_board=pic18f2550
+pic18f2550.build.extra_flags=
+
+pic18f2550.menu.optimize.size=Size (default)
+pic18f2550.menu.optimize.size.build.nb_optimize=size
+pic18f2550.menu.optimize.speed=Speed
+pic18f2550.menu.optimize.speed.build.nb_optimize=speed
+pic18f2550.menu.optimize.none=None
+pic18f2550.menu.optimize.none.build.nb_optimize=none
+
+pic18f2550.menu.compiler.auto=Auto-detect SDCC (default)
+pic18f2550.menu.compiler.auto.build.nb_compiler=auto
+pic18f2550.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic18f2550.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 64 KB flash, 3968 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
+pic18f2620.name=18F2620 (64 KB, PICkit 3) [experimental]
+pic18f2620.upload.tool=niusburner
+pic18f2620.upload.protocol=pickit3
+pic18f2620.upload.maximum_size=65536
+pic18f2620.upload.maximum_data_size=3968
+pic18f2620.upload.require_upload_port=false
+pic18f2620.build.mcu=18F2620
+pic18f2620.build.f_cpu=20000000L
+pic18f2620.build.board=18F2620
+pic18f2620.build.core=niusburner
+pic18f2620.build.variant=standard
+pic18f2620.build.nb_board=pic18f2620
+pic18f2620.build.extra_flags=
+
+pic18f2620.menu.optimize.size=Size (default)
+pic18f2620.menu.optimize.size.build.nb_optimize=size
+pic18f2620.menu.optimize.speed=Speed
+pic18f2620.menu.optimize.speed.build.nb_optimize=speed
+pic18f2620.menu.optimize.none=None
+pic18f2620.menu.optimize.none.build.nb_optimize=none
+
+pic18f2620.menu.compiler.auto=Auto-detect SDCC (default)
+pic18f2620.menu.compiler.auto.build.nb_compiler=auto
+pic18f2620.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic18f2620.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 32 KB flash, 1536 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
+pic18f452.name=18F452 (32 KB, PICkit 3) [experimental]
+pic18f452.upload.tool=niusburner
+pic18f452.upload.protocol=pickit3
+pic18f452.upload.maximum_size=32768
+pic18f452.upload.maximum_data_size=1536
+pic18f452.upload.require_upload_port=false
+pic18f452.build.mcu=18F452
+pic18f452.build.f_cpu=20000000L
+pic18f452.build.board=18F452
+pic18f452.build.core=niusburner
+pic18f452.build.variant=standard
+pic18f452.build.nb_board=pic18f452
+pic18f452.build.extra_flags=
+
+pic18f452.menu.optimize.size=Size (default)
+pic18f452.menu.optimize.size.build.nb_optimize=size
+pic18f452.menu.optimize.speed=Speed
+pic18f452.menu.optimize.speed.build.nb_optimize=speed
+pic18f452.menu.optimize.none=None
+pic18f452.menu.optimize.none.build.nb_optimize=none
+
+pic18f452.menu.compiler.auto=Auto-detect SDCC (default)
+pic18f452.menu.compiler.auto.build.nb_compiler=auto
+pic18f452.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic18f452.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 32 KB flash, 1536 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
+pic18f4520.name=18F4520 (32 KB, PICkit 3) [experimental]
+pic18f4520.upload.tool=niusburner
+pic18f4520.upload.protocol=pickit3
+pic18f4520.upload.maximum_size=32768
+pic18f4520.upload.maximum_data_size=1536
+pic18f4520.upload.require_upload_port=false
+pic18f4520.build.mcu=18F4520
+pic18f4520.build.f_cpu=20000000L
+pic18f4520.build.board=18F4520
+pic18f4520.build.core=niusburner
+pic18f4520.build.variant=standard
+pic18f4520.build.nb_board=pic18f4520
+pic18f4520.build.extra_flags=
+
+pic18f4520.menu.optimize.size=Size (default)
+pic18f4520.menu.optimize.size.build.nb_optimize=size
+pic18f4520.menu.optimize.speed=Speed
+pic18f4520.menu.optimize.speed.build.nb_optimize=speed
+pic18f4520.menu.optimize.none=None
+pic18f4520.menu.optimize.none.build.nb_optimize=none
+
+pic18f4520.menu.compiler.auto=Auto-detect SDCC (default)
+pic18f4520.menu.compiler.auto.build.nb_compiler=auto
+pic18f4520.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic18f4520.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 32 KB flash, 2048 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
+pic18f4550.name=18F4550 (32 KB, PICkit 3) [experimental]
+pic18f4550.upload.tool=niusburner
+pic18f4550.upload.protocol=pickit3
+pic18f4550.upload.maximum_size=32768
+pic18f4550.upload.maximum_data_size=2048
+pic18f4550.upload.require_upload_port=false
+pic18f4550.build.mcu=18F4550
+pic18f4550.build.f_cpu=20000000L
+pic18f4550.build.board=18F4550
+pic18f4550.build.core=niusburner
+pic18f4550.build.variant=standard
+pic18f4550.build.nb_board=pic18f4550
+pic18f4550.build.extra_flags=
+
+pic18f4550.menu.optimize.size=Size (default)
+pic18f4550.menu.optimize.size.build.nb_optimize=size
+pic18f4550.menu.optimize.speed=Speed
+pic18f4550.menu.optimize.speed.build.nb_optimize=speed
+pic18f4550.menu.optimize.none=None
+pic18f4550.menu.optimize.none.build.nb_optimize=none
+
+pic18f4550.menu.compiler.auto=Auto-detect SDCC (default)
+pic18f4550.menu.compiler.auto.build.nb_compiler=auto
+pic18f4550.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic18f4550.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 64 KB flash, 3968 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
+pic18f4620.name=18F4620 (64 KB, PICkit 3) [experimental]
+pic18f4620.upload.tool=niusburner
+pic18f4620.upload.protocol=pickit3
+pic18f4620.upload.maximum_size=65536
+pic18f4620.upload.maximum_data_size=3968
+pic18f4620.upload.require_upload_port=false
+pic18f4620.build.mcu=18F4620
+pic18f4620.build.f_cpu=20000000L
+pic18f4620.build.board=18F4620
+pic18f4620.build.core=niusburner
+pic18f4620.build.variant=standard
+pic18f4620.build.nb_board=pic18f4620
+pic18f4620.build.extra_flags=
+
+pic18f4620.menu.optimize.size=Size (default)
+pic18f4620.menu.optimize.size.build.nb_optimize=size
+pic18f4620.menu.optimize.speed=Speed
+pic18f4620.menu.optimize.speed.build.nb_optimize=speed
+pic18f4620.menu.optimize.none=None
+pic18f4620.menu.optimize.none.build.nb_optimize=none
+
+pic18f4620.menu.compiler.auto=Auto-detect SDCC (default)
+pic18f4620.menu.compiler.auto.build.nb_compiler=auto
+pic18f4620.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic18f4620.menu.compiler.configured.build.nb_compiler=configured

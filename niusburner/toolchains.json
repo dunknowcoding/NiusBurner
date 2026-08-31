@@ -72,7 +72,42 @@
         "pic18"
       ],
       "detect": {
-        "glob": "${EMBD_TOOLCHAINS}/pic/xc8/*/bin/xc8-cc.exe"
+        "any": [
+          {
+            "glob": "${EMBD_TOOLCHAINS}/pic/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "glob": "C:\\embd_toolchains/pic/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "glob": "C:\\Program Files\\Microchip/pic/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "glob": "C:\\Program Files (x86)\\Microchip/pic/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "glob": "/opt/microchip/pic/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "glob": "C:\\embd_toolchains/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "glob": "C:\\Program Files\\Microchip/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "glob": "C:\\Program Files (x86)\\Microchip/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "glob": "/opt/microchip/xc8/*/bin/xc8-cc.exe"
+          },
+          {
+            "cmd": "xc8-cc",
+            "args": [
+              "--version"
+            ],
+            "match": ""
+          }
+        ]
       },
       "install": {
         "url": "https://www.microchip.com/mplab/compilers",
@@ -85,7 +120,42 @@
         "dspic33"
       ],
       "detect": {
-        "glob": "${EMBD_TOOLCHAINS}/pic/xc16/*/bin/xc16-gcc.exe"
+        "any": [
+          {
+            "glob": "${EMBD_TOOLCHAINS}/pic/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "glob": "C:\\embd_toolchains/pic/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "glob": "C:\\Program Files\\Microchip/pic/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "glob": "C:\\Program Files (x86)\\Microchip/pic/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "glob": "/opt/microchip/pic/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "glob": "C:\\embd_toolchains/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "glob": "C:\\Program Files\\Microchip/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "glob": "C:\\Program Files (x86)\\Microchip/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "glob": "/opt/microchip/xc16/*/bin/xc16-gcc.exe"
+          },
+          {
+            "cmd": "xc16-gcc",
+            "args": [
+              "--version"
+            ],
+            "match": ""
+          }
+        ]
       },
       "install": {
         "url": "https://www.microchip.com/mplab/compilers"
@@ -96,7 +166,42 @@
         "pic32"
       ],
       "detect": {
-        "glob": "${EMBD_TOOLCHAINS}/pic/xc32/*/bin/xc32-gcc.exe"
+        "any": [
+          {
+            "glob": "${EMBD_TOOLCHAINS}/pic/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "glob": "C:\\embd_toolchains/pic/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "glob": "C:\\Program Files\\Microchip/pic/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "glob": "C:\\Program Files (x86)\\Microchip/pic/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "glob": "/opt/microchip/pic/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "glob": "C:\\embd_toolchains/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "glob": "C:\\Program Files\\Microchip/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "glob": "C:\\Program Files (x86)\\Microchip/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "glob": "/opt/microchip/xc32/*/bin/xc32-gcc.exe"
+          },
+          {
+            "cmd": "xc32-gcc",
+            "args": [
+              "--version"
+            ],
+            "match": ""
+          }
+        ]
       },
       "install": {
         "url": "https://www.microchip.com/mplab/compilers"
@@ -226,7 +331,23 @@
       ],
       "transport": "usb",
       "note": "Dropped by MPLAB X 6.x. Use MPLAB IPE 5.50 or earlier, or a PICkit 4/5.",
-      "wiring": "docs/families/pic.md"
+      "wiring": "docs/families/pic.md",
+      "detect": {
+        "any": [
+          {
+            "glob": "H:\\MPLABX\\*\\mplab_platform\\mplab_ipe\\ipecmd.exe"
+          },
+          {
+            "glob": "C:\\Program Files\\Microchip\\MPLABX\\*\\mplab_platform\\mplab_ipe\\ipecmd.exe"
+          },
+          {
+            "glob": "C:\\Program Files (x86)\\Microchip\\MPLABX\\*\\mplab_platform\\mplab_ipe\\ipecmd.exe"
+          },
+          {
+            "glob": "/opt/microchip/mplabx/*/mplab_platform/mplab_ipe/ipecmd"
+          }
+        ]
+      }
     }
   }
 }

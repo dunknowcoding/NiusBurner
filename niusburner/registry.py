@@ -176,8 +176,29 @@ def scan(registry: dict[str, Any] | None = None) -> list[Found]:
     reg = registry if registry is not None else load_registry()
     results: list[Found] = []
 
+    # A path recorded by `setup --<tool> <path>` is the answer the user
+    # already gave, and it is what the build uses. Reporting the tool
+    # missing because a search rule did not also find it is a lie the
+    # getting-started guide sends people chasing.
+    try:
+        from .config import tool_path as _recorded
+    except ImportError:                     # pragma: no cover
+        _recorded = lambda _name: None      # noqa: E731
+
     for kind, section in (("compiler", "compilers"), ("programmer", "programmers")):
         for name, entry in reg.get(section, {}).items():
+            recorded = None
+            try:
+                recorded = _recorded(name)
+            except Exception:
+                recorded = None
+            if recorded is not None and pathlib.Path(recorded).exists():
+                results.append(Found(
+                    name=name, kind=kind, present=True, where=str(recorded),
+                    version="", reason="recorded by `niusburner setup`",
+                    meta=entry,
+                ))
+                continue
             ok, where, version, reason = probe(entry)
             results.append(Found(
                 name=name, kind=kind, present=ok, where=where,
