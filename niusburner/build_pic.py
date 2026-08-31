@@ -138,7 +138,6 @@ def build_pic16(
     data_size: int = 368,
     defines: list[str] | None = None,
     optimize: str = "size",
-    debug_symbols: bool = False,
 ) -> Pic16Build:
     """Compile and link *sources* into a HEX image for *part*."""
     driver = compiler or find_xc8()
@@ -167,8 +166,6 @@ def build_pic16(
         "-o", str(image),
     ]
     command += {"size": ["-O2"], "speed": ["-O2"], "none": ["-O0"]}[optimize]
-    if debug_symbols:
-        command += ["-g"]
     for path in includes:
         command += ["-I", str(pathlib.Path(path).resolve(strict=True))]
     for macro in defines or []:
@@ -183,10 +180,9 @@ def build_pic16(
     if not image.is_file():
         raise ValueError("XC8 reported success but produced no HEX image")
 
+    # The HEX image and its manifest are the deliverables; everything
+    # else XC8 leaves behind is scratch.
     symbols: list[pathlib.Path] = []
-    if debug_symbols:
-        for pattern in ("*.elf", "*.sym", "*.lst", "*.map", "*.cof"):
-            symbols += sorted(output.glob(pattern))
 
     manifest = output / "build-manifest.json"
     import json
@@ -196,7 +192,7 @@ def build_pic16(
         "part": part,
         "compiler": driver.name,
         "version": version.splitlines()[0] if version else "",
-        "build": {"optimize": optimize, "debug_symbols": debug_symbols},
+        "build": {"optimize": optimize},
         "measured": {
             "program_words": usage.get("program", 0),
             "data_bytes": usage.get("data", 0),

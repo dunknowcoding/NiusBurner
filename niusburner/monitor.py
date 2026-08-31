@@ -49,8 +49,8 @@ def monitor(port: str, baud: int, seconds: float | None = None,
     name = _normalize_port(port)
     if name in BLOCKED_PORTS or name.startswith("COM35"):
         print(
-            "refused: COM35 is not the AT89S52 UART. "
-            "Use the CH341 port (this bench: COM31).",
+            "refused: COM35 is not the target UART. "
+            "Use the serial adapter's port.",
             file=sys.stderr,
         )
         return 2

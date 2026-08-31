@@ -41,17 +41,13 @@ the UART stays silent, measure pin 31 before suspecting anything else.
 
 ## Power
 
-The ISP VCC pin (IDC10 pin 2) **sources 5 V from USB**, and will run a small
-target board on its own — this bench does exactly that. It is a real supply,
-not a sense line: with pin 2 as the board's only feed, 45 mA of pulsed load
-through the reset capacitor, held for five seconds, did not sag the rail
-enough to brown the part out.
+The ISP VCC pin (IDC10 pin 2) **sources 5 V from USB** and will run a small
+target board on its own. It is a real supply, not a sense line, and it is
+stiff enough to hold a board up unaided.
 
-It is **not switchable from software.** Everything this programmer accepts
-was tried against it — both configuration commands across their parameter
-spaces, every unused command byte, the tri-state, and both ways of rebooting
-the unit — and the rail never moved. PROGISP's own notes offer 3.3 V/5 V
-target switching only "where the hardware supports it"; this unit does not.
+It is **not switchable from software.** No frame this programmer accepts
+gates that pin. The vendor's own notes offer 3.3 V/5 V target switching only
+"where the hardware supports it"; this unit does not.
 
 So the programmer can reset a target but cannot power-cycle one, which
 decides the upload route for any part whose bootloader is entered on
@@ -96,7 +92,7 @@ Report 1 is a **command register**, and the GET is what executes it. A
 `SET_REPORT` only loads the payload; `GET_REPORT` runs it and returns the
 result. Two SETs in a row therefore execute once, with the second payload.
 
-Measured on silicon: `SET 0E 40 hi lo data` with no GET leaves the byte at
+`SET 0E 40 hi lo data` with no GET leaves the byte at
 `0xFF`, and `SET 0E AC 80 00 00` with no GET never erases, however long you
 wait. Never SET report 2 with zeros — that USB-resets the programmer.
 

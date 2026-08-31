@@ -3,7 +3,7 @@
 # Copyright 2026 dunknowcoding (NiusRobotLab)
 # SPDX-License-Identifier: Apache-2.0
 #
-# The first entry is the default and is the one verified on hardware. Both
+# The first entry is the default. Both
 # the Upload button and Sketch > Upload Using Programmer go through the same
 # tool; the entry selected here decides which transport it drives.
 

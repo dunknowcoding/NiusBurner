@@ -7,8 +7,8 @@
  * Timing is busy-wait, calibrated against NIUS_FOSC. The 8051 core divides
  * the crystal by 12, so one machine cycle is 12/Fosc -- 1.085 us at
  * 11.0592 MHz. NIUS_SPIN_MC below is what one pass of nius_spin() costs in
- * machine cycles, measured on the bench by timing delay(1000) over the UART;
- * re-measure it if the SDCC version or the memory model changes.
+ * machine cycles, fitted by timing delay(1000) over the UART; refit it if
+ * the SDCC version or the memory model changes.
  *
  * There are no timers here on purpose: a sketch is free to use all three.
  * That makes delay() sensitive to interrupts, which is the same trade the
@@ -36,11 +36,11 @@
  *                     1/256 machine cycles: the millis counter, the loop
  *                     test, and the fractional-spin carry
  *
- * Both are fitted on silicon by _work/debugger_8051/verify/calibrate.py,
- * which builds delay() twice with the spin cost forced wide apart and fits
- * the line through the two points. Re-run it whenever the body of delay()
- * changes: adding the fractional carry moved the overhead from 39 to 65
- * machine cycles, and leaving it at 39 put delay(1000) at +2.48 %.
+ * Both are fitted by building delay() twice with the spin cost forced
+ * wide apart and fitting a line through the two points. They have to be
+ * refitted whenever the body of delay() changes: adding the fractional
+ * carry moved the overhead from 39 to 65 machine cycles, and leaving it at
+ * 39 put delay(1000) at +2.48 %.
  */
 #ifndef NIUS_SPIN_MC
 #define NIUS_SPIN_MC 16UL
@@ -156,9 +156,9 @@ void delayMicroseconds(unsigned int us)
      * The scale factor is folded by the preprocessor. It used to be a
      * 32-bit divide done here, at run time, and this core has no divide
      * instruction: SDCC calls a routine costing about a thousand machine
-     * cycles, over a millisecond. Measured on silicon, that made
-     * delayMicroseconds(50) take 1206 us and delayMicroseconds(250) take
-     * 1488 us -- 24x and 6x their arguments. Q16 turns it into one 16x16
+     * cycles, over a millisecond. That made delayMicroseconds(50) take
+     * 1206 us and delayMicroseconds(250) take 1488 us -- 24x and 6x their
+     * arguments. Q16 turns it into one 16x16
      * multiply and a byte select.
      */
     /* us is 16 bit, so the product shifted back down can never exceed the

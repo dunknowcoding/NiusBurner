@@ -1,105 +1,200 @@
+<div align="center">
+
 # NiusBurner
 
-Compile Arduino-shaped sketches and flash them onto parts the Arduino IDE
-cannot reach.
+**One-key compile and upload for the microcontrollers the Arduino IDE forgot.**
 
-NiusDisplay is a **plain Arduino library**. Programmers, 12 V rails, Intel HEX,
-ISP wiring and SDCC live here so that library can stay installable through
-the Library Manager. NiusBurner never imports NiusDisplay; it finds the tree
-when a sketch names it.
+Write a sketch that looks like Arduino. Press Upload. It lands on an 8051 or a PIC.
+
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Parts](https://img.shields.io/badge/parts-33-green.svg)](#supported-parts)
+[![Toolchains](https://img.shields.io/badge/toolchains-never%20vendored-orange.svg)](docs/toolchains.md)
+
+</div>
+
+---
+
+## Why
+
+The Arduino IDE speaks AVR, ARM and Xtensa. It does not speak 8051 or PIC —
+those parts have no C++ compiler, no common bootloader, and a different
+programmer for every family.
+
+NiusBurner closes that gap. It keeps the part of Arduino that matters — write
+`setup()` and `loop()`, press one button — and does the unglamorous work
+underneath: translating C++ to C, driving SDCC or XC8, framing the programmer
+protocol, and reporting what actually happened.
+
+```cpp
+void setup() {
+  pinMode(13, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  digitalWrite(13, HIGH);
+  delay(200);
+  digitalWrite(13, LOW);
+  delay(200);
+}
+```
+
+That sketch compiles and runs on an AT89S52, an STC89C52RC and a PIC16F877A,
+unchanged.
 
 ## Quick start
 
 ```bash
-python -m niusburner setup --board at89s52
+pip install -e .                  # from a clone
+python -m niusburner setup        # find the compilers and programmers
 python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
 ```
 
-That is the whole happy path: install a compiler on this machine, write a
-sketch that looks like Arduino (`setup` / `loop`), one command to compile and
-burn.
+For the IDE, `setup` also installs the board package:
 
-- [docs/workflow.md](docs/workflow.md) — the command line path
-- [docs/arduino-ide.md](docs/arduino-ide.md) — board, programmer and compiler
-  menus, and what Upload prints
-- [docs/translation.md](docs/translation.md) — what the C++ to C translation
-  covers, and what it refuses
+```bash
+python -m niusburner setup --sketchbook ~/Documents/Arduino
+```
+
+Then **Tools → Board → NiusBurner** and press **Upload**. That is the whole
+path.
+
+## Supported parts
+
+**Serial ISP** — written straight through the ISP header. Nothing to press.
+
+| part | flash | RAM |
+|---|---|---|
+| AT89S2051 | 2 KB | 128 B |
+| AT89S4051 | 4 KB | 128 B |
+| AT89S51 | 4 KB | 128 B |
+| AT89S52 | 8 KB | 256 B |
+| AT89S53 | 12 KB | 256 B |
+| AT89S8252 | 8 KB | 256 B |
+| AT89S8253 | 12 KB | 256 B |
+
+**UART bootloader** — written by `stcgal` through a USB-serial adapter.
+
+| part | flash | RAM |
+|---|---|---|
+| STC89C51RC | 4 KB | 256 B |
+| STC89C52RC | 8 KB | 256 B |
+| STC89C53RC | 12 KB | 256 B |
+| STC89C54RD | 16 KB | 256 B |
+| STC89C58RD | 32 KB | 256 B |
+| STC90C51RC | 4 KB | 256 B |
+| STC90C52RC | 8 KB | 256 B |
+| STC90C58RD | 32 KB | 256 B |
+
+**PIC over ICSP** — written by a PICkit 3.
+
+| part | flash | RAM | ports |
+|---|---|---|---|
+| 16F873 | 4 K words | 192 B | A-C |
+| 16F873A | 4 K words | 192 B | A-C |
+| 16F874 | 4 K words | 192 B | A-E |
+| 16F874A | 4 K words | 192 B | A-E |
+| 16F876 | 8 K words | 368 B | A-C |
+| 16F876A | 8 K words | 368 B | A-C |
+| 16F877 | 8 K words | 368 B | A-E |
+| 16F877A | 8 K words | 368 B | A-E |
+
+**Compile only** — these parts are written in a parallel programming socket,
+which no header here can drive. They compile and size correctly, and `upload`
+says plainly that the route is not wired: AT89C2051, AT89C51, AT89C52, AT89C55, SST89E54, SST89E564, W78E51, W78E52, W78E54, W78E58.
+
+`python -m niusburner boards` lists everything; `boards --features` says which
+peripherals each part has.
+
+## What you get
+
+| | |
+|---|---|
+| **One button** | Compile, erase, program, verify and release, from the IDE or one command. |
+| **Arduino API** | `pinMode`, `digitalWrite`, `Serial`, `delay`, `millis`, `shiftOut`, `random` — as C, on parts with no C++ compiler. |
+| **C++ → C** | The translator lowers sketch C++ to C and passes inline assembly and register writes through untouched. |
+| **Honest refusals** | Ask for `analogWrite` on a part with no PWM and it says so at compile time, naming the part and the feature. |
+| **Real sizes** | Every build prints flash and RAM against the part's actual capacity, and fails closed on the limit rather than silently overflowing. |
+| **No vendored toolchains** | Compilers are found, never shipped. |
+
+## How it works
+
+```
+sketch.ino
+   |  cxxlower      C++ -> C, assembly and registers untouched
+   v
+   C sources + the Arduino runtime for this family
+   |  build / build_pic     SDCC (mcs51) or XC8 (pic16)
+   v
+   Intel HEX
+   |  flash -> backends     USB-ISP HID | stcgal | PICkit 3
+   v
+   the part
+```
+
+Each stage is a separate module with its own tests, and the board catalog
+([`niusburner/boards.json`](niusburner/boards.json)) is the single source of
+truth for sizes, peripherals and transports — the IDE board menus are
+generated from it rather than hand-maintained.
 
 ## Layout
 
 ```
 examples/            target sketches (the MCU you are flashing)
-hardware/            firmware for programmer appliances we build
-  nano_at89c2051/    Nano as a 12 V parallel programmer — not a target sketch
-docs/
-  workflow.md        the user path
-  families/          per-family programming and wiring
-niusburner/          the Python package
+hardware/            firmware for programmer appliances
+  nano_at89c2051/    Nano as a 12 V parallel programmer - not a target sketch
+docs/                workflow, IDE menus, translation limits, per-family notes
+niusburner/
   __main__.py        CLI
   workflow.py        compile + upload
-  sketch.py          .ino wrapping; honest C++ refusal
-  display.py         find NiusDisplay, pick C sources
-  boards.py          named parts (flash size, programmer)
-  build.py           SDCC driver
-  flash.py           delegate probe/burn to the programmer backend
-  backends/          USB-ISP HID and later transports
-  cxxlower.py        Arduino C++ -> C; assembly and registers pass through
-  adapter.py         how a library says which C++ maps to which C
-  adapters/
-    Arduino/         Serial, Wire, SPI and the core API, as C for mcs51
-    NiusDisplay/     NiusSegment, NiusCharLCD, NiusMatrix, as C for mcs51
+  cxxlower.py        Arduino C++ -> C
+  boards.py          the part catalog
+  build.py           SDCC driver          build_pic.py  XC8 driver
+  flash.py           transport dispatch   backends/     USB-ISP, stcgal, PICkit 3
+  adapters/Arduino/  the Arduino API as C, per family
+  arduino/           generated Arduino IDE board packages
 tests/               host tests; no hardware required
 ```
 
-Two kinds of `.ino` live in this repository and they are not interchangeable:
+Two kinds of `.ino` live here and they are not interchangeable:
 
-| Tree | Runs on | What it is | Flashed with |
-|---|---|---|---|
-| `examples/` | AT89S52 (the chip in the socket) | your sketch | `python -m niusburner upload` |
-| `hardware/` | Arduino Nano (the programmer box) | 12 V parallel programmer firmware | `arduino-cli` onto the **Nano** |
-
-`hardware/nano_at89c2051/nano_at89c2051.ino` is not an AT89C2051 program. The
-2051 has no ISP; the Nano *is* the programmer. Details: [hardware/README.md](hardware/README.md).
-
-## Status
-
-- `verified` — run end to end on the bench
-- `implemented` — tested against a host stub, not silicon
-- `planned` — documented, not written
-
-| Target | Method | Status |
+| Tree | Runs on | What it is |
 |---|---|---|
-| AT89S52 | USB-ISP HID | `verified` — probe `1E 52 06`, erase/program/verify/run |
-| AT89C2051 | Nano-hosted 12 V programmer | `implemented`; physical backend pending |
-| STC89C52RC | UART bootloader (`stcgal`) | `planned`; SPI ISP is the wrong protocol |
-| STC15W408AS | `stcgal` serial bootloader | `planned` |
-| PIC12F675 / PIC16F877A | PICkit 3 | `planned` |
+| `examples/` | the target MCU | your sketch |
+| `hardware/` | an Arduino Nano | programmer firmware, not a target sketch |
 
 ## What it is not
 
-**It does not vendor toolchains.** `EMBD_TOOLCHAINS` is an **environment
-variable** naming a directory on this machine (default
-`~/.local/share/niusburner/toolchains`). Compilers are never committed here.
-SDCC for AT89S52 is found on PATH / Program Files, not under that variable.
-See [docs/toolchains.md](docs/toolchains.md). `setup` / `detect` say which
-tool is missing and where to get it.
+**It does not vendor toolchains.** `EMBD_TOOLCHAINS` names a directory on your
+machine (default `~/.local/share/niusburner/toolchains`). Compilers are never
+committed here; `setup` and `detect` say which tool is missing and where to get
+it. See [docs/toolchains.md](docs/toolchains.md).
 
-**It does not compile Arduino C++ on SDCC.** SDCC has no C++ mode. A sketch
-that `#include <NiusDisplay.h>` is refused; rewrite it against NiusDuino / the
-C drivers, or use NiusDisplay's IAR 8051 Arduino core.
+**It does not compile Arduino C++ on SDCC.** SDCC has no C++ mode. The
+translator covers the sketch dialect — classes and templates are refused with
+a reason, not miscompiled. See [docs/translation.md](docs/translation.md).
+
+**It is not a substitute for the datasheet.** Timing is busy-wait and
+interrupt-sensitive, the bit-banged buses run slow on purpose, and every one
+of those trades is written down rather than hidden.
 
 ## Guides
 
-- [docs/workflow.md](docs/workflow.md) — setup, compile, upload, NiusDisplay
-- [docs/families/8051.md](docs/families/8051.md) — AT89S52, AT89C2051, STC
-- [docs/families/pic.md](docs/families/pic.md) — PIC12F675, PIC16F877A
-- [docs/toolchains.md](docs/toolchains.md) — why nothing is vendored
-- [docs/integration.md](docs/integration.md) — using NiusBurner from another project
-- [hardware/nano_at89c2051/](hardware/nano_at89c2051/) — building the 12 V programmer
+| | |
+|---|---|
+| [docs/workflow.md](docs/workflow.md) | setup, compile, upload |
+| [docs/arduino-ide.md](docs/arduino-ide.md) | board and programmer menus, and what Upload prints |
+| [docs/translation.md](docs/translation.md) | what the C++ to C translation covers, and what it refuses |
+| [docs/families/8051.md](docs/families/8051.md) | AT89S, AT89C, STC89/90, W78E, SST89 |
+| [docs/families/pic.md](docs/families/pic.md) | the PIC16F87x family |
+| [docs/wiring/usbasp-idc10.md](docs/wiring/usbasp-idc10.md) | ISP header pinout and wiring |
+| [docs/toolchains.md](docs/toolchains.md) | why nothing is vendored |
+| [docs/integration.md](docs/integration.md) | using NiusBurner from another project |
 
 ## Licence
 
-Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 Third-party toolchains are **not** covered by that licence and are **not**
 distributed here; each is fetched from its own vendor under its own terms.

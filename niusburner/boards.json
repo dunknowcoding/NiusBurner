@@ -7,22 +7,21 @@
     "the NiusDisplay graphics demos need SRAM fitted and --xram-size."
   ],
   "boards": {
-    "at89s52": {
-      "part": "at89s52",
+    "at89c2051": {
+      "part": "at89c2051",
       "family": "mcs51",
       "compiler": "sdcc",
-      "code_size": 8192,
-      "iram_size": 256,
+      "code_size": 2048,
+      "iram_size": 128,
       "xram_size": 0,
       "model": "small",
-      "f_cpu": 11059200,
-      "programmer": "usbisp_hid",
-      "status": "verified",
-      "signature": "1E 52 06",
+      "programmer": "nano_at89c2051",
+      "status": "supported",
+      "signature": "1E 21",
       "aliases": [
-        "89s52"
+        "89c2051"
       ],
-      "note": "8 KB flash, 256 IRAM, no XRAM on a minimum DIP-40. USB-ISP HID. Segment/TM1637 sketches fit; colour graphics need external SRAM.",
+      "note": "2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -33,6 +32,130 @@
         "eeprom": "none"
       }
     },
+    "at89c51": {
+      "part": "at89c51",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 4096,
+      "iram_size": 128,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "at89c52": {
+      "part": "at89c52",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "8 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "at89c55": {
+      "part": "at89c55",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 20480,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "20 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "at89s2051": {
+      "part": "at89s2051",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 2048,
+      "iram_size": 128,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "usbisp_hid",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "89s2051"
+      ],
+      "note": "2 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, and there is no Timer 2, so Serial.begin() above 9600 has no baud source.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "at89s4051": {
+      "part": "at89s4051",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 4096,
+      "iram_size": 128,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "usbisp_hid",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "89s4051"
+      ],
+      "note": "4 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, and there is no Timer 2, so Serial.begin() above 9600 has no baud source.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
     "at89s51": {
       "part": "at89s51",
       "family": "mcs51",
@@ -42,12 +165,38 @@
       "xram_size": 0,
       "model": "small",
       "programmer": "usbisp_hid",
-      "status": "implemented",
+      "status": "supported",
       "signature": "1E 51 06",
       "aliases": [
         "89s51"
       ],
       "note": "4 KB flash. Same USB-ISP HID route as AT89S52.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      }
+    },
+    "at89s52": {
+      "part": "at89s52",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 11059200,
+      "programmer": "usbisp_hid",
+      "status": "supported",
+      "signature": "1E 52 06",
+      "aliases": [
+        "89s52"
+      ],
+      "note": "8 KB flash, 256 IRAM, no XRAM on a minimum DIP-40. USB-ISP HID. Segment/TM1637 sketches fit; colour graphics need external SRAM.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -68,7 +217,7 @@
       "model": "small",
       "f_cpu": 11059200,
       "programmer": "usbisp_hid",
-      "status": "implemented",
+      "status": "supported",
       "signature": "1E 53 06",
       "aliases": [
         "89s53"
@@ -94,7 +243,7 @@
       "model": "small",
       "f_cpu": 11059200,
       "programmer": "usbisp_hid",
-      "status": "implemented",
+      "status": "supported",
       "signature": "1E 72 01",
       "aliases": [
         "89s8252"
@@ -120,7 +269,7 @@
       "model": "small",
       "f_cpu": 11059200,
       "programmer": "usbisp_hid",
-      "status": "implemented",
+      "status": "supported",
       "signature": "1E 73 01",
       "aliases": [
         "89s8253"
@@ -136,21 +285,19 @@
         "eeprom": "none"
       }
     },
-    "at89c2051": {
-      "part": "at89c2051",
+    "sst89e54": {
+      "part": "sst89e54",
       "family": "mcs51",
       "compiler": "sdcc",
-      "code_size": 2048,
-      "iram_size": 128,
+      "code_size": 20480,
+      "iram_size": 256,
       "xram_size": 0,
       "model": "small",
-      "programmer": "nano_at89c2051",
-      "status": "implemented",
-      "signature": "1E 21",
-      "aliases": [
-        "89c2051"
-      ],
-      "note": "2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired.",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "SST, 20 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -159,7 +306,57 @@
         "pwm": "none",
         "adc": "none",
         "eeprom": "none"
-      }
+      },
+      "f_cpu": 11059200
+    },
+    "sst89e564": {
+      "part": "sst89e564",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 65536,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "SST, 64 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "stc89c51rc": {
+      "part": "stc89c51rc",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 4096,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "stcgal",
+      "status": "supported",
+      "aliases": [
+        "stc89c51"
+      ],
+      "note": "4 KB flash. Same UART bootloader as the STC89C52RC.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
     },
     "stc89c52rc": {
       "part": "stc89c52rc",
@@ -170,7 +367,7 @@
       "xram_size": 0,
       "model": "small",
       "programmer": "stcgal",
-      "status": "verified",
+      "status": "supported",
       "aliases": [
         "stc89c52",
         "stc89"
@@ -186,10 +383,82 @@
         "eeprom": "none"
       },
       "f_cpu": 11059200,
-      "signature": "magic F002, BSL 6.6C"
+      "signature": ""
     },
-    "stc89c51rc": {
-      "part": "stc89c51rc",
+    "stc89c53rc": {
+      "part": "stc89c53rc",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 12288,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "stcgal",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "12 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "stc89c54rd": {
+      "part": "stc89c54rd",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 16384,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "stcgal",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "16 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "stc89c58rd": {
+      "part": "stc89c58rd",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 32768,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "stcgal",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "32 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "stc90c51rc": {
+      "part": "stc90c51rc",
       "family": "mcs51",
       "compiler": "sdcc",
       "code_size": 4096,
@@ -197,11 +466,10 @@
       "xram_size": 0,
       "model": "small",
       "programmer": "stcgal",
-      "status": "implemented",
-      "aliases": [
-        "stc89c51"
-      ],
-      "note": "4 KB flash. Same UART bootloader as the STC89C52RC.",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "4 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
@@ -222,7 +490,7 @@
       "xram_size": 0,
       "model": "small",
       "programmer": "stcgal",
-      "status": "implemented",
+      "status": "supported",
       "aliases": [
         "stc90c52"
       ],
@@ -238,6 +506,315 @@
       },
       "f_cpu": 11059200
     },
+    "stc90c58rd": {
+      "part": "stc90c58rd",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 32768,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "stcgal",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "32 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "w78e51": {
+      "part": "w78e51",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 4096,
+      "iram_size": 128,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "Winbond, 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "w78e52": {
+      "part": "w78e52",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "Winbond, 8 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "w78e54": {
+      "part": "w78e54",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 16384,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "Winbond, 16 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "w78e58": {
+      "part": "w78e58",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 32768,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "programmer": "parallel_hv",
+      "status": "supported",
+      "signature": "",
+      "aliases": [],
+      "note": "Winbond, 32 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "none",
+        "eeprom": "none"
+      },
+      "f_cpu": 11059200
+    },
+    "pic16f873": {
+      "part": "16F873",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 4096,
+      "iram_size": 192,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f873"
+      ],
+      "note": "4 K words flash, 192 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 3
+    },
+    "pic16f873a": {
+      "part": "16F873A",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 4096,
+      "iram_size": 192,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f873a"
+      ],
+      "note": "4 K words flash, 192 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 3
+    },
+    "pic16f874": {
+      "part": "16F874",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 4096,
+      "iram_size": 192,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f874"
+      ],
+      "note": "4 K words flash, 192 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 5
+    },
+    "pic16f874a": {
+      "part": "16F874A",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 4096,
+      "iram_size": 192,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f874a"
+      ],
+      "note": "4 K words flash, 192 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 5
+    },
+    "pic16f876": {
+      "part": "16F876",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 8192,
+      "iram_size": 368,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f876"
+      ],
+      "note": "8 K words flash, 368 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 3
+    },
+    "pic16f876a": {
+      "part": "16F876A",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 8192,
+      "iram_size": 368,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f876a"
+      ],
+      "note": "8 K words flash, 368 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 3
+    },
+    "pic16f877": {
+      "part": "16F877",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 8192,
+      "iram_size": 368,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f877"
+      ],
+      "note": "8 K words flash, 368 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 5
+    },
     "pic16f877a": {
       "part": "16F877A",
       "family": "pic16",
@@ -248,7 +825,7 @@
       "model": "small",
       "f_cpu": 20000000,
       "programmer": "pickit3",
-      "status": "implemented",
+      "status": "supported",
       "aliases": [
         "16f877a",
         "pic877a"
@@ -262,7 +839,8 @@
         "pwm": "hardware",
         "adc": "hardware",
         "eeprom": "hardware"
-      }
+      },
+      "ports": 5
     }
   },
   "_peripherals": [

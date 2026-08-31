@@ -5,20 +5,16 @@ SPDX-License-Identifier: Apache-2.0
 
 An STC89C52RC sits in the same DIP-40 socket as an AT89S52 and runs the same
 instruction set, but it has no SPI programming interface at all. The ISP
-header on this bench cannot reach it: the part is written through its own
+header cannot reach it: the part is written through its own
 UART bootloader, which is a different protocol on different pins.
 
 That bootloader only listens for a short window immediately after reset, and
 the STC89 generation has no software entry into it -- the chip has to be
 power-cycled while the host is already sending the sync pattern. So a flash
-here is a two-party operation: this module talks, and somebody has to switch
-the board's power. `stcgal` handles the protocol; this module handles
+here is a two-party operation: this module talks, and the board's power
+has to be interrupted. `stcgal` handles the protocol; this module handles
 locating it, framing the request, and saying clearly what the operator has
 to do.
-
-Nothing here is on silicon yet. No STC part has been in the socket on this
-bench, so the status stays `implemented`: the plumbing is exercised against
-stcgal's own protocol classes, not against a chip.
 """
 
 from __future__ import annotations
@@ -53,7 +49,7 @@ DEFAULT_BAUD = 19200
 #: asks a person to do it.
 #:
 #: The ISP header cannot: its 0x0D frame carries a VCC byte, and setting it
-#: low was measured on this bench against a part that prints once a second.
+#: low does not gate the rail.
 #: The printing continued straight through a 1.5 s cut, so that byte does
 #: not gate the rail whatever else it does.
 RESET_PINS = ("dtr", "rts")
@@ -205,7 +201,7 @@ def autoreset_args(reset_pin: str) -> list[str]:
     """stcgal's flags for cycling power from a modem control line.
 
     -r is not used: that runs a shell command, and a command cannot switch
-    a rail this bench has no switch on. -A names the pin, and -a is what
+    a rail that needs a switch on it. -A names the pin, and -a is what
     makes stcgal consult it at all -- passing -A alone looks right and
     silently does nothing.
     """

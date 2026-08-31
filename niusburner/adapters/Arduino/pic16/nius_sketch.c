@@ -58,21 +58,7 @@
 
 #pragma config WDTE = OFF
 
-/*
- * On-chip debugging takes two of these bits away from the sketch. The
- * debug module needs its own bit set, and it refuses to attach while the
- * power-up timer is enabled, because the timer holds the part in reset
- * past the point where the tool expects to have it. Both are only worth
- * paying for while a tool is attached, so a plain build keeps the power-up
- * timer and leaves the debug bit clear.
- */
-#ifdef NIUS_PIC_ICD
-#pragma config PWRTE = OFF
-#pragma config DEBUG = ON
-#else
 #pragma config PWRTE = ON
-#pragma config DEBUG = OFF
-#endif
 
 #pragma config BOREN = ON
 #pragma config LVP = OFF
@@ -90,6 +76,16 @@ static unsigned long g_seed = 1;
 #define PORT_OF(p) ((unsigned char)((p) >> 3))
 #define BIT_OF(p)  ((unsigned char)((p) & 7))
 
+/*
+ * How many ports this part brings out. The 40-pin members of the family
+ * have A..E; the 28-pin ones stop at C, and naming PORTD on those is a
+ * compile error rather than a pin that quietly does nothing. The board
+ * catalog supplies the count.
+ */
+#ifndef NIUS_PIC_PORTS
+#define NIUS_PIC_PORTS 5
+#endif
+
 void pinMode(unsigned char pin, unsigned char mode)
 {
     unsigned char mask = (unsigned char)(1u << BIT_OF(pin));
@@ -104,8 +100,12 @@ void pinMode(unsigned char pin, unsigned char mode)
     case 0: if (mode == OUTPUT) TRISA &= (unsigned char)~mask; else TRISA |= mask; break;
     case 1: if (mode == OUTPUT) TRISB &= (unsigned char)~mask; else TRISB |= mask; break;
     case 2: if (mode == OUTPUT) TRISC &= (unsigned char)~mask; else TRISC |= mask; break;
+#if NIUS_PIC_PORTS > 3
     case 3: if (mode == OUTPUT) TRISD &= (unsigned char)~mask; else TRISD |= mask; break;
+#endif
+#if NIUS_PIC_PORTS > 4
     case 4: if (mode == OUTPUT) TRISE &= (unsigned char)~mask; else TRISE |= mask; break;
+#endif
     default: break;
     }
     if (mode == INPUT_PULLUP && PORT_OF(pin) == 1)
@@ -120,8 +120,12 @@ void digitalWrite(unsigned char pin, unsigned char value)
     case 0: if (value) PORTA |= mask; else PORTA &= (unsigned char)~mask; break;
     case 1: if (value) PORTB |= mask; else PORTB &= (unsigned char)~mask; break;
     case 2: if (value) PORTC |= mask; else PORTC &= (unsigned char)~mask; break;
+#if NIUS_PIC_PORTS > 3
     case 3: if (value) PORTD |= mask; else PORTD &= (unsigned char)~mask; break;
+#endif
+#if NIUS_PIC_PORTS > 4
     case 4: if (value) PORTE |= mask; else PORTE &= (unsigned char)~mask; break;
+#endif
     default: break;
     }
 }
@@ -134,8 +138,12 @@ unsigned char digitalRead(unsigned char pin)
     case 0: return (unsigned char)((PORTA & mask) ? 1 : 0);
     case 1: return (unsigned char)((PORTB & mask) ? 1 : 0);
     case 2: return (unsigned char)((PORTC & mask) ? 1 : 0);
+#if NIUS_PIC_PORTS > 3
     case 3: return (unsigned char)((PORTD & mask) ? 1 : 0);
+#endif
+#if NIUS_PIC_PORTS > 4
     case 4: return (unsigned char)((PORTE & mask) ? 1 : 0);
+#endif
     default: return 0;
     }
 }

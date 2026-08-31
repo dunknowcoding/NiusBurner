@@ -77,6 +77,27 @@ tracked as an open task; do not assume it fits.
 
 ---
 
+## Parts
+
+| part | flash | RAM | ports |
+|---|---|---|---|
+| 16F873 | 4 K words | 192 B | A-C |
+| 16F873A | 4 K words | 192 B | A-C |
+| 16F874 | 4 K words | 192 B | A-E |
+| 16F874A | 4 K words | 192 B | A-E |
+| 16F876 | 8 K words | 368 B | A-C |
+| 16F876A | 8 K words | 368 B | A-C |
+| 16F877 | 8 K words | 368 B | A-E |
+| 16F877A | 8 K words | 368 B | A-E |
+
+One family, one register layout: the same USART on RC6/RC7, the same TRIS
+inversion, the same analog-at-reset behaviour on PORTA. The 28-pin members
+bring out ports A to C only, and the runtime is compiled for the ports the
+selected part actually has — naming a port a package does not bond out is a
+compile error, not a pin that quietly does nothing.
+
+---
+
 ## The configuration word
 
 A mid-range PIC takes its oscillator, watchdog and programming mode from a
@@ -104,26 +125,6 @@ complete set. Two config blocks in one program is an error, not a merge.
 Read back what actually landed with `niusburner probe --board pic16f877a`;
 the programmer reports the device ID it found, and a wrong board selection
 fails with `Invalid Device ID` rather than quietly succeeding.
-
-## On-chip debug
-
-`--on-chip-debug` (**Tools > On-chip debug** in the IDE) builds with the two
-configuration bits an attached Microchip debug tool requires: the debug bit
-set, and the power-up timer off, because that timer holds the part in reset
-past the point where the tool expects to have it. A default build leaves the
-power-up timer on and the debug bit clear, which is what you want for a part
-running on its own.
-
-**It needs a clock.** The debug executive is code that runs *on the target*,
-so it cannot answer until the oscillator does. On a board with no crystal
-fitted the image programs and verifies normally and the tool then reports
-`The target device is not ready for debugging` — that is the missing
-oscillator, not the programmer. Programming itself is unaffected either way,
-because ICSP is clocked by the programmer rather than by the part.
-
-A bare PIC16F877A also has no on-chip debug module of its own; Microchip
-sells a debug header for this family. Everything above applies once a clock
-and a supported debug path are present.
 
 ---
 

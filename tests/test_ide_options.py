@@ -49,21 +49,18 @@ def test_boards_txt_offers_every_catalog_board_with_safe_defaults():
             continue          # each family has its own board package
         assert f"{board_id}.name=" in text, f"{board_id} is missing from boards.txt"
         assert f"{board_id}.build.nb_board={board_id}" in text
-        # Size and no debug info are the defaults every board must agree on.
+        # Size is the default every board must agree on.
         assert f"{board_id}.menu.optimize.size.build.nb_optimize=size" in text
-        assert f"{board_id}.menu.debug.none.build.nb_debug=none" in text
         assert f"{board_id}.menu.compiler.auto.build.nb_compiler=auto" in text
 
 
 def test_platform_txt_passes_the_menu_choices_to_the_host():
     text = (PLATFORM / "platform.txt").read_text(encoding="utf-8")
     assert "{build.nb_optimize}" in text
-    assert "{build.nb_debug}" in text
     assert "{build.nb_compiler}" in text
     assert "{program.nb_programmer}" in text
     # Defaults must exist so a stale IDE preference cannot expand to nothing.
     assert "build.nb_optimize=size" in text
-    assert "build.nb_debug=none" in text
     assert "build.nb_compiler=auto" in text
 
 
@@ -280,21 +277,6 @@ def test_menu_applies_follows_the_programmer():
     assert _menu_applies("entry", stc) and not _menu_applies("entry", at89)
     assert not _menu_applies("entry", pic)
     assert _menu_applies("reset", stc) and not _menu_applies("reset", pic)
-    # The debug configuration bits exist only on the PIC parts.
-    assert _menu_applies("icd", pic) and not _menu_applies("icd", stc)
     # Everything else is offered everywhere.
     for board in (stc, at89, pic):
         assert _menu_applies("optimize", board)
-
-
-def test_on_chip_debug_is_refused_off_pic16(tmp_path):
-    """The option sets PIC configuration bits; nothing else has them."""
-    import pytest
-    from niusburner import workflow
-
-    sketch = tmp_path / "s"
-    sketch.mkdir()
-    (sketch / "s.ino").write_text("void setup(){} void loop(){}\n")
-    plan = workflow.plan_compile(sketch, "stc89c52rc", output=tmp_path / "o")
-    with pytest.raises(ValueError, match="PIC16 feature"):
-        workflow.compile_plan(plan, tmp_path / "o", icd=True)

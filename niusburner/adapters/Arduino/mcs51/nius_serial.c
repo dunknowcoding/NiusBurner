@@ -151,8 +151,8 @@ void nius_serial_println_s(const char *s)
 
 /*
  * One digit generator for every width and sign. The 16-bit entry point is
- * kept because it is the cheap common case and because the bench monitor
- * calls it, but the digits themselves are produced once, here.
+ * kept because it is the cheap common case, but the digits themselves are
+ * produced once, here.
  */
 static void put_digits(unsigned long u, unsigned char base)
 {

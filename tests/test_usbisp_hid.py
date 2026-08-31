@@ -74,7 +74,7 @@ def test_erase_and_write_fire_then_wait():
     after_done = flash_src.split("did not verify")[-1]
     assert "release_to_run" in after_done
     assert "disconnect" not in after_done
-    # The bench failure this points at was not the reset at all: EA tied low
+    # The failure this points at is not the reset at all: EA tied low
     # makes the CPU fetch from external memory, so a perfectly verified image
     # never runs. Say that where someone reads it.
     assert "EA (pin 31)" in after_done
@@ -100,7 +100,7 @@ def test_release_uses_0d_and_executes_both_frames():
 
     A bare SET only loads the dongle's command register; the GET is what
     runs it. Sending the release as a SET is why the part stayed halted
-    after every flash on this bench.
+    after every flash.
     """
     import inspect
     from niusburner.backends.usbisp_hid import _Programmer

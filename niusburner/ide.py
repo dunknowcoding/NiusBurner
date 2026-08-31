@@ -91,10 +91,6 @@ MENUS = (
         ("speed", "Speed", "speed"),
         ("none", "None", "none"),
     )),
-    ("debug", "Debug info", (
-        ("none", "None (default)", "none"),
-        ("symbols", "Symbols and listings", "symbols"),
-    )),
     ("reset", "Power switch", (
         ("none", "None - interrupt power by hand (default)", "none"),
         ("dtr", "Adapter DTR switches VDD", "dtr"),
@@ -103,10 +99,6 @@ MENUS = (
     ("entry", "Bootloader entry", (
         ("none", "Interrupt power by hand (default)", "none"),
         ("soft", "Sketch reboots itself into the bootloader", "soft"),
-    )),
-    ("icd", "On-chip debug", (
-        ("off", "Off (default)", "off"),
-        ("on", "Configure for an attached debug tool", "on"),
     )),
     ("compiler", "Compiler", (
         ("auto", "Auto-detect SDCC (default)", "auto"),
@@ -118,10 +110,9 @@ MENUS = (
 
 #: Which menus a board actually has a use for. An inert Tools entry is
 #: worse than an absent one: it invites a choice that changes nothing.
-#: Rebooting into a bootloader and switching a rail to reach one are both
-#: only meaningful for a part programmed through its own bootloader, and
-#: the debug configuration bits exist only on the PIC parts.
-_MENU_OWNERS = {"entry": "stcgal", "reset": "stcgal", "icd": "pickit3"}
+#: Rebooting into a bootloader, and switching a rail to reach one, are
+#: only meaningful for a part programmed through its own bootloader.
+_MENU_OWNERS = {"entry": "stcgal", "reset": "stcgal"}
 
 
 def _menu_applies(key: str, board) -> bool:
@@ -149,7 +140,7 @@ def render_boards_txt(family: str = "mcs51") -> str:
         "# Edit the catalog, not this file.",
         "#",
         "# Defaults are the safe answer, not the fastest one: Size, because",
-        "# these parts run out of room long before cycles; no debug info,",
+        "# these parts run out of room long before cycles;",
         "# because symbols cost build time and disk rather than flash; and",
         "# auto-detection, because a compiler is normally where its own",
         "# installer put it.",
@@ -251,16 +242,13 @@ def resolve_compiler(choice: str, family: str = "mcs51") -> Path | None:
 
 
 def cmd_compile(sketch: Path, build_path: Path, board: str,
-                optimize: str = "size", debug: str = "none",
-                compiler_choice: str = "auto", entry: str = "none",
-                icd: str = "off") -> int:
+                optimize: str = "size", compiler_choice: str = "auto",
+                entry: str = "none") -> int:
     from . import boards as boards_mod
 
     out = build_path / "niusburner"
     optimize = _menu(optimize, ("size", "speed", "none"), "size")
-    debug_symbols = _menu(debug, ("none", "symbols"), "none") == "symbols"
     isp_entry = _menu(entry, ("none", "soft"), "none") == "soft"
-    on_chip_debug = _menu(icd, ("off", "on"), "off") == "on"
     # No banner here: the upload tool prints it once, and Verify runs in a
     # separate process that would otherwise repeat the whole thing.
     stage(0, "Compiling", f"target {board}")
@@ -270,8 +258,7 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
         plan = workflow.plan_compile(sketch, board, output=out)
         result = workflow.compile_plan(
             plan, out, compiler=compiler,
-            optimize=optimize, debug_symbols=debug_symbols,
-            isp_entry=isp_entry, icd=on_chip_debug)
+            optimize=optimize, isp_entry=isp_entry)
     except (OSError, ValueError, KeyError) as exc:
         error(str(exc), title="compile failed")
         return 1
@@ -279,9 +266,7 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     shutil.copy2(result.image, build_path / ("firmware" + result.image.suffix))
     spec = plan.board
     note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
-         + (", debug symbols" if debug_symbols else "")
-         + (", bootloader entry" if isp_entry else "")
-         + (", on-chip debug config" if on_chip_debug else ""))
+         + (", bootloader entry" if isp_entry else ""))
     if spec.family == "pic16":
         detail = (f"flash {result.program_words}/{spec.code_size} words "
                   f"({100 * result.program_words / spec.code_size:.1f}%)  "
@@ -313,6 +298,14 @@ def cmd_flash(image: Path, board: str, programmer: str = "",
     supply_power = wanted.endswith("_power")
     if supply_power:
         wanted = wanted[:-len("_power")]
+    if not spec.flashable:
+        error(
+            f"{spec.id} is written in a parallel programming socket, "
+            f"not through a header this tool drives",
+            title="this board compiles but cannot be flashed here",
+            hints=("the sketch itself compiled cleanly",
+                   "see docs/families/8051.md for the route this part needs"))
+        return 1
     if wanted != spec.programmer:
         error(
             f"Tools > Programmer is set to {wanted}, but {spec.id} is "
@@ -320,14 +313,6 @@ def cmd_flash(image: Path, board: str, programmer: str = "",
             title="programmer does not match the board",
             hints=(f"select Tools > Programmer > {spec.programmer}",
                    "or select a board that uses the programmer you have"))
-        return 1
-    if not spec.flashable:
-        error(
-            f"{spec.id} is programmed with {spec.programmer} "
-            f"({spec.status}), which the Upload button does not drive yet",
-            title="this board compiles but cannot be flashed here",
-            hints=("the sketch itself compiled cleanly",
-                   "see docs/families/8051.md for the route this part needs"))
         return 1
     if not image.is_file():
         error(f"image not found: {image}",
@@ -419,10 +404,8 @@ def arduino_main(argv: list[str]) -> int:
             return cmd_compile(
                 Path(rest[0]), Path(rest[1]), rest[2],
                 optimize=rest[3] if len(rest) > 3 else "size",
-                debug=rest[4] if len(rest) > 4 else "none",
-                compiler_choice=rest[5] if len(rest) > 5 else "auto",
-                entry=rest[6] if len(rest) > 6 else "none",
-                icd=rest[7] if len(rest) > 7 else "off")
+                compiler_choice=rest[4] if len(rest) > 4 else "auto",
+                entry=rest[5] if len(rest) > 5 else "none")
         if cmd == "preproc":
             return cmd_preproc(Path(rest[0]), Path(rest[1]))
         if cmd == "dummy-o":

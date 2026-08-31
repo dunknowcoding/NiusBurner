@@ -22,13 +22,11 @@ version=0.1.0
 # Board menu choices ride along as extra arguments. Anything the IDE does
 # not define expands to an empty string, which the host reads as "default".
 build.nb_optimize=size
-build.nb_debug=none
 build.nb_compiler=auto
 build.nb_reset=none
 build.nb_entry=none
-build.nb_icd=off
-recipe.hooks.prebuild.1.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" compile "{build.source.path}" "{build.path}" "{build.nb_board}" "{build.nb_optimize}" "{build.nb_debug}" "{build.nb_compiler}" "{build.nb_entry}" "{build.nb_icd}"
-recipe.hooks.prebuild.1.pattern="{runtime.platform.path}/tools/nb_host" compile "{build.source.path}" "{build.path}" "{build.nb_board}" "{build.nb_optimize}" "{build.nb_debug}" "{build.nb_compiler}" "{build.nb_entry}" "{build.nb_icd}"
+recipe.hooks.prebuild.1.pattern.windows="{runtime.platform.path}/tools/nb_host.bat" compile "{build.source.path}" "{build.path}" "{build.nb_board}" "{build.nb_optimize}" "{build.nb_compiler}" "{build.nb_entry}"
+recipe.hooks.prebuild.1.pattern="{runtime.platform.path}/tools/nb_host" compile "{build.source.path}" "{build.path}" "{build.nb_board}" "{build.nb_optimize}" "{build.nb_compiler}" "{build.nb_entry}"
 
 preproc.includes.flags=
 recipe.preproc.includes=

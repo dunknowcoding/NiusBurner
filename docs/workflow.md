@@ -88,7 +88,7 @@ The USB-ISP dongle is HID and is not a COM port. UART logging uses a
 | 5 V | VCC if the board is powered from the adapter |
 
 Crystal **11.0592 MHz**. `Serial.begin(9600)` and `115200` are exact with
-Timer 2. This bench uses **COM31**. Do not open COM35.
+Timer 2. The adapter appears as a COM port; use that one.
 
 ```bash
 python -m niusburner upload examples/at89s52_serial --board at89s52 --yes

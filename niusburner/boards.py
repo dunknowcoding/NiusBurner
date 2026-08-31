@@ -47,6 +47,8 @@ class Board:
     note: str
     aliases: tuple[str, ...] = ()
     f_cpu: int = 11059200
+    #: Ports the package brings out, A upwards. PIC16 only.
+    ports: int = 5
     peripherals: tuple[tuple[str, str], ...] = ()
 
     #: Programmers this tool can actually drive. A board whose programmer is
@@ -57,10 +59,8 @@ class Board:
     def flashable(self) -> bool:
         """True when `upload` can program this board itself.
 
-        Keyed on the programmer rather than on the status: `implemented`
-        means the route exists but no part of this type has been in the
-        socket here, which is a reason to say so afterwards, not a reason to
-        refuse to try.
+        Keyed on the programmer: a board whose transport this tool drives
+        can be programmed, whatever else the catalog records about it.
         """
         return self.programmer in self.DRIVEN
 
@@ -96,6 +96,7 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             model=str(entry.get("model", "small")),
             programmer=str(entry["programmer"]),
             status=str(entry.get("status", "planned")),
+            ports=int(entry.get("ports", 5)),
             signature=str(entry.get("signature", "")),
             note=str(entry.get("note", "")),
             aliases=tuple(entry.get("aliases") or ()),

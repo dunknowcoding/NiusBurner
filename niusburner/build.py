@@ -242,14 +242,10 @@ def build_mcs51(
     xram_size: int = 0,
     defines: list[str] | None = None,
     optimize: str = "size",
-    debug_symbols: bool = False,
 ) -> Mcs51Build:
     """Compile C through optimized assembly and fail closed on exact limits.
 
     *optimize* picks what SDCC spends its effort on; see OPTIMIZE_FLAGS.
-    *debug_symbols* asks SDCC for a symbol database and keeps the listings
-    and symbol tables that are otherwise scratch, so a linked image can be
-    read back against the source it came from.
     """
 
     if not sources or code_size <= 0 or iram_size <= 0:
@@ -296,8 +292,6 @@ def build_mcs51(
         "--code-size", str(code_size),
         "--xram-size", str(xram_size),
     ]
-    if debug_symbols:
-        flags.append("--debug")
     if stack_auto:
         flags.append("--stack-auto")
     for name in defines or []:
@@ -353,7 +347,9 @@ def build_mcs51(
     symbols: list[pathlib.Path] = []
     for name in objects:
         (output / name).unlink(missing_ok=True)
-    keep = ("*.cdb", "*.sym", "*.lst", "*.rst") if debug_symbols else ()
+    # Listings, symbol tables and link maps are scratch: the image and
+    # its manifest are the deliverables.
+    keep: tuple[str, ...] = ()
     for pattern in ("*.lst", "*.rst", "*.sym", "*.lk", "*.cdb"):
         if pattern in keep:
             symbols.extend(sorted(output.glob(pattern)))
@@ -387,7 +383,6 @@ def build_mcs51(
         },
         "build": {
             "optimize": optimize,
-            "debug_symbols": bool(debug_symbols),
         },
         "sources": [
             {"name": source.name, "sha256": _sha256(source)}

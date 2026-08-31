@@ -148,7 +148,7 @@ unsigned char d = digits[i];
 ## Timing
 
 `delay()` and `delayMicroseconds()` are busy-wait loops calibrated against
-`NIUS_FOSC` from two constants measured on silicon: the cost of one spin and
+`NIUS_FOSC` from two fitted constants: the cost of one spin and
 the fixed per-millisecond overhead. On an AT89S52 at 11.0592 MHz,
 `delay(1000)` measures **997.3 ms**, about −0.3 %.
 
@@ -158,18 +158,17 @@ Three consequences worth knowing:
   `while (millis() - start < 500) { }` never finishes. Use `delay()`.
 - **Interrupts stretch delays.** The loop counts iterations, not time. Any
   interrupt handler you install is added to every delay.
-- **`delay()` is within 0.03 %.** Measured on an AT89S52 at 11.0592 MHz,
+- **`delay()` is within 0.03 %.** On an AT89S52 at 11.0592 MHz,
   `delay(1000)` is 999.7 ms. Spins per millisecond is fractional -- 53.72 --
   and spending only its whole part cost 0.28 % on every millisecond, always
   in the same direction; the remainder is carried and spent as one extra
   spin whenever it adds up to one. The per-iteration overhead is carried in
   1/256ths of a machine cycle for the same reason: as a whole number it
   could only be tuned in steps of 0.11 %, coarser than the error being
-  corrected. `_work/debugger_8051/verify/calibrate.py` fits both constants
-  on silicon.
+  corrected.
 - **`delayMicroseconds()` has about 190 µs of fixed cost.** One machine
   cycle is 1.085 µs at 11.0592 MHz, and the call itself has to scale its
-  argument. Measured on an AT89S52, 1000 calls per sample:
+  argument. On an AT89S52, 1000 calls per sample:
 
   | asked | actual | note |
   |---|---|---|
@@ -187,10 +186,7 @@ Three consequences worth knowing:
 ### The bit-banged buses
 
 I2C and SPI specify minimum times, not exact ones, and both masters err
-slow, so a slow bus is a correct bus. How slow is worth knowing, and it was
-measured rather than assumed --
-`_work/debugger_8051/verify/busrate.py` differences two batch sizes on the
-target so the loop and UART overhead cancel:
+slow, so a slow bus is a correct bus. How slow is worth knowing:
 
 | setting | measured | vs the fastest setting |
 |---|---|---|
@@ -253,9 +249,9 @@ wrapped to zero after 65.5, and `Serial.println(70000)` printed 4464.
 
 The generated call carries no cast now. `nius_serial.h` resolves the type
 with `_Generic`, which SDCC supports: `unsigned long` gets its own routine
-and everything narrower converts to `long` without losing a value. Verified
-on silicon — `4000000000`, `EE6B2800`, `-70000`, `65000`, `200` and `70000`
-all print correctly, and `'A'` still prints as a character rather than 65.
+and everything narrower converts to `long` without losing a value.
+`4000000000`, `EE6B2800`, `-70000`, `65000`, `200` and `70000` all print
+correctly, and `'A'` still prints as a character rather than 65.
 
 Floating point has no printer at all, deliberately. A float reaching
 `Serial.print` would otherwise be converted to an integer and quietly lose
@@ -292,7 +288,7 @@ change to `cxxlower.py`.
 SDCC links whole modules, so anything sharing a translation unit with
 `pinMode()` costs flash in every sketch. The Arduino API is therefore split
 across several units and only the ones a sketch actually calls are linked.
-Measured on an AT89S52 build:
+On an AT89S52 build:
 
 | sketch | flash | internal RAM |
 |---|---|---|
@@ -319,9 +315,7 @@ make it easy to see what the translator did:
 
 ```bash
 python -m niusburner lower <sketch> --board at89s52     # the C it produced
-python -m niusburner compile <sketch> --board at89s52 --debug-symbols
 ```
 
 `lower` prints the translated C to stdout, so the output can be read, diffed
-and compiled by hand. `--debug-symbols` keeps the symbol tables and listings
-next to the image.
+and compiled by hand.

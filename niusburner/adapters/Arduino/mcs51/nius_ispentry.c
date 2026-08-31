@@ -5,10 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * An STC89 enters its bootloader on power-on and on nothing else. There is
- * no pin to assert -- a RST pulse was tried on silicon here and the
- * bootloader did not answer -- and on this bench nothing can interrupt the
- * supply under software control. That leaves one door, and the part
- * provides it: ISP_CONTR at 0xE7 carries SWBS and SWRST, and writing both
+ * no pin to assert, a reset pin that re-enters user code rather than the
+ * bootloader, and no way to interrupt the supply under software control.
+ * That leaves one door, and the part provides it: ISP_CONTR at 0xE7 carries SWBS and SWRST, and writing both
  * performs a reset that boots from the ISP block rather than from user
  * code. That is a bootloader entry a running program can perform on
  * itself.

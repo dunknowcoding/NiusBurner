@@ -24,10 +24,10 @@ again after installing anything.
 
 | Menu | Choices | Default |
 |---|---|---|
-| **Board → NiusBurner 8051 (SDCC)** | AT89S52, AT89S51, AT89C2051, STC89C52RC | AT89S52 |
+| **Board → NiusBurner 8051 (SDCC)** | 25 parts: AT89S, AT89C, STC89/90, W78E, SST89 | AT89S52 |
+| **Board → NiusBurner PIC (XC8)** | 8 parts: PIC16F873/874/876/877 and the A revisions | PIC16F877A |
 | **Programmer** | USB-ISP HID (03EB:C8B4), USBasp, Nano 12 V | USB-ISP HID |
 | **Optimize** | Size, Speed, None | **Size** |
-| **Debug info** | None, Symbols and listings | None |
 | **Compiler** | Auto-detect SDCC, configured path | Auto-detect |
 
 The defaults are the safe answers, not the fastest ones:
@@ -35,9 +35,6 @@ The defaults are the safe answers, not the fastest ones:
 - **Size**, because these parts run out of flash long before they run out of
   cycles. An empty sketch is 734 bytes of an 8 KB part; the margin is what
   you are spending.
-- **Debug info: None**, because symbols cost build time and disk, not flash.
-  Turning it on keeps the symbol database and per-unit listings next to the
-  image, and changes nothing about the code that is programmed.
 - **Auto-detect**, because SDCC is normally on PATH or in its installer's
   directory. Switch to the configured path only after recording one.
 

@@ -204,7 +204,7 @@ def programmers_for(part: str, registry: dict[str, Any] | None = None) -> list[F
     Returns all of them rather than picking one. An STC89C52RC can be done over
     SPI ISP with a USB-ISP *or* through the serial bootloader, and which is
     right depends on how the board is wired -- so the choice belongs to whoever
-    can see the bench.
+    can see the board.
     """
     part = part.lower()
     return [f for f in scan(registry)

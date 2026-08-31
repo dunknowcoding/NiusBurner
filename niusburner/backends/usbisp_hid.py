@@ -29,11 +29,9 @@ zeros -- that USB-resets the device.
   0x0B  disconnect   01 0B 01 00 00 00 00 00
 
 0x0D byte1 is the RST level. Byte 2 reads as a target-VCC flag and is not
-one: with the programmer as a board's only supply, holding it low for eight
-seconds -- with the serial adapter's TXD held low too, so it could not
-back-feed through the RXD clamp diode -- did not interrupt a part that
-prints once a second. The VCC pin on this dongle is tied to USB 5 V. There
-is therefore no way to power-cycle a board from here, which matters for any
+one: the VCC pin on this dongle is tied to USB 5 V and no frame gates it,
+so holding that byte low changes nothing. There is therefore no way to
+power-cycle a board from here, which matters for any
 part whose bootloader is entered on power-on. The AT89S52 resets on
 a HIGH level, so the whole programming session runs with byte1 = 1 and the
 part held in reset; byte1 = 0 is the falling edge that starts user code.
@@ -65,6 +63,30 @@ _ERASE_MS = 520
 _WRITE_MS = 5
 _FR1_LEN = 8
 _AT89S52_SIG = (0x1E, 0x52, 0x06)
+
+
+def _expected_signature(target: str) -> tuple[int, ...]:
+    """The signature the catalog records for *target*, if it records one.
+
+    Every AT89S part answers the same enable sequence and reports its own
+    three bytes, so the check belongs to the catalog rather than to one
+    part written into this module.
+    """
+    try:
+        from .. import boards as boards_mod
+    except ImportError:
+        return ()
+    for board in boards_mod.all_boards().values():
+        if board.family != "mcs51" or board.part.lower() != target.lower():
+            continue
+        text = (board.signature or "").strip()
+        if not text:
+            return ()
+        try:
+            return tuple(int(byte, 16) for byte in text.split())
+        except ValueError:
+            return ()
+    return ()
 
 # 0x0D payload tails. The four clock bytes make the programmer drive XTAL1;
 # a board with its own crystal must leave them at zero to run.
@@ -173,9 +195,9 @@ class _Programmer:
 
         The dongle treats FR1 as one command register: a SET only loads it,
         and the GET is the trigger. Two SETs in a row therefore execute once,
-        with the second payload. Measured on silicon: SET 40 hi lo data with
-        no GET leaves the byte at 0xFF, and SET AC 80 00 00 with no GET does
-        not erase however long you wait.
+        with the second payload. SET 40 hi lo data with no GET leaves the
+        byte at 0xFF, and SET AC 80 00 00 with no GET does not erase however
+        long you wait.
         """
         self._fr1(payload7)
         time.sleep(settle_ms / 1000)
@@ -290,8 +312,8 @@ class _Programmer:
     def chip_erase(self, timeout_s: float = 12.0, spinner=None) -> None:
         """Erase, then wait until the array really reads blank.
 
-        The datasheet puts tERASE at 500 ms. This bench needs several times
-        that, and a short erase does not merely leave a few bytes behind —
+        The datasheet puts tERASE at 500 ms. Parts routinely need several
+        times that, and a short erase does not merely leave a few bytes behind —
         every byte keeps its high nibble, and repeating the short erase never
         finishes the job. So the wait grows until a sample of the array is
         0xFF, instead of trusting one fixed delay.
@@ -384,11 +406,14 @@ def probe(target: str) -> int:
                 return 1
             sig = prog.read_signature()
             sig_text = " ".join(f"{b:02X}" for b in sig)
-            if sig == _AT89S52_SIG:
-                info(f"found AT89S52, signature {sig_text}")
+            expected = _expected_signature(target)
+            if expected and sig == expected:
+                info(f"found {target.upper()}, signature {sig_text}")
             else:
                 info(f"signature {sig_text}")
-                info("warning: that is not the AT89S52 signature 1E 52 06")
+                if expected:
+                    want = " ".join(f"{b:02X}" for b in expected)
+                    info(f"warning: {target.upper()} should report {want}")
             prog.release_to_run()
     except FileNotFoundError as exc:
         error(str(exc), title="programmer not found")
@@ -447,8 +472,10 @@ def flash(image: pathlib.Path, target: str, run: bool = True) -> int:
 
             sig = prog.read_signature()
             sig_text = " ".join(f"{b:02X}" for b in sig)
-            if target.lower() == "at89s52" and sig != _AT89S52_SIG:
-                error(f"signature {sig_text} is not AT89S52 (1E 52 06)",
+            expected = _expected_signature(target)
+            if expected and sig != expected:
+                want = " ".join(f"{b:02X}" for b in expected)
+                error(f"signature {sig_text} is not {target.upper()} ({want})",
                       title="wrong part in the socket",
                       hints=("nothing was erased",
                              "select the board that matches the part, or "

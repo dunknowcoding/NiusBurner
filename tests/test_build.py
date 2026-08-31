@@ -66,7 +66,7 @@ def test_mcs51_build_retains_assembly_and_enforces_receipt(tmp_path, monkeypatch
         "stack_bytes_free": 0,
         "xram_bytes": 0,
     }
-    assert manifest["build"] == {"optimize": "size", "debug_symbols": False}
+    assert manifest["build"] == {"optimize": "size"}
     assert manifest["limits"]["linked_system_program_bytes"] == 2048
     assert manifest["artifacts"]["assembly"][0]["name"].endswith(".asm")
     assert str(tmp_path) not in result.manifest.read_text(encoding="utf-8")

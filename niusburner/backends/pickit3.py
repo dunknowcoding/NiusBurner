@@ -20,10 +20,11 @@ The options that matter here, from `ipecmd /?`:
     -OL             release from reset when finished, instead of holding it
     -W              power the target from the tool
 
-`-W` is deliberately not the default. On this bench the board takes its 5 V
-from the serial adapter, and having two supplies fight over VDD is a good
-way to damage one of them. A board with no other supply needs it, so it is
-an argument rather than a decision made here.
+`-W` is deliberately not the default. Most target boards have their own
+supply, and having two supplies fight over VDD is a good way to damage one
+of them -- the tool refuses outright when it sees external power. A board
+with no other supply needs it, so it is an argument rather than a decision
+made here.
 """
 
 from __future__ import annotations

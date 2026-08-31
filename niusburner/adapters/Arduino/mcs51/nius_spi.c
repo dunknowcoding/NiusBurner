@@ -92,8 +92,8 @@ static void half(void)
  * The port pins are bit-addressable, so each edge is one machine cycle.
  *
  * These were helper functions taking a level and branching on it, called
- * three times per bit. Measured on silicon that made an SPI bit cost about
- * 213 machine cycles, of which the deliberate half-bit delay was 15 -- the
+ * three times per bit. That made an SPI bit cost about 213 machine
+ * cycles, of which the deliberate half-bit delay was 15 -- the
  * bus ran at the speed of the C, not the speed it was asked for. `setb` and
  * `clr` on a bit-addressable SFR are one cycle and two bytes, so this is
  * both faster and smaller.
