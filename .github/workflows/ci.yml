@@ -19,10 +19,10 @@ jobs:
       - name: Install
         run: python -m pip install -e .
 
-      # The unit tests exercise internals and are not published, so the
-      # checks here are the ones that can be made against the package as a
-      # user receives it: it imports, it runs, and the board packages it
-      # ships still agree with the catalog they are generated from.
+      # The unit tests are not published, so what is checked here is what a
+      # user actually receives: it imports, it runs, every part in the
+      # catalog is described, and the generated board packages and the
+      # packaging manifest both still agree with the catalog.
       - name: Imports and CLI
         run: |
           python -c "import niusburner; print(niusburner.__version__)"
@@ -30,63 +30,11 @@ jobs:
           python -m niusburner boards
           python -m niusburner boards --features
 
-      - name: Every board in the catalog is well formed
-        run: |
-          python - <<'PY'
-          from niusburner import boards
-          catalog = boards.all_boards()
-          assert catalog, "the catalog is empty"
-          for name, board in catalog.items():
-              assert board.code_size > 0, f"{name} has no flash size"
-              assert board.iram_size > 0, f"{name} has no RAM size"
-              assert board.programmer, f"{name} names no programmer"
-              assert board.note, f"{name} has no description"
-          print(f"{len(catalog)} boards")
-          PY
+      - name: Catalog is well formed
+        run: python ci/check_catalog.py
 
-      - name: Every data file is actually packaged
-        run: |
-          python - <<'PY'
-          import pathlib, tomllib
-          cfg = tomllib.loads(pathlib.Path("pyproject.toml").read_text())
-          patterns = cfg["tool"]["setuptools"]["package-data"]["niusburner"]
-          root = pathlib.Path("niusburner")
-          packaged = {p for pat in patterns for p in root.glob(pat) if p.is_file()}
-          on_disk = {p for p in root.rglob("*")
-                     if p.is_file() and p.suffix not in (".py", ".pyc")
-                     and "__pycache__" not in str(p)}
-          missing = sorted(str(p) for p in on_disk - packaged)
-          if missing:
-              raise SystemExit(
-                  "these files would be left out of an installed copy:
-  "
-                  + "
-  ".join(missing)
-                  + "
-
-Widen package-data in pyproject.toml. An editable
-"
-                    "install reads the source tree, so this is invisible
-"
-                    "from a working checkout.")
-          print(f"{len(on_disk)} data files, all packaged")
-          PY
+      - name: Every data file is packaged
+        run: python ci/check_packaging.py
 
       - name: Generated board packages are current
-        run: |
-          python - <<'PY'
-          import pathlib
-          from niusburner import ide
-          stale = []
-          for family in ide.ARCHITECTURES:
-              path = pathlib.Path("niusburner/arduino") / family / "boards.txt"
-              if not path.is_file():
-                  stale.append(f"{family}: boards.txt missing")
-                  continue
-              if path.read_text(encoding="utf-8") != ide.render_boards_txt(family):
-                  stale.append(f"{family}: boards.txt is out of date")
-          if stale:
-              raise SystemExit("\n".join(stale) +
-                               "\n\nRe-run `python -m niusburner setup`.")
-          print("board packages match the catalog")
-          PY
+        run: python ci/check_board_packages.py
