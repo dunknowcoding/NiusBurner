@@ -138,22 +138,51 @@ If it is older than 3.10: `sudo apt install python3` on Debian and Ubuntu,
 commands below — on these systems a bare `python` is often Python 2, or
 missing entirely.
 
-### Then, once
+---
 
-From the folder you downloaded NiusBurner into:
+## 3. Install NiusBurner
+
+There are two ways in. Pick one.
+
+### Boards Manager (recommended)
+
+NiusBurner is a **boards platform**, so it installs the way platforms do —
+not through the Library Manager, which is for C++ libraries a sketch
+`#include`s and would reject this on sight.
+
+1. **File → Preferences → Additional Boards Manager URLs**, and add:
+
+   ```
+   https://github.com/dunknowcoding/NiusBurner/releases/latest/download/package_niusrobotlab_index.json
+   ```
+
+2. **Tools → Board → Boards Manager**, search for `NiusBurner`, and install
+   the families you need — 8051, PIC16, PIC18.
+
+That is all. Each platform carries its own copy of the tool, so there is
+nothing to clone and no `setup` to run. Python still has to be installed
+(§2), but nothing is installed *into* it.
+
+### From a checkout
+
+Better if you want to read the source, change it, or use the command line:
 
 ```
+git clone https://github.com/dunknowcoding/NiusBurner
+cd NiusBurner
 python -m niusburner setup
 ```
 
-That copies the board packages into your Arduino sketchbook, records the
-interpreter and this folder, and prints what it found and what is missing.
-That is the whole installation. Re-run it whenever you move the folder,
-change Python, or pull a newer version.
+`setup` copies the board packages into your sketchbook and records which
+Python it ran under. Re-run it whenever you move the folder, change Python,
+or pull a newer version.
+
+Either way, **restart the IDE afterwards** — it reads the board list once, at
+start-up.
 
 ---
 
-## 3. Install the compiler
+## 4. Install the compiler
 
 ### SDCC — for the 8051 parts
 
@@ -195,7 +224,7 @@ python -m niusburner setup --xc8 "C:\Program Files\Microchip\xc8\v3.00\bin\xc8-c
 
 ---
 
-## 4. Install the programmer software and drivers
+## 5. Install the programmer software and drivers
 
 ### USB-ISP (8051)
 
@@ -247,7 +276,7 @@ appears, get the vendor driver from
 
 ---
 
-## 5. Wire it up
+## 6. Wire it up
 
 ### 8051 — ISP header
 
@@ -282,16 +311,11 @@ has power, which is the safe behaviour.
 
 ---
 
-## 6. Set up the Arduino IDE
+## 7. Set up the Arduino IDE
 
-You already did this in §2:
-
-```bash
-python -m niusburner setup
-```
-
-It finds your sketchbook by itself. Pass `--sketchbook` only if you keep it
-somewhere `setup` would not look:
+You already did this in §3, whichever route you took. If you installed from
+a checkout, `setup` finds your sketchbook by itself; pass `--sketchbook` only
+if you keep it somewhere it would not look:
 
 ```bash
 python -m niusburner setup --sketchbook "D:\my sketches"
@@ -309,14 +333,15 @@ Restart the IDE, then:
 **Verify** compiles. **Upload** erases and programs. There is no third step.
 
 The IDE does not need Python on its PATH and does not need NiusBurner
-installed into Python — `setup` recorded the interpreter's full path, and the
-board package uses that.
+installed into Python. A checkout install records the interpreter's full
+path; a Boards Manager install carries the tool inside the platform. Either
+way the board package finds it.
 
 Full menu reference: [arduino-ide.md](arduino-ide.md).
 
 ---
 
-## 7. First upload
+## 8. First upload
 
 ```bash
 python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
@@ -334,15 +359,16 @@ program, the verify and the release from reset.
 | `no ISP acknowledge` | Pin 1 reversed, no crystal, or the part is an AT89**C** rather than an AT89**S**. |
 | Signature reads `FF FF FF` or `00 00 00` | The target has no power, or MISO is not connected. |
 | Verify passes, the part does nothing | **EA (pin 31) is not tied to VCC**, or there is no crystal. |
-| `Could not find device` from the PIC tools | MPLAB X 6.x or newer. See the warning in §4. |
+| `Could not find device` from the PIC tools | MPLAB X 6.x or newer. See the warning in §5. |
 | The PIC programmer refuses to power the target | The board already has its own supply. Select the plain PICkit 3 entry, not the one that powers the target. |
 | `sdcc not found` | Not on `PATH`. Re-run the installer with the PATH option, or `setup --sdcc <path>`. |
 | Typing `python` opens the Microsoft Store | That is the Windows placeholder, not Python. See [§2](#2-install-python-windows-first). |
 | `python` is not recognised as a command | Python was installed without **Add python.exe to PATH**. Use `py -3` instead, or re-run the installer and tick it. |
-| The IDE says it cannot import niusburner, naming a path | The recorded Python or folder moved. Re-run `python -m niusburner setup`. |
+| The IDE says it cannot import niusburner, naming a path | A checkout install whose Python or folder moved. Re-run `python -m niusburner setup`, or install through Boards Manager instead, which carries its own copy. |
 | It worked from the terminal but not from the IDE | `setup` was run with a different Python than you expected. Check `python -c "import sys; print(sys.executable)"` and re-run `setup` with the one you want. |
 | You moved or renamed the NiusBurner folder | Re-run `python -m niusburner setup` from its new location. |
 | The Upload button says the part cannot be flashed | That part has no in-circuit programming interface at all; it needs a parallel programming socket. |
+| NiusBurner is not in the Library Manager | It is a boards platform, not a library — the Library Manager only lists C++ libraries. Use the Boards Manager URL in [§3](#3-install-niusburner). |
 | A part is marked **experimental** | It is in the catalog from its datasheet and family; some of the path is still an assumption. It compiles and sizes correctly — treat the first upload as a test of that. |
 
 `python -m niusburner detect` prints what was found and what was not, which

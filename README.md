@@ -45,25 +45,33 @@ unchanged.
 
 ## Quick start
 
+NiusBurner is a **boards platform**, so it installs through Boards Manager.
+Add this to **File → Preferences → Additional Boards Manager URLs**:
+
+```
+https://github.com/dunknowcoding/NiusBurner/releases/latest/download/package_niusrobotlab_index.json
+```
+
+then **Tools → Board → Boards Manager**, search `NiusBurner`, and install the
+families you want. Restart the IDE and press **Upload**.
+
+Each platform carries the tool inside it, so there is nothing to clone and
+nothing to run. **Python 3.10+ is the only prerequisite** — and nothing is
+installed *into* it: no `pip install`, no virtual environment.
+
+Prefer the command line, or want to read the source?
+
 ```bash
 git clone https://github.com/dunknowcoding/NiusBurner
 cd NiusBurner
-python -m niusburner setup        # installs the IDE board packages, finds the tools
+python -m niusburner setup        # installs the board packages, finds the tools
 python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
 ```
-
-**There is nothing to install.** No `pip install`, no virtual environment:
-`setup` records which Python it ran under and where this directory is, and
-the Arduino IDE uses those. Python 3.10 or newer is the only prerequisite.
 
 New to this? [**docs/getting-started.md**](docs/getting-started.md) covers the
 hardware to buy, the drivers and compilers to install, and how to wire both
 families — including the one MPLAB X version trap that costs PIC users an
 afternoon.
-
-`setup` finds your sketchbook by itself; pass `--sketchbook` only if you
-keep it somewhere unusual. Then restart the IDE, pick **Tools → Board →
-NiusBurner**, and press **Upload**. That is the whole path.
 
 On Windows, the one thing worth reading first is
 [which Python to install](docs/getting-started.md#2-install-python-windows-first),

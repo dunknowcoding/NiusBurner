@@ -8,6 +8,11 @@ choosing, so neither the interpreter that has `niusburner` nor the directory
 it lives in can be assumed. `niusburner setup` records both next to this
 file, and they are used only as a fallback: an installed package on the
 current interpreter wins.
+
+A platform installed through Boards Manager has neither record, because
+nothing ran `setup` -- so it carries its own copy of the package beside
+this file, and that is the last thing tried. It comes last on purpose: a
+checkout being worked on should always win over a bundled copy.
 """
 
 from __future__ import annotations
@@ -18,6 +23,7 @@ from pathlib import Path
 _TOOLS = Path(__file__).resolve().parent
 _PY_PATH = _TOOLS / "python.path"
 _PKG_PATH = _TOOLS / "niusburner.path"
+_BUNDLED = _TOOLS / "niusburner"
 
 
 def _python() -> None:
@@ -50,6 +56,10 @@ def _package() -> None:
     recorded = _PKG_PATH.read_text(encoding="utf-8").strip()
     if recorded and Path(recorded).is_dir():
         sys.path.insert(0, recorded)
+        return
+    # Installed through Boards Manager: the package travels in the archive.
+    if (_BUNDLED / "__init__.py").is_file():
+        sys.path.insert(0, str(_TOOLS))
 
 
 def _fail(message: str) -> int:

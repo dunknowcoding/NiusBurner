@@ -11,6 +11,28 @@ if str(ROOT) not in sys.path:
 
 from niusburner import ide
 
+import re
+
+import niusburner
+
+# Boards Manager keys an installed platform by this version, so a platform
+# left behind at an older number installs as a different, older release.
+# They had already drifted once: mcs51 said 0.5.0 while both PIC platforms
+# still said 0.1.0.
+wrong = []
+for family in ide.ARCHITECTURES:
+    path = ROOT / "niusburner" / "arduino" / family / "platform.txt"
+    found = re.search(r"^version=(.+)$", path.read_text(encoding="utf-8"), re.M)
+    if found is None:
+        wrong.append(f"{family}: platform.txt has no version")
+    elif found.group(1).strip() != niusburner.__version__:
+        wrong.append(f"{family}: platform.txt says {found.group(1).strip()}, "
+                     f"package says {niusburner.__version__}")
+if wrong:
+    for line in wrong:
+        print(line, file=sys.stderr)
+    sys.exit("platform versions must match the package version")
+
 stale = []
 for family in ide.ARCHITECTURES:
     path = ROOT / "niusburner" / "arduino" / family / "boards.txt"
@@ -24,4 +46,5 @@ if stale:
         print(line, file=sys.stderr)
     sys.exit("re-run `python -m niusburner setup`")
 
-print(f"{len(ide.ARCHITECTURES)} board packages match the catalog")
+print(f"{len(ide.ARCHITECTURES)} board packages match the catalog "
+      f"at version {niusburner.__version__}")
