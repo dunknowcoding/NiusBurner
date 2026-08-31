@@ -356,6 +356,7 @@ def compile_plan(
                 "bootloader entry over the UART is an STC feature; "
                 f"{plan.board.id} is {plan.board.family}")
         defines.append("NIUS_ISP_ENTRY")
+        defines.append(f"NIUS_ISP_CONTR_ADDR=0x{plan.board.isp_contr:02X}")
         unit = runtime_dir(plan.board.family) / OPTION_UNITS["isp_entry"]
         if unit not in sources:
             sources.append(unit)

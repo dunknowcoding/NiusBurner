@@ -72,6 +72,9 @@ class Board:
     #: 8051 only: oscillator periods per machine cycle. 12 on a
     #: classic core, 1 on the STC15 and other 1T parts.
     clocks_per_mc: int = 12
+    #: STC only: address of the ISP/IAP control register. 0xE7 on
+    #: the STC89 and STC90, 0xC7 on the STC15.
+    isp_contr: int = 0xE7
     #: 8-pin PICs name their port GPIO/TRISIO, not PORTA/TRISA.
     gpio_style: bool = False
     #: 0 crystal, 1 internal RC as INTRCIO, 2 internal as INTOSCIO.
@@ -181,6 +184,7 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             config_profile=int(entry.get("config_profile", 1)),
             ports_present=str(entry.get("ports_present", "")),
             clocks_per_mc=int(entry.get("clocks_per_mc", 12)),
+            isp_contr=int(str(entry.get("isp_contr", "0xE7")), 0),
             gpio_style=bool(entry.get("gpio_style", False)),
             internal_osc=int(entry.get("internal_osc", 0)),
             signature=str(entry.get("signature", "")),

@@ -35,9 +35,18 @@
 
 #include <8052.h>
 
-/* STC89 In-System-Programming control. Not in <8052.h>: it is an STC
-   addition, at 0xE7 on this generation. */
-__sfr __at(0xE7) NIUS_ISP_CONTR;
+/*
+ * The In-System-Programming control register. Not in <8052.h>: it is an STC
+ * addition, and it does not sit at the same address across their
+ * generations -- 0xE7 on the STC89 and STC90, 0xC7 on the STC15, where it
+ * is called IAP_CONTR. The bits mean the same thing in both. The catalog
+ * supplies the address, because writing the wrong one resets nothing and
+ * looks exactly like a part that ignored the request.
+ */
+#ifndef NIUS_ISP_CONTR_ADDR
+#define NIUS_ISP_CONTR_ADDR 0xE7
+#endif
+__sfr __at(NIUS_ISP_CONTR_ADDR) NIUS_ISP_CONTR;
 
 /* SWBS selects the ISP block as the boot source, SWRST performs the reset.
    Both together is "reset into the bootloader"; SWRST alone restarts user

@@ -11,7 +11,8 @@ output into the same console every other target uses.
 
 The options that matter here, from `ipecmd /?`:
 
-    -TPPK3          the tool is a PICkit 3
+    -TPPK3          select by PICkit 3 type when no exact serial is supplied
+    -TS<serial>     select one exact programming tool by USB serial
     -P<part>        the part, without a leading PIC
     -F<file>        the HEX to program
     -M              program the device
@@ -45,6 +46,10 @@ _INSTALL_ROOTS = (
     r"C:\Program Files (x86)\Microchip\MPLABX",
     "/opt/microchip/mplabx",
 )
+
+# Public compatibility marker for callers that require serial-bound tool
+# selection.  Increment this when the selector/readback contract changes.
+PICKIT3_BACKEND_API = 1
 
 #: ipecmd is chatty and most of it is banner. These are the lines that say
 #: something happened, and the ones that say something went wrong.
@@ -216,6 +221,22 @@ def invocation(ipecmd: pathlib.Path) -> tuple[list[str], pathlib.Path]:
     return ([str(ipecmd)], home)
 
 
+def tool_selector(tool_serial: str | None = None) -> str:
+    """Return an exact IPECMD selector, or the legacy type selector.
+
+    IPECMD documents ``-TS<serial>`` for selecting one programming tool when
+    several tools are connected.  Keep the type-only selector for existing
+    interactive callers, while safety-oriented callers can require the exact
+    serial form.
+    """
+    if tool_serial is None:
+        return "-TPPK3"
+    serial = str(tool_serial).strip()
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", serial):
+        raise ValueError("PICkit tool serial must be one exact token")
+    return f"-TS{serial}"
+
+
 def _run(tool: pathlib.Path, args: list[str],
          cwd: pathlib.Path) -> tuple[int, str]:
     prefix, home = invocation(tool)
@@ -257,7 +278,8 @@ def _hints_for(output: str) -> tuple[str, ...]:
     return lead + _HINTS
 
 
-def probe(target: str, power: bool = False) -> int:
+def probe(target: str, power: bool = False, *, tool_serial: str | None = None,
+          scratch_root: pathlib.Path | None = None) -> int:
     """Read the device ID. Programs nothing."""
     tool = find_ipecmd()
     if tool is None:
@@ -269,8 +291,11 @@ def probe(target: str, power: bool = False) -> int:
     # with nothing on the header, and even against the wrong part number.
     # The read goes to a scratch file nobody looks at; the device ID line
     # it prints on the way is the answer.
-    with tempfile.TemporaryDirectory() as scratch:
-        args = [f"-P{target}", "-TPPK3",
+    if scratch_root is not None:
+        scratch_root = pathlib.Path(scratch_root)
+        scratch_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=scratch_root) as scratch:
+        args = [f"-P{target}", tool_selector(tool_serial),
                 "-GCF" + str(pathlib.Path(scratch) / "id.hex")]
         if power:
             args.append("-W")
@@ -286,7 +311,7 @@ def probe(target: str, power: bool = False) -> int:
 
 
 def flash(image: pathlib.Path, target: str, power: bool = False,
-          run: bool = True) -> int:
+          run: bool = True, *, tool_serial: str | None = None) -> int:
     """Erase, program and verify *image* on *target* through a PICkit 3."""
     tool = find_ipecmd()
     if tool is None:
@@ -299,7 +324,8 @@ def flash(image: pathlib.Path, target: str, power: bool = False,
     banner(f"PIC Flash Console - Target: {target}")
     stage(0, "Connecting", "PICkit 3 over ICSP")
 
-    args = [f"-P{target}", "-TPPK3", f"-F{image}", "-E", "-M", "-Y"]
+    args = [f"-P{target}", tool_selector(tool_serial), f"-F{image}",
+            "-E", "-M", "-Y"]
     if power:
         args.append("-W")
     if run:
@@ -332,12 +358,13 @@ def flash(image: pathlib.Path, target: str, power: bool = False,
     return 0
 
 
-def reset(target: str, power: bool = False) -> int:
+def reset(target: str, power: bool = False, *,
+          tool_serial: str | None = None) -> int:
     """Release the part from reset without touching its flash."""
     tool = find_ipecmd()
     if tool is None:
         return _missing()
-    args = [f"-P{target}", "-TPPK3", "-OL"]
+    args = [f"-P{target}", tool_selector(tool_serial), "-OL"]
     if power:
         args.append("-W")
     code, output = _run(tool, args, pathlib.Path.cwd())
@@ -346,4 +373,29 @@ def reset(target: str, power: bool = False) -> int:
               hints=_hints_for(output), details=_trouble(output))
         return 1
     info(f"reset  {target} released from reset")
+    return 0
+
+
+def readback(output: pathlib.Path, target: str, power: bool = False, *,
+             tool_serial: str | None = None) -> int:
+    """Read the entire target into *output* using one selected programmer."""
+    tool = find_ipecmd()
+    if tool is None:
+        return _missing()
+    output = pathlib.Path(output)
+    if not output.parent.is_dir():
+        error(f"output directory not found: {output.parent}",
+              title="cannot save PIC readback")
+        return 1
+    args = [f"-P{target}", tool_selector(tool_serial), f"-GF{output}"]
+    if power:
+        args.append("-W")
+    code, result = _run(tool, args, output.parent)
+    if code != 0 or not output.is_file():
+        error("the PIC readback did not produce an image",
+              title="readback failed", hints=_hints_for(result),
+              details=_trouble(result))
+        _report(result)
+        return 1
+    _report(result)
     return 0

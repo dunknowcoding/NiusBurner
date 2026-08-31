@@ -384,7 +384,8 @@
         "adc": "hardware",
         "eeprom": "hardware"
       },
-      "experimental": true
+      "experimental": true,
+      "isp_contr": "0xC7"
     },
     "stc15w404as": {
       "part": "stc15w404as",
@@ -414,7 +415,8 @@
         "adc": "hardware",
         "eeprom": "hardware"
       },
-      "experimental": true
+      "experimental": true,
+      "isp_contr": "0xC7"
     },
     "stc15w408as": {
       "part": "stc15w408as",
@@ -444,7 +446,8 @@
         "adc": "hardware",
         "eeprom": "hardware"
       },
-      "experimental": true
+      "experimental": true,
+      "isp_contr": "0xC7"
     },
     "stc89c51rc": {
       "part": "stc89c51rc",
