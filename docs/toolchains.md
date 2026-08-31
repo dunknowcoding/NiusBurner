@@ -121,7 +121,8 @@ python -m niusburner setup --board at89s52
 2. Add an entry to `niusburner/toolchains.json` with a `detect` rule and an
    `install` URL.
 3. Run `detect` and confirm it is found.
-4. `pytest tests/` — the invariants apply to the new entry too.
+4. `python -m niusburner detect` again, and check the new entry
+   resolves outside this repository.
 
 `install` is a URL and an instruction, not an automated installer. Several of
 these vendors require accepting a licence or registering, and scripting around

@@ -19,4 +19,4 @@ Package layout, from the user inward:
     registry.py     what is actually installed
 """
 
-__version__ = "0.3.0"
+__version__ = "0.5.0"

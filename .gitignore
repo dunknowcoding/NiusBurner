@@ -54,3 +54,8 @@ Thumbs.db
 
 # MPLAB drops this wherever it is run from.
 MPLABXLog.xml
+
+# Host tests. They exercise internals and pin down decisions that only
+# matter to whoever is changing this code; a user installing NiusBurner
+# has no use for them. Kept locally, not published.
+tests/

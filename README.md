@@ -188,7 +188,6 @@ niusburner/
   flash.py           transport dispatch   backends/     USB-ISP, stcgal, PICkit 3
   adapters/Arduino/  the Arduino API as C, per family
   arduino/           generated Arduino IDE board packages
-tests/               host tests; no hardware required
 ```
 
 Two kinds of `.ino` live here and they are not interchangeable:

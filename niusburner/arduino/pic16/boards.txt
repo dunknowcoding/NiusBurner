@@ -16,6 +16,90 @@ menu.optimize=Optimize
 menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
+# 1 K words, 8-pin, internal 4 MHz oscillator. One port, called GPIO. No USART and no converter.
+pic12f629.name=12F629 (1 K words, PICkit 3) [experimental]
+pic12f629.upload.tool=niusburner
+pic12f629.upload.protocol=pickit3
+pic12f629.upload.maximum_size=1024
+pic12f629.upload.maximum_data_size=64
+pic12f629.upload.require_upload_port=false
+pic12f629.build.mcu=12F629
+pic12f629.build.f_cpu=4000000L
+pic12f629.build.board=12F629
+pic12f629.build.core=niusburner
+pic12f629.build.variant=standard
+pic12f629.build.nb_board=pic12f629
+pic12f629.build.extra_flags=
+
+pic12f629.menu.optimize.size=Size (default)
+pic12f629.menu.optimize.size.build.nb_optimize=size
+pic12f629.menu.optimize.speed=Speed
+pic12f629.menu.optimize.speed.build.nb_optimize=speed
+pic12f629.menu.optimize.none=None
+pic12f629.menu.optimize.none.build.nb_optimize=none
+
+pic12f629.menu.compiler.auto=Auto-detect SDCC (default)
+pic12f629.menu.compiler.auto.build.nb_compiler=auto
+pic12f629.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic12f629.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 1 K words, 8-pin, internal 4 MHz oscillator. One port, called GPIO. No USART.
+pic12f675.name=12F675 (1 K words, PICkit 3) [experimental]
+pic12f675.upload.tool=niusburner
+pic12f675.upload.protocol=pickit3
+pic12f675.upload.maximum_size=1024
+pic12f675.upload.maximum_data_size=64
+pic12f675.upload.require_upload_port=false
+pic12f675.build.mcu=12F675
+pic12f675.build.f_cpu=4000000L
+pic12f675.build.board=12F675
+pic12f675.build.core=niusburner
+pic12f675.build.variant=standard
+pic12f675.build.nb_board=pic12f675
+pic12f675.build.extra_flags=
+
+pic12f675.menu.optimize.size=Size (default)
+pic12f675.menu.optimize.size.build.nb_optimize=size
+pic12f675.menu.optimize.speed=Speed
+pic12f675.menu.optimize.speed.build.nb_optimize=speed
+pic12f675.menu.optimize.none=None
+pic12f675.menu.optimize.none.build.nb_optimize=none
+
+pic12f675.menu.compiler.auto=Auto-detect SDCC (default)
+pic12f675.menu.compiler.auto.build.nb_compiler=auto
+pic12f675.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic12f675.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 2 K words, 8-pin, internal oscillator. One port, called GPIO. No USART.
+pic12f683.name=12F683 (2 K words, PICkit 3) [experimental]
+pic12f683.upload.tool=niusburner
+pic12f683.upload.protocol=pickit3
+pic12f683.upload.maximum_size=2048
+pic12f683.upload.maximum_data_size=128
+pic12f683.upload.require_upload_port=false
+pic12f683.build.mcu=12F683
+pic12f683.build.f_cpu=4000000L
+pic12f683.build.board=12F683
+pic12f683.build.core=niusburner
+pic12f683.build.variant=standard
+pic12f683.build.nb_board=pic12f683
+pic12f683.build.extra_flags=
+
+pic12f683.menu.optimize.size=Size (default)
+pic12f683.menu.optimize.size.build.nb_optimize=size
+pic12f683.menu.optimize.speed=Speed
+pic12f683.menu.optimize.speed.build.nb_optimize=speed
+pic12f683.menu.optimize.none=None
+pic12f683.menu.optimize.none.build.nb_optimize=none
+
+pic12f683.menu.compiler.auto=Auto-detect SDCC (default)
+pic12f683.menu.compiler.auto.build.nb_compiler=auto
+pic12f683.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic12f683.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
 # 1 K words, 18-pin, USART, comparators.
 pic16f627a.name=16F627A (1 K words, PICkit 3) [experimental]
 pic16f627a.upload.tool=niusburner

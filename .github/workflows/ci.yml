@@ -8,12 +8,57 @@ permissions:
   contents: read
 
 jobs:
-  host-contracts:
+  host-checks:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
-      - run: python -m pip install pytest
-      - run: python -m pytest -q
+
+      - name: Install
+        run: python -m pip install -e .
+
+      # The unit tests exercise internals and are not published, so the
+      # checks here are the ones that can be made against the package as a
+      # user receives it: it imports, it runs, and the board packages it
+      # ships still agree with the catalog they are generated from.
+      - name: Imports and CLI
+        run: |
+          python -c "import niusburner; print(niusburner.__version__)"
+          python -m niusburner --version
+          python -m niusburner boards
+          python -m niusburner boards --features
+
+      - name: Every board in the catalog is well formed
+        run: |
+          python - <<'PY'
+          from niusburner import boards
+          catalog = boards.all_boards()
+          assert catalog, "the catalog is empty"
+          for name, board in catalog.items():
+              assert board.code_size > 0, f"{name} has no flash size"
+              assert board.iram_size > 0, f"{name} has no RAM size"
+              assert board.programmer, f"{name} names no programmer"
+              assert board.note, f"{name} has no description"
+          print(f"{len(catalog)} boards")
+          PY
+
+      - name: Generated board packages are current
+        run: |
+          python - <<'PY'
+          import pathlib
+          from niusburner import ide
+          stale = []
+          for family in ide.ARCHITECTURES:
+              path = pathlib.Path("niusburner/arduino") / family / "boards.txt"
+              if not path.is_file():
+                  stale.append(f"{family}: boards.txt missing")
+                  continue
+              if path.read_text(encoding="utf-8") != ide.render_boards_txt(family):
+                  stale.append(f"{family}: boards.txt is out of date")
+          if stale:
+              raise SystemExit("\n".join(stale) +
+                               "\n\nRe-run `python -m niusburner setup`.")
+          print("board packages match the catalog")
+          PY
