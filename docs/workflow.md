@@ -1,5 +1,8 @@
 # Workflow
 
+Setting a machine up for the first time?
+[getting-started.md](getting-started.md) comes before this.
+
 NiusBurner is the legacy-MCU half of NiusDisplay: write an Arduino-shaped
 sketch, install a compiler on this machine, compile and flash with one CLI.
 NiusDisplay stays a plain Arduino library. This tool never imports it.

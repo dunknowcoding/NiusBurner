@@ -626,6 +626,136 @@
       },
       "f_cpu": 11059200
     },
+    "pic16f627a": {
+      "part": "16F627A",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 1024,
+      "iram_size": 224,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f627a"
+      ],
+      "note": "1 K words, 18-pin, USART, comparators.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "none",
+        "eeprom": "hardware"
+      },
+      "ports": 2,
+      "analog": 2,
+      "config_omit": [
+        "WRT"
+      ],
+      "usart": 2
+    },
+    "pic16f628a": {
+      "part": "16F628A",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 2048,
+      "iram_size": 224,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f628a"
+      ],
+      "note": "2 K words, 18-pin, USART, comparators.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "none",
+        "eeprom": "hardware"
+      },
+      "ports": 2,
+      "analog": 2,
+      "config_omit": [
+        "WRT"
+      ],
+      "usart": 2
+    },
+    "pic16f648a": {
+      "part": "16F648A",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 4096,
+      "iram_size": 256,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f648a"
+      ],
+      "note": "4 K words, 18-pin, USART, comparators.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "none",
+        "eeprom": "hardware"
+      },
+      "ports": 2,
+      "analog": 2,
+      "config_omit": [
+        "WRT"
+      ],
+      "usart": 2
+    },
+    "pic16f84a": {
+      "part": "16F84A",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 1024,
+      "iram_size": 68,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f84a"
+      ],
+      "note": "1 K words, 18-pin, no USART and no analog.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "none",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "none",
+        "eeprom": "hardware"
+      },
+      "ports": 2,
+      "analog": 0,
+      "config_omit": [
+        "BOREN",
+        "LVP",
+        "CPD",
+        "WRT"
+      ]
+    },
     "pic16f873": {
       "part": "16F873",
       "family": "pic16",
@@ -841,6 +971,35 @@
         "eeprom": "hardware"
       },
       "ports": 5
+    },
+    "pic16f88": {
+      "part": "16F88",
+      "family": "pic16",
+      "compiler": "xc8",
+      "code_size": 4096,
+      "iram_size": 368,
+      "xram_size": 0,
+      "model": "small",
+      "f_cpu": 20000000,
+      "programmer": "pickit3",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "16f88"
+      ],
+      "note": "4 K words, 18-pin, USART, ANSEL analog select.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "hardware",
+        "spi": "hardware",
+        "pwm": "hardware",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "ports": 2,
+      "analog": 3,
+      "usart": 3
     }
   },
   "_peripherals": [

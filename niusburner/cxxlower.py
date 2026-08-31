@@ -534,7 +534,7 @@ def _serial_call(method: str, args: list[str]) -> str:
     )
 
 
-def _lower_serial(text: str) -> str:
+def _lower_serial(text: str, board=None) -> str:
     spans: list[tuple[int, int, str]] = []
     n = len(text)
     i = 0
@@ -544,6 +544,13 @@ def _lower_serial(text: str) -> str:
             i = jumped
             continue
         if _at_word(text, i, "Serial"):
+            # Serial is a peripheral like any other: a part with no UART
+            # should be told so here, not by a page of compiler errors
+            # about registers it does not have.
+            if board is not None and not board.provides("uart"):
+                raise CxxLowerError(
+                    "Serial", _feature_refusal("Serial", "uart", board),
+                    kind="board")
             j = i + 6
             while j < n and text[j].isspace():
                 j += 1
@@ -647,7 +654,11 @@ _FEATURE_WHY = {
         "There is no byte-erasable data memory here; the flash array erases "
         "whole, so a single-byte write is not something to emulate."
     ),
-    "uart": "This part has no serial port.",
+    "uart": (
+        "This part has no hardware serial port. Bit-banging one means "
+        "holding the CPU for a whole frame at an exact rate, which "
+        "stops everything else the sketch is doing."
+    ),
     "gpio": "This part has no general-purpose port pins.",
 }
 
@@ -841,7 +852,7 @@ def lower_with_info(
     _check_calls(text, board)
     had_serial = bool(re.search(r"\bSerial\b", _code_words(text)))
     out = _lower_f(text)
-    out = _lower_serial(out)
+    out = _lower_serial(out, board)
     leftover_serial = re.search(r"\bSerial\b", _code_words(out))
     if leftover_serial:
         raise CxxLowerError(

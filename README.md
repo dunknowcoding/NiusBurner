@@ -8,7 +8,7 @@ Write a sketch that looks like Arduino. Press Upload. It lands on an 8051 or a P
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Parts](https://img.shields.io/badge/parts-33-green.svg)](#supported-parts)
+[![Parts](https://img.shields.io/badge/parts-38-green.svg)](#supported-parts)
 [![Toolchains](https://img.shields.io/badge/toolchains-never%20vendored-orange.svg)](docs/toolchains.md)
 
 </div>
@@ -51,6 +51,11 @@ python -m niusburner setup        # find the compilers and programmers
 python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
 ```
 
+New to this? [**docs/getting-started.md**](docs/getting-started.md) covers the
+hardware to buy, the drivers and compilers to install, and how to wire both
+families — including the one MPLAB X version trap that costs PIC users an
+afternoon.
+
 For the IDE, `setup` also installs the board package:
 
 ```bash
@@ -91,6 +96,10 @@ path.
 
 | part | flash | RAM | ports |
 |---|---|---|---|
+| 16F627A | 1 K words | 224 B | A-B |
+| 16F628A | 2 K words | 224 B | A-B |
+| 16F648A | 4 K words | 256 B | A-B |
+| 16F84A | 1 K words | 68 B | A-B |
 | 16F873 | 4 K words | 192 B | A-C |
 | 16F873A | 4 K words | 192 B | A-C |
 | 16F874 | 4 K words | 192 B | A-E |
@@ -99,6 +108,7 @@ path.
 | 16F876A | 8 K words | 368 B | A-C |
 | 16F877 | 8 K words | 368 B | A-E |
 | 16F877A | 8 K words | 368 B | A-E |
+| 16F88 | 4 K words | 368 B | A-B |
 
 **Compile only** — these parts are written in a parallel programming socket,
 which no header here can drive. They compile and size correctly, and `upload`
@@ -183,9 +193,11 @@ of those trades is written down rather than hidden.
 
 | | |
 |---|---|
+| [docs/getting-started.md](docs/getting-started.md) | **start here** — what to buy, which drivers and compilers to install, how to wire it |
 | [docs/workflow.md](docs/workflow.md) | setup, compile, upload |
 | [docs/arduino-ide.md](docs/arduino-ide.md) | board and programmer menus, and what Upload prints |
 | [docs/translation.md](docs/translation.md) | what the C++ to C translation covers, and what it refuses |
+| [docs/assembly.md](docs/assembly.md) | writing assembly in a sketch, on either family |
 | [docs/families/8051.md](docs/families/8051.md) | AT89S, AT89C, STC89/90, W78E, SST89 |
 | [docs/families/pic.md](docs/families/pic.md) | the PIC16F87x family |
 | [docs/wiring/usbasp-idc10.md](docs/wiring/usbasp-idc10.md) | ISP header pinout and wiring |

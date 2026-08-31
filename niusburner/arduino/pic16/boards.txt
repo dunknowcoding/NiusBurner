@@ -16,6 +16,118 @@ menu.optimize=Optimize
 menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
+# 1 K words, 18-pin, USART, comparators.
+pic16f627a.name=16F627A (1 K words, PICkit 3)
+pic16f627a.upload.tool=niusburner
+pic16f627a.upload.protocol=pickit3
+pic16f627a.upload.maximum_size=1024
+pic16f627a.upload.maximum_data_size=224
+pic16f627a.upload.require_upload_port=false
+pic16f627a.build.mcu=16F627A
+pic16f627a.build.f_cpu=20000000L
+pic16f627a.build.board=16F627A
+pic16f627a.build.core=niusburner
+pic16f627a.build.variant=standard
+pic16f627a.build.nb_board=pic16f627a
+pic16f627a.build.extra_flags=
+
+pic16f627a.menu.optimize.size=Size (default)
+pic16f627a.menu.optimize.size.build.nb_optimize=size
+pic16f627a.menu.optimize.speed=Speed
+pic16f627a.menu.optimize.speed.build.nb_optimize=speed
+pic16f627a.menu.optimize.none=None
+pic16f627a.menu.optimize.none.build.nb_optimize=none
+
+pic16f627a.menu.compiler.auto=Auto-detect SDCC (default)
+pic16f627a.menu.compiler.auto.build.nb_compiler=auto
+pic16f627a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic16f627a.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 2 K words, 18-pin, USART, comparators.
+pic16f628a.name=16F628A (2 K words, PICkit 3)
+pic16f628a.upload.tool=niusburner
+pic16f628a.upload.protocol=pickit3
+pic16f628a.upload.maximum_size=2048
+pic16f628a.upload.maximum_data_size=224
+pic16f628a.upload.require_upload_port=false
+pic16f628a.build.mcu=16F628A
+pic16f628a.build.f_cpu=20000000L
+pic16f628a.build.board=16F628A
+pic16f628a.build.core=niusburner
+pic16f628a.build.variant=standard
+pic16f628a.build.nb_board=pic16f628a
+pic16f628a.build.extra_flags=
+
+pic16f628a.menu.optimize.size=Size (default)
+pic16f628a.menu.optimize.size.build.nb_optimize=size
+pic16f628a.menu.optimize.speed=Speed
+pic16f628a.menu.optimize.speed.build.nb_optimize=speed
+pic16f628a.menu.optimize.none=None
+pic16f628a.menu.optimize.none.build.nb_optimize=none
+
+pic16f628a.menu.compiler.auto=Auto-detect SDCC (default)
+pic16f628a.menu.compiler.auto.build.nb_compiler=auto
+pic16f628a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic16f628a.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 4 K words, 18-pin, USART, comparators.
+pic16f648a.name=16F648A (4 K words, PICkit 3)
+pic16f648a.upload.tool=niusburner
+pic16f648a.upload.protocol=pickit3
+pic16f648a.upload.maximum_size=4096
+pic16f648a.upload.maximum_data_size=256
+pic16f648a.upload.require_upload_port=false
+pic16f648a.build.mcu=16F648A
+pic16f648a.build.f_cpu=20000000L
+pic16f648a.build.board=16F648A
+pic16f648a.build.core=niusburner
+pic16f648a.build.variant=standard
+pic16f648a.build.nb_board=pic16f648a
+pic16f648a.build.extra_flags=
+
+pic16f648a.menu.optimize.size=Size (default)
+pic16f648a.menu.optimize.size.build.nb_optimize=size
+pic16f648a.menu.optimize.speed=Speed
+pic16f648a.menu.optimize.speed.build.nb_optimize=speed
+pic16f648a.menu.optimize.none=None
+pic16f648a.menu.optimize.none.build.nb_optimize=none
+
+pic16f648a.menu.compiler.auto=Auto-detect SDCC (default)
+pic16f648a.menu.compiler.auto.build.nb_compiler=auto
+pic16f648a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic16f648a.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 1 K words, 18-pin, no USART and no analog.
+pic16f84a.name=16F84A (1 K words, PICkit 3)
+pic16f84a.upload.tool=niusburner
+pic16f84a.upload.protocol=pickit3
+pic16f84a.upload.maximum_size=1024
+pic16f84a.upload.maximum_data_size=68
+pic16f84a.upload.require_upload_port=false
+pic16f84a.build.mcu=16F84A
+pic16f84a.build.f_cpu=20000000L
+pic16f84a.build.board=16F84A
+pic16f84a.build.core=niusburner
+pic16f84a.build.variant=standard
+pic16f84a.build.nb_board=pic16f84a
+pic16f84a.build.extra_flags=
+
+pic16f84a.menu.optimize.size=Size (default)
+pic16f84a.menu.optimize.size.build.nb_optimize=size
+pic16f84a.menu.optimize.speed=Speed
+pic16f84a.menu.optimize.speed.build.nb_optimize=speed
+pic16f84a.menu.optimize.none=None
+pic16f84a.menu.optimize.none.build.nb_optimize=none
+
+pic16f84a.menu.compiler.auto=Auto-detect SDCC (default)
+pic16f84a.menu.compiler.auto.build.nb_compiler=auto
+pic16f84a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic16f84a.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
 # 4 K words flash, 192 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.
 pic16f873.name=16F873 (4 K words, PICkit 3)
 pic16f873.upload.tool=niusburner
@@ -238,3 +350,31 @@ pic16f877a.menu.compiler.auto=Auto-detect SDCC (default)
 pic16f877a.menu.compiler.auto.build.nb_compiler=auto
 pic16f877a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f877a.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
+# 4 K words, 18-pin, USART, ANSEL analog select.
+pic16f88.name=16F88 (4 K words, PICkit 3)
+pic16f88.upload.tool=niusburner
+pic16f88.upload.protocol=pickit3
+pic16f88.upload.maximum_size=4096
+pic16f88.upload.maximum_data_size=368
+pic16f88.upload.require_upload_port=false
+pic16f88.build.mcu=16F88
+pic16f88.build.f_cpu=20000000L
+pic16f88.build.board=16F88
+pic16f88.build.core=niusburner
+pic16f88.build.variant=standard
+pic16f88.build.nb_board=pic16f88
+pic16f88.build.extra_flags=
+
+pic16f88.menu.optimize.size=Size (default)
+pic16f88.menu.optimize.size.build.nb_optimize=size
+pic16f88.menu.optimize.speed=Speed
+pic16f88.menu.optimize.speed.build.nb_optimize=speed
+pic16f88.menu.optimize.none=None
+pic16f88.menu.optimize.none.build.nb_optimize=none
+
+pic16f88.menu.compiler.auto=Auto-detect SDCC (default)
+pic16f88.menu.compiler.auto.build.nb_compiler=auto
+pic16f88.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+pic16f88.menu.compiler.configured.build.nb_compiler=configured

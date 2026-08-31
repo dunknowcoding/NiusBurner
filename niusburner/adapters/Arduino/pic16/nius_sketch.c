@@ -56,15 +56,42 @@
 #pragma config FOSC = LP
 #endif
 
+/*
+ * Not every member of the family implements every bit. The 16F84A has no
+ * brown-out, no low-voltage programming and no data protection; the
+ * 16F62xA have no flash write protection. Naming a bit a part does not
+ * have is an error rather than a no-op, so the catalog says which to
+ * leave out.
+ */
+#ifndef NIUS_PIC_CFG_BOREN
+#define NIUS_PIC_CFG_BOREN 1
+#endif
+#ifndef NIUS_PIC_CFG_LVP
+#define NIUS_PIC_CFG_LVP 1
+#endif
+#ifndef NIUS_PIC_CFG_CPD
+#define NIUS_PIC_CFG_CPD 1
+#endif
+#ifndef NIUS_PIC_CFG_WRT
+#define NIUS_PIC_CFG_WRT 1
+#endif
+
 #pragma config WDTE = OFF
-
 #pragma config PWRTE = ON
-
-#pragma config BOREN = ON
-#pragma config LVP = OFF
-#pragma config CPD = OFF
-#pragma config WRT = OFF
 #pragma config CP = OFF
+
+#if NIUS_PIC_CFG_BOREN
+#pragma config BOREN = ON
+#endif
+#if NIUS_PIC_CFG_LVP
+#pragma config LVP = OFF
+#endif
+#if NIUS_PIC_CFG_CPD
+#pragma config CPD = OFF
+#endif
+#if NIUS_PIC_CFG_WRT
+#pragma config WRT = OFF
+#endif
 
 #endif /* NIUS_NO_CONFIG */
 
@@ -86,6 +113,15 @@ static unsigned long g_seed = 1;
 #define NIUS_PIC_PORTS 5
 #endif
 
+/*
+ * Which register makes the analog-capable pins digital at start-up:
+ * 1 ADCON1, 2 CMCON, 3 ANSEL, 0 for a part with no analog at all. Naming
+ * the wrong one is a compile error, so the catalog picks.
+ */
+#ifndef NIUS_PIC_ANALOG
+#define NIUS_PIC_ANALOG 1
+#endif
+
 void pinMode(unsigned char pin, unsigned char mode)
 {
     unsigned char mask = (unsigned char)(1u << BIT_OF(pin));
@@ -98,8 +134,12 @@ void pinMode(unsigned char pin, unsigned char mode)
      */
     switch (PORT_OF(pin)) {
     case 0: if (mode == OUTPUT) TRISA &= (unsigned char)~mask; else TRISA |= mask; break;
+#if NIUS_PIC_PORTS > 1
     case 1: if (mode == OUTPUT) TRISB &= (unsigned char)~mask; else TRISB |= mask; break;
+#endif
+#if NIUS_PIC_PORTS > 2
     case 2: if (mode == OUTPUT) TRISC &= (unsigned char)~mask; else TRISC |= mask; break;
+#endif
 #if NIUS_PIC_PORTS > 3
     case 3: if (mode == OUTPUT) TRISD &= (unsigned char)~mask; else TRISD |= mask; break;
 #endif
@@ -118,8 +158,12 @@ void digitalWrite(unsigned char pin, unsigned char value)
 
     switch (PORT_OF(pin)) {
     case 0: if (value) PORTA |= mask; else PORTA &= (unsigned char)~mask; break;
+#if NIUS_PIC_PORTS > 1
     case 1: if (value) PORTB |= mask; else PORTB &= (unsigned char)~mask; break;
+#endif
+#if NIUS_PIC_PORTS > 2
     case 2: if (value) PORTC |= mask; else PORTC &= (unsigned char)~mask; break;
+#endif
 #if NIUS_PIC_PORTS > 3
     case 3: if (value) PORTD |= mask; else PORTD &= (unsigned char)~mask; break;
 #endif
@@ -136,8 +180,12 @@ unsigned char digitalRead(unsigned char pin)
 
     switch (PORT_OF(pin)) {
     case 0: return (unsigned char)((PORTA & mask) ? 1 : 0);
+#if NIUS_PIC_PORTS > 1
     case 1: return (unsigned char)((PORTB & mask) ? 1 : 0);
+#endif
+#if NIUS_PIC_PORTS > 2
     case 2: return (unsigned char)((PORTC & mask) ? 1 : 0);
+#endif
 #if NIUS_PIC_PORTS > 3
     case 3: return (unsigned char)((PORTD & mask) ? 1 : 0);
 #endif
@@ -250,7 +298,13 @@ void main(void)
      * the sketch runs. A sketch that wants the converter sets ADCON1
      * itself in setup(), which runs after this.
      */
-    ADCON1 = 0x06;
+#if NIUS_PIC_ANALOG == 1
+    ADCON1 = 0x06;              /* every PORTA/PORTE pin digital */
+#elif NIUS_PIC_ANALOG == 2
+    CMCON = 0x07;               /* comparators off, PORTA digital */
+#elif NIUS_PIC_ANALOG == 3
+    ANSEL = 0x00;               /* every analog select off */
+#endif
     setup();
     for (;;)
         loop();

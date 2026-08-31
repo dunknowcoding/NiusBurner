@@ -49,6 +49,13 @@ class Board:
     f_cpu: int = 11059200
     #: Ports the package brings out, A upwards. PIC16 only.
     ports: int = 5
+    #: Which register makes the analog pins digital at start-up:
+    #: 1 ADCON1, 2 CMCON, 3 ANSEL, 0 the part has no analog.
+    analog: int = 1
+    #: Configuration bits this part does not implement.
+    config_omit: tuple[str, ...] = ()
+    #: Where the USART appears: 1 RC6/RC7, 2 RB2/RB1, 3 RB2/RB5.
+    usart: int = 1
     peripherals: tuple[tuple[str, str], ...] = ()
 
     #: Programmers this tool can actually drive. A board whose programmer is
@@ -97,6 +104,9 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             programmer=str(entry["programmer"]),
             status=str(entry.get("status", "planned")),
             ports=int(entry.get("ports", 5)),
+            analog=int(entry.get("analog", 1)),
+            config_omit=tuple(entry.get("config_omit", ())),
+            usart=int(entry.get("usart", 1)),
             signature=str(entry.get("signature", "")),
             note=str(entry.get("note", "")),
             aliases=tuple(entry.get("aliases") or ()),

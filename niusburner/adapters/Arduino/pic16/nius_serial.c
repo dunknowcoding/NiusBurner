@@ -19,6 +19,11 @@
 #include "nius_sketch.h"
 #include "nius_serial.h"
 
+/* Which pins the USART appears on; see nius_serial_begin(). */
+#ifndef NIUS_PIC_USART
+#define NIUS_PIC_USART 1
+#endif
+
 #ifndef _XTAL_FREQ
 #define _XTAL_FREQ 20000000UL
 #endif
@@ -48,11 +53,25 @@ void nius_serial_begin(unsigned long baud)
         divisor = 255UL;
     SPBRG = (unsigned char)divisor;
 
-    TRISCbits.TRISC6 = 1;      /* the USART drives TX itself once enabled */
-    TRISCbits.TRISC7 = 1;      /* RX must stay an input */
+    /*
+     * The USART takes its pins over once SPEN is set, but both have to be
+     * left as inputs for it to do so. Which pins those are depends on the
+     * package: RC6/RC7 on the 28- and 40-pin parts, PORTB on the 18-pin
+     * ones, and naming a port the part does not have is a compile error.
+     */
+#if NIUS_PIC_USART == 2
+    TRISBbits.TRISB2 = 1;      /* TX */
+    TRISBbits.TRISB1 = 1;      /* RX */
+#elif NIUS_PIC_USART == 3
+    TRISBbits.TRISB2 = 1;      /* TX */
+    TRISBbits.TRISB5 = 1;      /* RX */
+#else
+    TRISCbits.TRISC6 = 1;      /* TX */
+    TRISCbits.TRISC7 = 1;      /* RX */
+#endif
 
     TXSTAbits.SYNC = 0;        /* asynchronous */
-    RCSTAbits.SPEN = 1;        /* serial port on, RC6/RC7 leave the port */
+    RCSTAbits.SPEN = 1;        /* serial port on; it owns the pins now */
     TXSTAbits.TXEN = 1;
     RCSTAbits.CREN = 1;        /* continuous receive */
 }

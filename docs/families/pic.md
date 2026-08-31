@@ -79,22 +79,33 @@ tracked as an open task; do not assume it fits.
 
 ## Parts
 
-| part | flash | RAM | ports |
-|---|---|---|---|
-| 16F873 | 4 K words | 192 B | A-C |
-| 16F873A | 4 K words | 192 B | A-C |
-| 16F874 | 4 K words | 192 B | A-E |
-| 16F874A | 4 K words | 192 B | A-E |
-| 16F876 | 8 K words | 368 B | A-C |
-| 16F876A | 8 K words | 368 B | A-C |
-| 16F877 | 8 K words | 368 B | A-E |
-| 16F877A | 8 K words | 368 B | A-E |
+| part | flash | RAM | ports | USART |
+|---|---|---|---|---|
+| 16F627A | 1 K words | 224 B | A-B | yes |
+| 16F628A | 2 K words | 224 B | A-B | yes |
+| 16F648A | 4 K words | 256 B | A-B | yes |
+| 16F84A | 1 K words | 68 B | A-B | — |
+| 16F873 | 4 K words | 192 B | A-C | yes |
+| 16F873A | 4 K words | 192 B | A-C | yes |
+| 16F874 | 4 K words | 192 B | A-E | yes |
+| 16F874A | 4 K words | 192 B | A-E | yes |
+| 16F876 | 8 K words | 368 B | A-C | yes |
+| 16F876A | 8 K words | 368 B | A-C | yes |
+| 16F877 | 8 K words | 368 B | A-E | yes |
+| 16F877A | 8 K words | 368 B | A-E | yes |
+| 16F88 | 4 K words | 368 B | A-B | yes |
 
-One family, one register layout: the same USART on RC6/RC7, the same TRIS
-inversion, the same analog-at-reset behaviour on PORTA. The 28-pin members
-bring out ports A to C only, and the runtime is compiled for the ports the
-selected part actually has — naming a port a package does not bond out is a
-compile error, not a pin that quietly does nothing.
+One runtime, compiled for the part in front of it. The family does not share
+one register map: the 40-pin members bring out ports A to E and the 18-pin
+ones stop at B; the analog pins are turned off through ADCON1, CMCON or
+ANSEL depending on the part; the USART appears on RC6/RC7 or on PORTB; and
+the 16F84A implements neither brown-out nor low-voltage programming, so those
+configuration bits must not be named at all.
+
+All of that is in the catalog rather than in the code, because naming a
+register a part does not have is a compile error, not a pin that quietly
+does nothing. A part with no USART refuses `Serial` at translation time with
+that reason, instead of failing later in the compiler.
 
 ---
 

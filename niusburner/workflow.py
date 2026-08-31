@@ -362,9 +362,13 @@ def compile_plan(
     if plan.board.family == "pic16":
         # Which ports the package brings out: naming a port the part does
         # not have is a compile error, not a dead store.
-        ports = f"NIUS_PIC_PORTS={plan.board.ports}"
-        if ports not in defines:
-            defines.append(ports)
+        omitted = [f"NIUS_PIC_CFG_{name.upper()}=0"
+                   for name in plan.board.config_omit]
+        for macro in (f"NIUS_PIC_PORTS={plan.board.ports}",
+                      f"NIUS_PIC_ANALOG={plan.board.analog}",
+                      f"NIUS_PIC_USART={plan.board.usart}", *omitted):
+            if macro not in defines:
+                defines.append(macro)
     if plan.board.family == "mcs51" and plan.board.f_cpu:
         osc = f"NIUS_FOSC={plan.board.f_cpu}UL"
         if osc not in defines:
