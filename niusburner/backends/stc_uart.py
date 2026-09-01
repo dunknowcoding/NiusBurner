@@ -349,7 +349,7 @@ def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
             if left is None:
                 waited()
             else:
-                waiting("Waiting", "%ds left" % int(left))
+                waiting("Waiting for handshake", "%ds left" % int(left))
 
         stc8_isp.program(port, payload, announce=info, progress=stage,
                          tick=tick)

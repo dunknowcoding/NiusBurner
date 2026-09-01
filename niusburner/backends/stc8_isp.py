@@ -521,11 +521,21 @@ def await_bootloader(ser, session, wait: float, say, tick=None,
         # the stream is what holds a line-fed board down, and it answers a
         # power-on within a byte time. The spaced cadence is for talking to
         # a part that is already awake.
-        spacing, session.sync_gap = session.sync_gap, 0.0
+        #
+        # Streaming means enough bytes per write to cover the read that
+        # follows it. Clearing the gap alone does not: the read blocks for
+        # the port's timeout, so one byte per write is one byte every 50 ms
+        # -- two percent of the time low, where a fifth is wanted and is
+        # what the drain argument rests on. The run is sized to the rate so
+        # the line stays busy at any of them.
+        spacing, runs = session.sync_gap, session.sync_run
+        session.sync_gap = 0.0
+        session.sync_run = max(1, int(ser.baudrate * (ser.timeout or 0.05)
+                                      / 10.0))
         try:
             status = session.sync(LISTEN_SECONDS)
         finally:
-            session.sync_gap = spacing
+            session.sync_gap, session.sync_run = spacing, runs
         if status is not None:
             return status
 
@@ -536,8 +546,7 @@ def await_bootloader(ser, session, wait: float, say, tick=None,
             if tick is not None:
                 tick(left)
             else:
-                say("still waiting for the board to be powered on, "
-                    "%ds left" % int(left))
+                say("still waiting for handshake, %ds left" % int(left))
     if tick is not None:
         tick(None)
     return None
@@ -680,10 +689,11 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             if paced:
                 say("sending in small pieces this time, so a board fed from "
                     "the serial line keeps its supply through the writes")
-            step(0, "Waiting", "power the board off and on")
+            step(0, "Waiting for handshake",
+                 "switch the board's supply off and on")
             if attempt == 1:
-                say("waiting for the board to be powered on -- switch its "
-                    "supply off, wait a moment, and switch it back on")
+                say("waiting for handshake -- switch the board's supply off "
+                    "and back on, any time in the next %d seconds" % wait)
             status = await_bootloader(ser, session, left, say, tick)
             if tick is not None:
                 tick(None)
