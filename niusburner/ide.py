@@ -120,6 +120,45 @@ def _menu_applies(key: str, board) -> bool:
     return owner is None or board.programmer == owner
 
 
+#: What series a part belongs to, longest prefix first so that STC89 is
+#: not read as STC8. The IDE has no notion of a category: a package's
+#: boards are one flat list, sorted by the name given here. So the series
+#: goes in the name, which both labels the part and sorts it next to its
+#: relatives -- an mcs51 package otherwise mixes five unrelated families
+#: into one alphabetical run.
+#: Read from the part, not from the package it is built by. A package
+#: holds whatever shares a toolchain, which is not the same as a series:
+#: the pic24 package carries dsPIC30F parts, and the pic16 one carries
+#: PIC12 parts. Naming those after their package would put a label on the
+#: menu that the part does not answer to.
+_SERIES = (
+    ("stc89", "STC89"),
+    ("stc90", "STC90"),
+    ("stc15", "STC15"),
+    ("stc12", "STC12"),
+    ("stc8", "STC8"),
+    ("sst89", "SST89"),
+    ("at89", "AT89"),
+    ("w78", "W78"),
+    ("30f", "dsPIC30F"),
+    ("33f", "dsPIC33F"),
+    ("24f", "PIC24F"),
+    ("24h", "PIC24H"),
+    ("18f", "PIC18F"),
+    ("16f", "PIC16F"),
+    ("12f", "PIC12F"),
+)
+
+
+def series_of(board) -> str:
+    """The series label shown before a part's name in the board menu."""
+    part = board.part.lower()
+    for prefix, label in _SERIES:
+        if part.startswith(prefix):
+            return label
+    return board.family.upper()
+
+
 def render_boards_txt(family: str = "mcs51") -> str:
     """Build boards.txt from the board catalog.
 
@@ -172,8 +211,8 @@ def render_boards_txt(family: str = "mcs51") -> str:
             "# %s" % board.note,
             # The marker rides in the menu name because that is the only
             # place the IDE shows anything about a board before it is used.
-            "%s.name=%s (%s, %s)%s" % (
-                board.id, board.part.upper(), size, how,
+            "%s.name=%s series - %s (%s, %s)%s" % (
+                board.id, series_of(board), board.part.upper(), size, how,
                 " [experimental]" if board.experimental else ""),
             "%s.upload.tool=niusburner" % board.id,
             "%s.upload.protocol=%s" % (board.id, board.programmer),

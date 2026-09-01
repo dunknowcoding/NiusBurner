@@ -17,7 +17,7 @@ menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
 # 7 KB flash, 512 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
-dspic30f2010.name=30F2010 (7 KB, PICkit 3) [experimental]
+dspic30f2010.name=dsPIC30F series - 30F2010 (7 KB, PICkit 3) [experimental]
 dspic30f2010.upload.tool=niusburner
 dspic30f2010.upload.protocol=pickit3
 dspic30f2010.upload.maximum_size=7936
@@ -45,7 +45,7 @@ dspic30f2010.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 7 KB flash, 1024 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCD. UART1 on fixed pins.
-dspic30f2011.name=30F2011 (7 KB, PICkit 3) [experimental]
+dspic30f2011.name=dsPIC30F series - 30F2011 (7 KB, PICkit 3) [experimental]
 dspic30f2011.upload.tool=niusburner
 dspic30f2011.upload.protocol=pickit3
 dspic30f2011.upload.maximum_size=7936
@@ -73,7 +73,7 @@ dspic30f2011.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 7 KB flash, 1024 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDF. UART1 on fixed pins.
-dspic30f2012.name=30F2012 (7 KB, PICkit 3) [experimental]
+dspic30f2012.name=dsPIC30F series - 30F2012 (7 KB, PICkit 3) [experimental]
 dspic30f2012.upload.tool=niusburner
 dspic30f2012.upload.protocol=pickit3
 dspic30f2012.upload.maximum_size=7936
@@ -101,7 +101,7 @@ dspic30f2012.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 15 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCD. UART1 on fixed pins.
-dspic30f3012.name=30F3012 (15 KB, PICkit 3) [experimental]
+dspic30f3012.name=dsPIC30F series - 30F3012 (15 KB, PICkit 3) [experimental]
 dspic30f3012.upload.tool=niusburner
 dspic30f3012.upload.protocol=pickit3
 dspic30f3012.upload.maximum_size=16128
@@ -129,7 +129,7 @@ dspic30f3012.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 15 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDF. UART1 on fixed pins.
-dspic30f3013.name=30F3013 (15 KB, PICkit 3) [experimental]
+dspic30f3013.name=dsPIC30F series - 30F3013 (15 KB, PICkit 3) [experimental]
 dspic30f3013.upload.tool=niusburner
 dspic30f3013.upload.protocol=pickit3
 dspic30f3013.upload.maximum_size=16128
@@ -157,7 +157,7 @@ dspic30f3013.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 15 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports ABCDF. UART1 on fixed pins.
-dspic30f3014.name=30F3014 (15 KB, PICkit 3) [experimental]
+dspic30f3014.name=dsPIC30F series - 30F3014 (15 KB, PICkit 3) [experimental]
 dspic30f3014.upload.tool=niusburner
 dspic30f3014.upload.protocol=pickit3
 dspic30f3014.upload.maximum_size=16128
@@ -185,7 +185,7 @@ dspic30f3014.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 31 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
-dspic30f4011.name=30F4011 (31 KB, PICkit 3) [experimental]
+dspic30f4011.name=dsPIC30F series - 30F4011 (31 KB, PICkit 3) [experimental]
 dspic30f4011.upload.tool=niusburner
 dspic30f4011.upload.protocol=pickit3
 dspic30f4011.upload.maximum_size=32512
@@ -213,7 +213,7 @@ dspic30f4011.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 31 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
-dspic30f4012.name=30F4012 (31 KB, PICkit 3) [experimental]
+dspic30f4012.name=dsPIC30F series - 30F4012 (31 KB, PICkit 3) [experimental]
 dspic30f4012.upload.tool=niusburner
 dspic30f4012.upload.protocol=pickit3
 dspic30f4012.upload.maximum_size=32512
@@ -241,7 +241,7 @@ dspic30f4012.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 31 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports ABCDF. UART1 on fixed pins.
-dspic30f4013.name=30F4013 (31 KB, PICkit 3) [experimental]
+dspic30f4013.name=dsPIC30F series - 30F4013 (31 KB, PICkit 3) [experimental]
 dspic30f4013.upload.tool=niusburner
 dspic30f4013.upload.protocol=pickit3
 dspic30f4013.upload.maximum_size=32512

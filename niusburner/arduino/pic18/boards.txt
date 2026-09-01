@@ -17,7 +17,7 @@ menu.compiler=Compiler
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 1536 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
-pic18f252.name=18F252 (32 KB, PICkit 3) [experimental]
+pic18f252.name=PIC18F series - 18F252 (32 KB, PICkit 3) [experimental]
 pic18f252.upload.tool=niusburner
 pic18f252.upload.protocol=pickit3
 pic18f252.upload.maximum_size=32768
@@ -45,7 +45,7 @@ pic18f252.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 1536 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
-pic18f2520.name=18F2520 (32 KB, PICkit 3) [experimental]
+pic18f2520.name=PIC18F series - 18F2520 (32 KB, PICkit 3) [experimental]
 pic18f2520.upload.tool=niusburner
 pic18f2520.upload.protocol=pickit3
 pic18f2520.upload.maximum_size=32768
@@ -73,7 +73,7 @@ pic18f2520.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 2048 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
-pic18f2550.name=18F2550 (32 KB, PICkit 3) [experimental]
+pic18f2550.name=PIC18F series - 18F2550 (32 KB, PICkit 3) [experimental]
 pic18f2550.upload.tool=niusburner
 pic18f2550.upload.protocol=pickit3
 pic18f2550.upload.maximum_size=32768
@@ -101,7 +101,7 @@ pic18f2550.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 64 KB flash, 3968 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
-pic18f2620.name=18F2620 (64 KB, PICkit 3) [experimental]
+pic18f2620.name=PIC18F series - 18F2620 (64 KB, PICkit 3) [experimental]
 pic18f2620.upload.tool=niusburner
 pic18f2620.upload.protocol=pickit3
 pic18f2620.upload.maximum_size=65536
@@ -129,7 +129,7 @@ pic18f2620.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 1536 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
-pic18f452.name=18F452 (32 KB, PICkit 3) [experimental]
+pic18f452.name=PIC18F series - 18F452 (32 KB, PICkit 3) [experimental]
 pic18f452.upload.tool=niusburner
 pic18f452.upload.protocol=pickit3
 pic18f452.upload.maximum_size=32768
@@ -157,7 +157,7 @@ pic18f452.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 1536 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
-pic18f4520.name=18F4520 (32 KB, PICkit 3) [experimental]
+pic18f4520.name=PIC18F series - 18F4520 (32 KB, PICkit 3) [experimental]
 pic18f4520.upload.tool=niusburner
 pic18f4520.upload.protocol=pickit3
 pic18f4520.upload.maximum_size=32768
@@ -185,7 +185,7 @@ pic18f4520.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 2048 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
-pic18f4550.name=18F4550 (32 KB, PICkit 3) [experimental]
+pic18f4550.name=PIC18F series - 18F4550 (32 KB, PICkit 3) [experimental]
 pic18f4550.upload.tool=niusburner
 pic18f4550.upload.protocol=pickit3
 pic18f4550.upload.maximum_size=32768
@@ -213,7 +213,7 @@ pic18f4550.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
 # 64 KB flash, 3968 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
-pic18f4620.name=18F4620 (64 KB, PICkit 3) [experimental]
+pic18f4620.name=PIC18F series - 18F4620 (64 KB, PICkit 3) [experimental]
 pic18f4620.upload.tool=niusburner
 pic18f4620.upload.protocol=pickit3
 pic18f4620.upload.maximum_size=65536
