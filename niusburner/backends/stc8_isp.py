@@ -505,9 +505,9 @@ class Session:
 DRAIN_SECONDS = 0.35
 LISTEN_SECONDS = 0.45
 
-#: How long a read waits while streaming. Short, so the line goes back to
-#: being busy quickly: a read as long as the write leaves the line idle
-#: half the time and halves the duty that holds a line-fed board down.
+#: How long a read waits between sync bytes while waiting for a power-on.
+#: Short, so a byte goes out often and a part that has just come up is
+#: answered promptly rather than up to a port timeout later.
 STREAM_READ = 0.01
 
 #: How often the wait says it is still waiting.
@@ -578,13 +578,22 @@ def await_bootloader(ser, session, wait: float, say, tick=None,
         # -- two percent of the time low, where a fifth is wanted and is
         # what the drain argument rests on. The run is sized to the rate so
         # the line stays busy at any of them.
-        # The read between writes must be short as well, or the line sits
-        # idle for as long as it was busy and the duty halves. A long run
-        # written against a short read keeps it busy most of the time.
+        # Sync bytes go out singly and often -- not in runs.
+        #
+        # A run would hold the line lower for longer, which is what the
+        # rail wants, and this bootloader does not answer it: spaced bytes
+        # have synced this hardware every time it was asked and a
+        # continuous stream has not. Sending runs to improve the duty
+        # stopped the handshake working at all, which is a poor trade for a
+        # drain that the low phase already provides.
+        #
+        # So the listening phase listens, the low phase drains, and the
+        # only thing tuned here is how often a single byte goes out: often
+        # enough to answer a power-on promptly, spaced enough to be heard.
         spacing, runs = session.sync_gap, session.sync_run
         patience = ser.timeout
         session.sync_gap = 0.0
-        session.sync_run = max(1, int(ser.baudrate * 0.05 / 10.0))
+        session.sync_run = 1
         ser.timeout = STREAM_READ
         try:
             status = session.sync(LISTEN_SECONDS)
