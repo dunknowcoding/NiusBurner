@@ -645,11 +645,15 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                         "a command that draws nothing usually means the "
                         "board lost power partway, or is not on a supply of "
                         "its own while it is being programmed") from None
-                # A write that fails after the erase was answered is the
-                # signature of a board fed from the serial line: the short
-                # frames were fine and the long ones are not. Pace the next
-                # attempt rather than repeating the one that just failed.
-                if "write" in str(exc) and not paced:
+                # A command that goes unanswered after the handshake
+                # succeeded is the signature of a board fed from the serial
+                # line: the sync byte is high nine tenths of the time and
+                # costs it nothing, and the first frame that is mostly low
+                # empties the rail. Which frame that turns out to be
+                # depends on the board, so pace everything from here rather
+                # than guess -- repeating the attempt that just failed,
+                # unchanged, is the one thing certain not to help.
+                if not paced:
                     paced = True
                 say("%s -- the board went away partway through. Nothing is "
                     "lost: power it off and on again and this starts over "
