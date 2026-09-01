@@ -449,6 +449,37 @@
       "experimental": true,
       "isp_contr": "0xC7"
     },
+    "stc8h1k08": {
+      "part": "stc8h1k08",
+      "family": "mcs51",
+      "compiler": "sdcc",
+      "code_size": 8192,
+      "iram_size": 256,
+      "xram_size": 1024,
+      "model": "small",
+      "programmer": "stcgal",
+      "protocol": "stc8g",
+      "status": "supported",
+      "signature": "",
+      "aliases": [
+        "8h1k08"
+      ],
+      "f_cpu": 22118400,
+      "clocks_per_mc": 1,
+      "timer2": false,
+      "note": "8 KB flash plus 4 KB EEPROM, 1T core, internal RC only. The RC is nominally 24 MHz and is trimmed at download time, so f_cpu here is the trim the tool asks for rather than a crystal: 22.1184 MHz, which is the closest exact UART divisor to nominal. The bootloader is the later STC8G generation, which uses a different calibration exchange from the STC8A parts.",
+      "peripherals": {
+        "gpio": "hardware",
+        "uart": "hardware",
+        "i2c": "software",
+        "spi": "software",
+        "pwm": "none",
+        "adc": "hardware",
+        "eeprom": "hardware"
+      },
+      "experimental": true,
+      "isp_contr": "0xC7"
+    },
     "stc89c51rc": {
       "part": "stc89c51rc",
       "family": "mcs51",

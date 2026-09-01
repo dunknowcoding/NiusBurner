@@ -98,9 +98,25 @@
    run time. Derived from the Q8 cycle count, not from the rounded one. */
 #define NIUS_SPINS_PER_US_Q16 ((NIUS_MC_PER_MS_Q8 * 256UL) / (1000UL * NIUS_SPIN_MC))
 
-/* The cast in delayMicroseconds() is only safe while this holds. */
+/*
+ * Q16 runs out of headroom as soon as the part spins more than once per
+ * microsecond, which a 1T core does above about 16 MHz: the scale itself
+ * stops fitting in the 16 bits the multiply is built around. Past that
+ * point range matters more than the sixteenth bit of a fraction, so the
+ * scale drops to Q8 -- still 0.3 % on a 22.1184 MHz part, and it reaches
+ * 255 spins per microsecond before it runs out again.
+ */
 #if NIUS_SPINS_PER_US_Q16 > 0xFFFFUL
-#error "NIUS_FOSC too high for the Q16 delayMicroseconds scale"
+#define NIUS_US_SHIFT 8
+#define NIUS_SPINS_PER_US_SCALE (NIUS_MC_PER_MS_Q8 / (1000UL * NIUS_SPIN_MC))
+#else
+#define NIUS_US_SHIFT 16
+#define NIUS_SPINS_PER_US_SCALE NIUS_SPINS_PER_US_Q16
+#endif
+
+/* The multiply in delayMicroseconds() is only safe while this holds. */
+#if NIUS_SPINS_PER_US_SCALE > 0xFFFFUL
+#error "NIUS_FOSC too high for the delayMicroseconds scale"
 #endif
 
 static unsigned char g_p1 = 0xFF;
@@ -180,14 +196,32 @@ void delayMicroseconds(unsigned int us)
      * arguments. Q16 turns it into one 16x16
      * multiply and a byte select.
      */
+#if NIUS_US_SHIFT == 16
     /* us is 16 bit, so the product shifted back down can never exceed the
        Q16 constant itself -- the old paging loop over 0xFFFF was dead code
        whose 32-bit comparison ran on every call. */
     unsigned int spins =
-        (unsigned int)(((unsigned long)us * NIUS_SPINS_PER_US_Q16) >> 16);
+        (unsigned int)(((unsigned long)us * NIUS_SPINS_PER_US_SCALE) >> 16);
 
     if (spins)
         nius_spin(spins);
+#else
+    /*
+     * On the Q8 scale the bound above no longer holds: a 1T part fast
+     * enough to need Q8 also wants more than 65535 spins for a long
+     * argument, so the count is spent in pages. The comparison is back,
+     * but only on the parts that actually need it.
+     */
+    unsigned long spins =
+        ((unsigned long)us * NIUS_SPINS_PER_US_SCALE) >> 8;
+
+    while (spins > 0xFFFFUL) {
+        nius_spin(0xFFFFU);
+        spins -= 0xFFFFUL;
+    }
+    if (spins)
+        nius_spin((unsigned int)spins);
+#endif
 }
 
 void delay(unsigned int ms)

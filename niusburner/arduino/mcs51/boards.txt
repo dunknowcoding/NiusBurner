@@ -502,6 +502,46 @@ stc15w408as.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc15w408as.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
+# 8 KB flash plus 4 KB EEPROM, 1T core, internal RC only. The RC is nominally 24 MHz and is trimmed at download time, so f_cpu here is the trim the tool asks for rather than a crystal: 22.1184 MHz, which is the closest exact UART divisor to nominal. The bootloader is the later STC8G generation, which uses a different calibration exchange from the STC8A parts.
+stc8h1k08.name=STC8H1K08 (8 KB, serial bootloader) [experimental]
+stc8h1k08.upload.tool=niusburner
+stc8h1k08.upload.protocol=stcgal
+stc8h1k08.upload.maximum_size=8192
+stc8h1k08.upload.maximum_data_size=256
+stc8h1k08.upload.require_upload_port=true
+stc8h1k08.build.mcu=stc8h1k08
+stc8h1k08.build.f_cpu=22118400L
+stc8h1k08.build.board=STC8H1K08
+stc8h1k08.build.core=niusburner
+stc8h1k08.build.variant=standard
+stc8h1k08.build.nb_board=stc8h1k08
+stc8h1k08.build.extra_flags=
+
+stc8h1k08.menu.optimize.size=Size (default)
+stc8h1k08.menu.optimize.size.build.nb_optimize=size
+stc8h1k08.menu.optimize.speed=Speed
+stc8h1k08.menu.optimize.speed.build.nb_optimize=speed
+stc8h1k08.menu.optimize.none=None
+stc8h1k08.menu.optimize.none.build.nb_optimize=none
+
+stc8h1k08.menu.reset.none=None - interrupt power by hand (default)
+stc8h1k08.menu.reset.none.build.nb_reset=none
+stc8h1k08.menu.reset.dtr=Adapter DTR switches VDD
+stc8h1k08.menu.reset.dtr.build.nb_reset=dtr
+stc8h1k08.menu.reset.rts=Adapter RTS switches VDD
+stc8h1k08.menu.reset.rts.build.nb_reset=rts
+
+stc8h1k08.menu.entry.none=Interrupt power by hand (default)
+stc8h1k08.menu.entry.none.build.nb_entry=none
+stc8h1k08.menu.entry.soft=Sketch reboots itself into the bootloader
+stc8h1k08.menu.entry.soft.build.nb_entry=soft
+
+stc8h1k08.menu.compiler.auto=Auto-detect SDCC (default)
+stc8h1k08.menu.compiler.auto.build.nb_compiler=auto
+stc8h1k08.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
+stc8h1k08.menu.compiler.configured.build.nb_compiler=configured
+
+# ----------------------------------------------------------------------
 # 4 KB flash. Same UART bootloader as the STC89C52RC.
 stc89c51rc.name=STC89C51RC (4 KB, serial bootloader)
 stc89c51rc.upload.tool=niusburner

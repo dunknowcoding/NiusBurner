@@ -384,7 +384,12 @@ def compile_plan(
     if plan.board.family == "mcs51":
         # A part with no Timer 2 must not have the Timer 2 baud generator
         # compiled in: those SFR addresses simply are not there.
+        # The 1T generations select UART1's clock source in AUXR, and it
+        # does not come up pointing at Timer 1. Without this the reload is
+        # written and then ignored, which looks like a wiring fault.
+        auxr = 1 if plan.board.protocol.startswith(("stc15", "stc8")) else 0
         for macro in (f"NIUS_HAS_TIMER2={1 if plan.board.timer2 else 0}",
+                      f"NIUS_UART_AUXR={auxr}",
                       f"NIUS_CLOCKS_PER_MC={plan.board.clocks_per_mc}UL"):
             if macro not in defines:
                 defines.append(macro)

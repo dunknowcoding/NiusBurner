@@ -33,6 +33,8 @@ PROTOCOLS = {
     "stc12": "stc12",
     "stc15": "stc15",
     "stc8": "stc8",
+    "stc8d": "stc8d",
+    "stc8g": "stc8g",
 }
 
 DEFAULT_BAUD = 19200

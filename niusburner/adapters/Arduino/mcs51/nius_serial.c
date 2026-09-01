@@ -29,19 +29,38 @@ extern volatile unsigned char nius_tx_done;
 void nius_isp_entry_begin(void);
 #endif
 
+/* Whether this part has a Timer 2 to use as a baud generator. */
+#ifndef NIUS_HAS_TIMER2
+#define NIUS_HAS_TIMER2 1
+#endif
+
+/* Whether UART1's clock source is selected in AUXR (the 1T generations). */
+#ifndef NIUS_UART_AUXR
+#define NIUS_UART_AUXR 0
+#endif
+
 #ifdef __SDCC
 #include <8052.h>
+#if NIUS_HAS_TIMER2
 /* Not in 8052.h. T2OE (bit 1) clocks P1.0; must stay 0 on a no-XRAM DIP-40. */
 __sfr __at(0xC9) T2MOD;
+#endif
+#if NIUS_UART_AUXR
+/*
+ * The 1T generations put a UART1 clock select in AUXR, and it does not
+ * come up on the setting the classic part has. S1ST2 (bit 0) reads 1 out
+ * of reset, which points UART1 at Timer 2 -- so a Timer 1 reload written
+ * on one of these parts is loaded correctly and then simply not used, and
+ * the port transmits at whatever Timer 2 happens to be doing. T1x12 (bit
+ * 6) reads 0, which is the 12-clock Timer 1 the divisors below assume;
+ * it is cleared here as well so the rate does not depend on a reset value.
+ */
+__sfr __at(0x8E) AUXR;
+#endif
 #endif
 
 #ifndef NIUS_FOSC
 #define NIUS_FOSC 11059200UL
-#endif
-
-/* Whether this part has a Timer 2 to use as a baud generator. */
-#ifndef NIUS_HAS_TIMER2
-#define NIUS_HAS_TIMER2 1
 #endif
 
 /*
@@ -70,7 +89,9 @@ void nius_serial_begin(unsigned long baud)
     SCON = 0x50; /* mode 1, 8-bit UART, REN */
     ES = 0;
     RI = 0;
+#if NIUS_HAS_TIMER2
     T2MOD = 0x00;
+#endif
 
     {
         unsigned int want = (unsigned int)baud;
@@ -105,6 +126,9 @@ void nius_serial_begin(unsigned long baud)
         if (placed) {
 #if NIUS_HAS_TIMER2
             T2CON = 0x00;
+#endif
+#if NIUS_UART_AUXR
+            AUXR &= (unsigned char)~0x41; /* UART1 from Timer 1, 12 clocks */
 #endif
             if (smod)
                 PCON |= 0x80;
