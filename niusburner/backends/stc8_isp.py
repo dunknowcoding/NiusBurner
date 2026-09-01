@@ -102,20 +102,23 @@ WRITE_OK = 0x54
 #: Flash is written a block at a time; the bootloader expects this size.
 BLOCK = 128
 
-#: How a frame is paced when the board is fed from the serial line itself.
+#: How a frame is paced on a retry, after a command went unanswered.
 #:
-#: Such a board is supplied only while the line is idle, so a frame sent
-#: solid is a gap in its supply as much as it is data. A block frame is
-#: 136 bytes -- twelve milliseconds at 115200, better than half of it low
-#: -- and on a measured board that is enough to empty the rail partway
-#: through the writes, after the shorter frames of the handshake, the rate
-#: change and the erase have all been answered. Sent in small pieces with
-#: the line left idle between them, the same frame arrives without the
-#: supply ever falling far, because a UART does not care how long the gaps
-#: between bytes are.
+#: A UART does not care how long the gaps between bytes are, so the same
+#: frame can be delivered in pieces with the line left idle between them.
+#: On a board supplied through that line, this is the difference between a
+#: frame that is half a gap in its supply and one that is not.
 #:
-#: This costs time and is not needed by a board with a supply of its own,
-#: so it is off until a write actually fails.
+#: Whether it is enough is not established. On the one board measured, with
+#: its supply switched out, the handshake succeeded on every power-on at
+#: 4800 and above and no command was ever answered -- at four rates, paced
+#: and solid, forty-eight attempts. Pacing did not rescue that; nothing in
+#: this file will, because the part cannot complete a command it has no
+#: power to run. It is kept because it costs nothing when it is not needed
+#: and is the only thing left to vary on a supply that is merely marginal
+#: rather than absent.
+#:
+#: Off until a command actually goes unanswered.
 PACED_CHUNK = 8
 PACED_GAP = 0.002
 
@@ -645,14 +648,15 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                         "a command that draws nothing usually means the "
                         "board lost power partway, or is not on a supply of "
                         "its own while it is being programmed") from None
-                # A command that goes unanswered after the handshake
-                # succeeded is the signature of a board fed from the serial
-                # line: the sync byte is high nine tenths of the time and
-                # costs it nothing, and the first frame that is mostly low
-                # empties the rail. Which frame that turns out to be
-                # depends on the board, so pace everything from here rather
-                # than guess -- repeating the attempt that just failed,
-                # unchanged, is the one thing certain not to help.
+                # A command unanswered after a successful handshake says
+                # the part is powered enough to answer a sync byte, which
+                # is high nine tenths of the time, and not enough for a
+                # frame that is half low. Pacing is the only thing left to
+                # vary, and repeating the attempt that just failed,
+                # unchanged, is the one thing certain not to help. On a
+                # board whose supply is switched out entirely it will not
+                # help either -- see PACED_CHUNK -- but that case is not
+                # one this can distinguish from a marginal supply.
                 if not paced:
                     paced = True
                 say("%s -- the board went away partway through. Nothing is "
