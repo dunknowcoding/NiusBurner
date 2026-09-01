@@ -430,25 +430,32 @@ class Session:
         raise Stc8Error(f"{what}: no reply")
 
 
-#: How the wait for a power-on is paced.
+#: How the wait for a power-on is paced. Three constraints, and the
+#: figures are where they all hold at once.
 #:
-#: The listening window is kept shorter than the second or so the
-#: bootloader waits before it gives up and runs the application, because a
-#: window longer than that can be busy at the wrong moment and miss the
-#: power-on entirely.
+#: The low phase must empty the rail of a board fed through the serial
+#: line, because on such a board an idle line is a powered board: switching
+#: its supply out during a listening window turns nothing off, and
+#: switching it back in is a step in voltage rather than a power-on. A
+#: fifth of a second is far more than enough -- thirteen bytes of traffic
+#: measurably resets that board -- so this constraint is cheap.
 #:
-#: The low phase is the longer of the two, which is the opposite of what
-#: seems sensible and matters more. On a board fed through the serial line,
-#: the line being idle is the board being powered -- so during a listening
-#: window, switching the supply out does not turn the board off, and
-#: switching it back in is a step in voltage rather than a power-on. Only a
-#: supply interruption that overlaps a low phase produces a reset. Somebody
-#: switching a supply off and straight back on holds it off for perhaps a
-#: second, so the low phase has to be most of the cycle for that gesture to
-#: land: at these figures any interruption of 0.6s or more is certain to
-#: overlap one.
-DRAIN_SECONDS = 0.9
-LISTEN_SECONDS = 0.6
+#: The low phase must also be short, and this is the one that is easy to
+#: get wrong in the other direction. The bootloader waits about a second
+#: after a power-on and then runs the application, and that clock starts
+#: when the supply is restored, not when the host next listens. Every
+#: millisecond spent holding the line low is a millisecond of that window
+#: spent. A drain approaching the window length loses the power-on it was
+#: waiting for -- reliably, and looking exactly like nothing happened.
+#:
+#: And the gap between low phases must be shorter than the interruption
+#: somebody makes by hand, or that interruption falls entirely inside a
+#: listening window and drains nothing. The gap here is the listening
+#: window, so any interruption of about half a second is certain to overlap
+#: a low phase, while the longest a power-on can wait to be noticed is a
+#: quarter of a second.
+DRAIN_SECONDS = 0.25
+LISTEN_SECONDS = 0.55
 
 #: How often the wait says it is still waiting.
 NOTICE_SECONDS = 5.0
