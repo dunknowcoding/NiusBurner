@@ -751,6 +751,10 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     ser.open()
     try:
         paced = False
+        # Said once when it changes, not on every retry: a line repeated
+        # down the page reads as something going wrong again rather than as
+        # a setting that is still in force.
+        announced_pacing = False
         deadline = time.monotonic() + wait
         attempt = 0
         while True:
@@ -766,8 +770,9 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                 ser,
                 write_chunk=PACED_CHUNK if paced else 0,
                 write_gap=PACED_GAP if paced else 0.0)
-            if paced:
-                say("sending in small pieces this time, so a board fed from "
+            if paced and not announced_pacing:
+                announced_pacing = True
+                say("sending in small pieces from here, so a board fed from "
                     "the serial line keeps its supply through the writes")
             step(0, "Waiting for handshake",
                  "switch the board's supply off and on")
