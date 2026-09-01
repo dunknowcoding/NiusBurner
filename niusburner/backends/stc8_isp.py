@@ -697,9 +697,21 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                 # one this can distinguish from a marginal supply.
                 if not paced:
                     paced = True
-                say("%s -- the board went away partway through. Nothing is "
-                    "lost: power it off and on again and this starts over "
-                    "from the erase." % exc)
+                if "rate change" in str(exc):
+                    # Nothing was written, so nothing was lost, and the
+                    # cause is specific: a part that answers the handshake
+                    # and then the very first command with silence is a
+                    # part with no supply of its own. The sync byte is high
+                    # nine tenths of the time and costs it almost nothing;
+                    # a command frame is half low and it cannot survive one.
+                    say("the board answered the handshake and then ignored "
+                        "the first command, which is what a board does when "
+                        "its supply is switched out -- lock the switch and "
+                        "leave it locked until this finishes")
+                else:
+                    say("%s -- the board went away partway through. Nothing "
+                        "is lost: power it off and on again and this starts "
+                        "over from the erase." % exc)
                 step(0, "Restarting", "waiting for the board again")
     finally:
         ser.close()
