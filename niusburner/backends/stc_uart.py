@@ -190,12 +190,30 @@ def ask_for_bootloader(port: str, baud: int = 9600) -> bool:
     return True
 
 
-def find_stcgal() -> list[str] | None:
-    """How to run stcgal on this machine, or None.
+#: The copy carried in this package, so an upload works from a clean
+#: checkout rather than failing on a machine that never had one installed.
+VENDORED = "niusburner.vendor.stcgal"
 
-    The module on this interpreter wins over a stcgal on PATH, because it is
-    the one whose version can be reported.
+
+def find_stcgal() -> list[str] | None:
+    """How to run stcgal, or None.
+
+    The vendored copy wins. It is the version this package was tested
+    against, and it carries a fix the installed one may not: upstream
+    picks the STC8 calibration exchange by the requested trim frequency
+    rather than by the part, which makes every STC8G and STC8H upload fail
+    with a timeout that looks like a wiring fault.
+
+    An installed stcgal is still accepted, so a machine that has one is
+    not broken by this, and a stcgal on PATH after that.
     """
+    try:
+        import importlib.util
+
+        if importlib.util.find_spec(VENDORED) is not None:
+            return [sys.executable, "-m", VENDORED]
+    except (ImportError, ValueError):
+        pass
     try:
         import stcgal  # noqa: F401
     except ImportError:
@@ -207,6 +225,13 @@ def find_stcgal() -> list[str] | None:
 
 
 def version() -> str | None:
+    """Which stcgal will actually run, and where it came from."""
+    try:
+        from ..vendor.stcgal import __version__ as vendored
+
+        return f"{vendored} (vendored)"
+    except Exception:
+        pass
     try:
         import importlib.metadata as md
 

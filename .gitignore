@@ -7,6 +7,12 @@ _backups/
 # If one is ever unpacked here by accident, it must not be committed.
 toolchains/
 vendor/
+# One exception, and it is not a toolchain: niusburner/vendor/ carries
+# small pure-Python libraries that an upload needs at run time, with their
+# licences and a record of what was changed. The rule above exists to keep
+# compilers and their multi-megabyte trees out of the history, which is a
+# different thing from a library the package imports.
+!niusburner/vendor/
 *.tar.gz
 *.tar.xz
 *.zip

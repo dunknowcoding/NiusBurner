@@ -32,6 +32,7 @@ niusburner = [
     "arduino/*/cores/niusburner/*",
     "arduino/*/variants/*/*",
     "arduino/*/tools/*",
+    "vendor/*/NOTICE.md",
 ]
 
 [tool.pytest.ini_options]
