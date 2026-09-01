@@ -286,11 +286,18 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
         clock = bootloader_hz(status, handshake)
         say("part reports %.3f MHz for its own clock" % (clock / 1e6))
 
-        session.command(baud_switch(status, transfer, handshake), 0x01,
-                        "baud switch")
+        # The rate change is not acknowledged. The bootloader takes it and
+        # says nothing, and the host confirms by handshaking again at the
+        # new rate -- which is what the vendor tool's "re-handshaking" step
+        # is doing. Waiting for a reply here waits forever.
+        ser.write(build(baud_switch(status, transfer, handshake)))
+        ser.flush()
         ser.baudrate = transfer
-        time.sleep(0.01)
-        session.command(PING, 0x05, "ping")
+        time.sleep(0.02)
+        if session.sync(6.0) is None:
+            raise Stc8Error(
+                "the bootloader did not answer after the rate change to "
+                f"{transfer}; it may not have accepted the reload")
         say("running at %d baud" % transfer)
 
         session.command(ERASE, 0x03, "erase")
