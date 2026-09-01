@@ -352,7 +352,7 @@ def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
                 waiting("Waiting for handshake", "%ds left" % int(left))
 
         stc8_isp.program(port, payload, announce=info, progress=stage,
-                         tick=tick)
+                         tick=tick, expect_part=target)
     except stc8_isp.Stc8Error as exc:
         error(str(exc)[:400], title="programming failed",
               hints=_WHY_NO_ANSWER)

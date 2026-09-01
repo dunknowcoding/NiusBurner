@@ -176,6 +176,51 @@ TRANSFER_BAUD = 115200
 #: What a status frame starts with, so it can be told from a reply.
 STATUS = 0x50
 
+#: Where the status frame carries the part's identity.
+MAGIC = slice(20, 22)
+
+
+def part_name(status: bytes):
+    """The part the status frame says this is, or None if unrecognised.
+
+    Read from the carried device table, so a part the table does not know
+    returns None rather than a guess. An unrecognised part is not an error
+    in itself -- the table is a copy and parts outlive copies -- so the
+    caller decides what to make of it.
+    """
+    if len(status) < MAGIC.stop:
+        return None
+    magic, = struct.unpack(">H", status[MAGIC])
+    try:
+        from ..vendor.stcgal.models import MCUModelDatabase
+        return MCUModelDatabase.find_model(magic).name
+    except Exception:
+        return None
+
+
+def check_part(status: bytes, expected: str):
+    """Refuse to program a part that is not the one the board says it is.
+
+    The parts in a family answer the same protocol and differ in how much
+    flash they have, so programming the wrong one succeeds and then behaves
+    strangely -- or overruns the flash and does not, with nothing to say
+    why. STC's own tool refuses this outright and it is right to.
+
+    Names are compared without case. An unrecognised magic passes, since
+    the table here is a copy of one that will always be behind.
+    """
+    if not expected:
+        return
+    found = part_name(status)
+    if found is None or found.upper() == expected.upper():
+        return
+    magic, = struct.unpack(">H", status[MAGIC])
+    raise Stc8Error(
+        f"this is an {found} (magic {magic:04X}), and the board selected is "
+        f"{expected.upper()}. Programming it as the wrong part writes the "
+        "wrong amount of flash and configures the wrong clock, so nothing "
+        "is written; select the right board and upload again")
+
 
 class Stc8Error(Exception):
     """The bootloader said something other than what was expected."""
@@ -457,8 +502,13 @@ class Session:
 #: The short break each cycle is belt and braces: a fifth of the time low
 #: is enough on the board measured, and a solid low is enough on any board.
 #: It is kept far below the window it is spent from.
-DRAIN_SECONDS = 0.15
-LISTEN_SECONDS = 0.55
+DRAIN_SECONDS = 0.35
+LISTEN_SECONDS = 0.45
+
+#: How long a read waits while streaming. Short, so the line goes back to
+#: being busy quickly: a read as long as the write leaves the line idle
+#: half the time and halves the duty that holds a line-fed board down.
+STREAM_READ = 0.01
 
 #: How often the wait says it is still waiting.
 NOTICE_SECONDS = 5.0
@@ -528,14 +578,19 @@ def await_bootloader(ser, session, wait: float, say, tick=None,
         # -- two percent of the time low, where a fifth is wanted and is
         # what the drain argument rests on. The run is sized to the rate so
         # the line stays busy at any of them.
+        # The read between writes must be short as well, or the line sits
+        # idle for as long as it was busy and the duty halves. A long run
+        # written against a short read keeps it busy most of the time.
         spacing, runs = session.sync_gap, session.sync_run
+        patience = ser.timeout
         session.sync_gap = 0.0
-        session.sync_run = max(1, int(ser.baudrate * (ser.timeout or 0.05)
-                                      / 10.0))
+        session.sync_run = max(1, int(ser.baudrate * 0.05 / 10.0))
+        ser.timeout = STREAM_READ
         try:
             status = session.sync(LISTEN_SECONDS)
         finally:
             session.sync_gap, session.sync_run = spacing, runs
+            ser.timeout = patience
         if status is not None:
             return status
 
@@ -618,7 +673,7 @@ def _one_pass(ser, session, status, image, handshake, transfer,
 def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             transfer: int = TRANSFER_BAUD, wait: float = 120.0,
             announce=None, progress=None, tick=None,
-            attempts: int = 200) -> None:
+            attempts: int = 200, expect_part: str = "") -> None:
     """Sync, then erase and write *image*, over a port opened here.
 
     Raises Stc8Error if the part does not answer, so a caller can report
@@ -709,6 +764,9 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                     status[17] & 0x0F, status[22] & 0x0F, chr(status[18]))
             else:
                 found = "part answered"
+            # Not something another power-on will change, so it is raised
+            # rather than retried.
+            check_part(status, expect_part)
             step(10, "Handshake", found)
             say("powered on: %s" % found)
             say("handshake at %d baud" % ser.baudrate)
