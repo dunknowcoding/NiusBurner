@@ -99,6 +99,18 @@ WRITE_FINISH_ACK = 0x07
 #: alike. The opcode alone comes back on a refusal too, so both are checked.
 WRITE_OK = 0x54
 
+#: Leave the bootloader and start what was just written.
+#:
+#: Without this the part sits in its bootloader after a successful upload,
+#: having written the flash and never run it, and stays silent until its
+#: power is cycled by hand. Which looks exactly like an upload that wrote
+#: nothing -- and cost a good while here being investigated as one.
+#:
+#: It is not acknowledged and cannot be: the part stops being a bootloader
+#: as it obeys. So this is sent and not waited for, and whether it worked
+#: is answered by the sketch starting to talk.
+RUN = (0xFF,)
+
 #: Flash is written a block at a time; the bootloader expects this size.
 BLOCK = 128
 
@@ -555,6 +567,12 @@ def _one_pass(ser, session, status, image, handshake, transfer,
     session.command(WRITE_FINISH, WRITE_FINISH_ACK, "finish writing",
                     WRITE_OK)
     say("wrote %d bytes" % len(image))
+
+    # Start it. The part leaves the bootloader as it obeys, so there is no
+    # acknowledgement to wait for and none is expected.
+    step(99, "Starting", "leaving the bootloader")
+    session.send(build(RUN))
+    say("started the sketch")
 
 
 def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
