@@ -11,14 +11,16 @@ The trim is not needed to program. The bootloader runs from its own
 oscillator whatever the user clock is set to, so the transfer rate follows
 from that and the flash can be written without touching the RC at all:
 
-    reload = 65536 - bootloader_hz / 4 / rate
+    reload = 65536 - 24_000_000 / 4 / rate
 
-That clock is not the 24 MHz usually assumed for it. The part reports its
-own, as a count of bootloader cycles per host bit period, and on an
-STC8H1K08 it comes back near 23.8 MHz -- close to what the vendor tool
-shows for the same part, and a percent off the constant. The reading moves
-by a few kHz between handshakes, which is what a count of whole cycles
-against a host bit period will do.
+The 24 MHz there is nominal and must stay nominal. The part also reports a
+clock of its own, as a count of bootloader cycles per host bit period, and
+on an STC8H1K08 that comes back near 23.9 MHz. Substituting it is the
+obvious refinement and it does not work: at 115200 it yields 0xFFCD where
+the bootloader wants 0xFFCC, and a bootloader sent the refined value
+answers nothing at all -- not the rate change, not anything after it. The
+count measures the host's bit period; it is not a statement about the
+bootloader's baud generator, which runs from the nominal clock.
 
 That leaves the RC untrimmed, which matters to the sketch and not to the
 programming: a board that needs a known clock should set it from the
@@ -33,20 +35,28 @@ against another implementation:
     terminator   = 0x16
 
 Those are what an STC8H1K08 running BSL 7.3.13U put on the wire, so the
-codec below is confirmed in both directions. The command sequence is not
-confirmed end to end on hardware yet, which is why the parts that use it
-are marked experimental in the catalog.
+codec below is confirmed in both directions. The sequence has since
+programmed that part end to end -- handshake, rate change, erase, blocks,
+finish -- in about a second.
 
-One reason it is hard to confirm is worth writing down, because it looks
-like a protocol fault and is not. A board that takes its supply from the
-serial line rather than from its own regulator is fed only while that line
-is idle. A sync byte is high nine tenths of the time and such a board
-handshakes perfectly; a command frame is low well over half the time, and
-on one measured board that collapses the supply before the frame ends. The
-part then restarts into its application, and the session reads as a
-bootloader that answered the handshake and ignored every command. Nothing
-in the exchange below can fix that -- the board has to be on its own
-supply while it is programmed.
+Two things had to be right before any of it worked, and both fail in the
+same silent way. This bootloader does not refuse a frame it dislikes; it
+says nothing at all and then starts the application, which reads as a part
+that answers the handshake and ignores every command. There is no NAK to
+look at and no error to report, so a wrong line setting and a wrong
+constant are indistinguishable from a dead part. The two are PARITY and
+the reload constant in baud_switch, and each is written up where it lives.
+
+A third thing looks like the same fault and is not. A board that takes its
+supply from the serial line rather than from its own regulator is fed only
+while that line is idle. A sync byte is high nine tenths of the time and
+such a board handshakes perfectly; a command frame is low well over half
+the time, and on one measured board that collapses the supply before the
+frame ends -- so it restarts into its application, again looking exactly
+like a refused command. Nothing in the exchange below can fix that: the
+board has to be on its own supply while it is programmed. Worth knowing
+because it makes every measurement taken on that supply worthless, which
+is a trap this file's history fell into repeatedly.
 """
 
 from __future__ import annotations
@@ -92,10 +102,28 @@ WRITE_OK = 0x54
 #: Flash is written a block at a time; the bootloader expects this size.
 BLOCK = 128
 
+#: Even parity, for the whole session including the handshake.
+#:
+#: This is easy to get wrong and hard to notice, because the sync byte
+#: hides it: 0x7f carries seven ones, so its even-parity bit is 1, which is
+#: the level a no-parity stop bit already holds. The two settings put an
+#: identical waveform on the wire for that one byte. So a session with no
+#: parity handshakes perfectly, reads the status frame, and then has every
+#: command frame it sends rejected -- which reads as a bootloader that
+#: answers the handshake and ignores commands, rather than as a line
+#: setting. Measured on an STC8H1K08: with this, the rate change is
+#: acknowledged and the part programs; without it, nothing is ever
+#: answered, at any rate and on any supply.
+PARITY = "E"
+
 #: The rate the handshake runs at. Low rates give the bootloader a longer
-#: pulse to measure, but this part does not answer below 4800 at all, and
-#: 9600 has synced it on every attempt.
-HANDSHAKE_BAUD = 9600
+#: pulse to measure, and 2400 is what has programmed this part end to end,
+#: both here and through the vendor tool. Higher rates sync too. An earlier
+#: note here said the part does not answer below 4800; that was measured on
+#: a board taking its supply from the serial line, where a 2400-baud sync
+#: byte holds that line low for the best part of a millisecond and empties
+#: the rail. It was measuring the supply, not the bootloader.
+HANDSHAKE_BAUD = 2400
 
 #: The rate the session moves to once the bootloader agrees to it.
 TRANSFER_BAUD = 115200
@@ -149,15 +177,15 @@ def bootloader_hz(status: bytes, handshake_rate: int) -> int:
     close to what the vendor tool displays for the same part, and nearly a
     percent away from the 24 MHz that gets assumed in its place.
 
-    That percent matters little for a UART reload and would matter for
-    anything derived from it, so it is worth taking from the part rather
-    than from a constant.
+    This is reported, and nothing is derived from it. Deriving the UART
+    reload from it is wrong -- see baud_switch, where using it instead of
+    the nominal clock stops the bootloader answering at all.
 
-    The count is whole cycles per host bit period, so a slow handshake
-    measures the clock finely and a fast one coarsely: the same part reads
-    23.779 MHz when the handshake ran at 9600 and 24.077 MHz when it ran at
-    115200, purely because the second count is a twelfth the size. Handshake
-    low, then change rate.
+    It is also coarse. The count is whole cycles per host bit period, so a
+    slow handshake measures finely and a fast one badly: the same part
+    reads 23.779 MHz from a handshake at 9600 and 24.077 MHz from one at
+    115200, purely because the second count is a twelfth the size. It is
+    worth printing and not worth computing with.
     """
     if len(status) < CLOCK_COUNT.stop:
         return BOOTLOADER_HZ
@@ -182,17 +210,31 @@ def transfer_reload(rate: int, clock_hz: int = BOOTLOADER_HZ) -> int:
     return value
 
 
-def baud_switch(status: bytes, rate: int, handshake_rate: int = 0) -> tuple:
+def baud_switch(status: bytes, rate: int) -> tuple:
     """The payload that moves the session to *rate*.
 
     The two zero bytes are where an oscillator trim would go. Leaving them
     zero is what "do not touch the RC" looks like on the wire.
+
+    The reload comes from the nominal 24 MHz and not from the clock the
+    part reports for itself, which looks like the worse choice and is not.
+    Deriving it from the reported figure puts the value one count out at
+    115200 -- 0xFFCD where the bootloader wants 0xFFCC -- and a bootloader
+    sent the derived value does not answer at all, while the nominal one is
+    acknowledged at once. That was measured on an STC8H1K08 running BSL
+    7.3.13U by putting this frame beside the same frame from a working
+    implementation: the reload byte and the checksum that follows it were
+    the only difference between a session that programmed the part and one
+    that got silence.
+
+    So the reported count is a measurement of the host's bit period, not a
+    statement that the bootloader's own baud generator runs from anything
+    other than its nominal clock. There is deliberately no parameter here
+    for supplying a measured clock, because there is nowhere it belongs.
     """
     if len(status) < 5:
         raise Stc8Error("status frame too short to switch rate")
-    clock = (bootloader_hz(status, handshake_rate) if handshake_rate
-             else BOOTLOADER_HZ)
-    reload_value = transfer_reload(rate, clock)
+    reload_value = transfer_reload(rate, BOOTLOADER_HZ)
     return (0x01, status[4], 0x40,
             (reload_value >> 8) & 0xFF, reload_value & 0xFF,
             0x00, 0x00, 0x97)
@@ -343,7 +385,7 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
 
     ser = serial.Serial()
     ser.port, ser.baudrate = port, handshake
-    ser.parity = serial.PARITY_NONE
+    ser.parity = PARITY
     ser.timeout = 0.05
     ser.open()
     try:
@@ -363,7 +405,7 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
         # sent, so it answers a handshake at whatever rate one arrives at,
         # whether it took the reload or never saw the frame at all.
         try:
-            session.command(baud_switch(status, transfer, handshake), 0x01,
+            session.command(baud_switch(status, transfer), 0x01,
                             "rate change")
         except Stc8Error as exc:
             raise Stc8Error(
