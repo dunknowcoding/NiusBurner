@@ -76,8 +76,18 @@ __sfr __at(0x8E) AUXR;
  * instruction, and SDCC's 32-bit routine costs about a thousand machine
  * cycles and several hundred bytes.
  */
-#define NIUS_T1_BASE0 ((unsigned int)(NIUS_FOSC / 384UL))
-#define NIUS_T1_BASE1 ((unsigned int)(NIUS_FOSC / 192UL))
+/*
+ * Not narrowed to 16 bits. Fosc/192 passes 65535 at 12.58 MHz, so on a
+ * 24 MHz part the SMOD=1 base is 125000 and truncating it gives 59464 --
+ * a base that fits nothing, silently. Both candidates are then refused,
+ * the timer is never started, and the first character written waits on a
+ * TI that cannot arrive: a sketch that says nothing at all, on a part
+ * whose UART was perfectly capable of the rate asked for. Only the two
+ * fixed points below are safe to narrow, and they are checked by an
+ * assertion in the tests rather than by eye.
+ */
+#define NIUS_T1_BASE0 (NIUS_FOSC / 384UL)
+#define NIUS_T1_BASE1 (NIUS_FOSC / 192UL)
 /* Timer 2 reload for a rate Timer 1 cannot reach. */
 #define NIUS_T2_RC(b) ((unsigned int)(65536UL - (NIUS_FOSC / (32UL * (b)))))
 
@@ -96,22 +106,20 @@ unsigned char nius_serial_ok = 1;
  * count is a large fraction. Kept in a 32-bit product because reload
  * times rate exceeds 16 bits well before either does.
  */
-static unsigned char nius_fits(unsigned int base, unsigned int want,
+static unsigned char nius_fits(unsigned long base, unsigned int want,
                                unsigned int *reload_out)
 {
     unsigned int reload;
     unsigned long produced;
     unsigned long slack;
 
-    if (want == 0U || base == 0U)
+    if (want == 0U || base == 0UL)
         return 0;
-    reload = (unsigned int)(((unsigned long)base + (want >> 1)) / want);
+    reload = (unsigned int)((base + (want >> 1)) / want);
     if (reload < 1U || reload > 256U)
         return 0;
     produced = (unsigned long)reload * want;
-    slack = (produced > (unsigned long)base)
-            ? produced - (unsigned long)base
-            : (unsigned long)base - produced;
+    slack = (produced > base) ? produced - base : base - produced;
     if (slack * (100UL / NIUS_BAUD_TOLERANCE_PCT) > produced)
         return 0;
     *reload_out = reload;
