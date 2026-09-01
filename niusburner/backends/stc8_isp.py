@@ -430,12 +430,25 @@ class Session:
         raise Stc8Error(f"{what}: no reply")
 
 
-#: How the wait for a power-on is paced. The listening window is kept
-#: shorter than the second or so the bootloader waits before it gives up
-#: and runs the application, because a window longer than that can be busy
-#: at the wrong moment and miss the power-on entirely.
-DRAIN_SECONDS = 0.35
-LISTEN_SECONDS = 0.9
+#: How the wait for a power-on is paced.
+#:
+#: The listening window is kept shorter than the second or so the
+#: bootloader waits before it gives up and runs the application, because a
+#: window longer than that can be busy at the wrong moment and miss the
+#: power-on entirely.
+#:
+#: The low phase is the longer of the two, which is the opposite of what
+#: seems sensible and matters more. On a board fed through the serial line,
+#: the line being idle is the board being powered -- so during a listening
+#: window, switching the supply out does not turn the board off, and
+#: switching it back in is a step in voltage rather than a power-on. Only a
+#: supply interruption that overlaps a low phase produces a reset. Somebody
+#: switching a supply off and straight back on holds it off for perhaps a
+#: second, so the low phase has to be most of the cycle for that gesture to
+#: land: at these figures any interruption of 0.6s or more is certain to
+#: overlap one.
+DRAIN_SECONDS = 0.9
+LISTEN_SECONDS = 0.6
 
 #: How often the wait says it is still waiting.
 NOTICE_SECONDS = 5.0
