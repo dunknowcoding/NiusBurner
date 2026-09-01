@@ -7,12 +7,16 @@ these bootloaders do not answer that exchange -- so the upload stops
 before a single byte of flash is written, on a part that is otherwise
 answering perfectly.
 
-The trim is not needed to program. The bootloader runs from its own fixed
-24 MHz whatever the user clock is set to, so the transfer rate can be
-derived from that constant and the flash written without touching the
-oscillator at all:
+The trim is not needed to program. The bootloader runs from its own
+oscillator whatever the user clock is set to, so the transfer rate follows
+from that and the flash can be written without touching the RC at all:
 
-    reload = 65536 - 24_000_000 / 4 / rate
+    reload = 65536 - bootloader_hz / 4 / rate
+
+That clock is not the 24 MHz usually assumed for it. The part reports its
+own, as a count of bootloader cycles per host bit period, and on an
+STC8H1K08 it comes back 23.779 MHz -- the figure the vendor tool shows for
+the same part, and a percent off the constant.
 
 That leaves the RC untrimmed, which matters to the sketch and not to the
 programming: a board that needs a known clock should set it from the
@@ -46,9 +50,14 @@ END = b"\x16"
 #: The byte the bootloader listens for while it works out the host's rate.
 SYNC = b"\x7f"
 
-#: The bootloader's own clock during programming. Not the user clock, and
-#: not affected by whether the RC has ever been trimmed.
+#: Nominal bootloader clock, used only when the status frame cannot be
+#: consulted. The real one is a few percent off this and is reported by
+#: the part itself -- see bootloader_hz().
 BOOTLOADER_HZ = 24_000_000
+
+#: Where the status frame carries the bootloader's clock, as a count of
+#: its own cycles per host bit period.
+CLOCK_COUNT = slice(13, 15)
 
 #: Payloads, minus the reply byte each one is answered with.
 PING = (0x05, 0x00, 0x00, 0x5A, 0xA5)
@@ -101,19 +110,43 @@ def parse(buf: bytes):
     return body[5:-3]
 
 
-def transfer_reload(rate: int) -> int:
+def bootloader_hz(status: bytes, handshake_rate: int) -> int:
+    """The bootloader's own clock, as the part reports it.
+
+    The status frame carries a count of bootloader cycles per host bit
+    period, so the clock follows from the rate the handshake ran at. On an
+    STC8H1K08 this reads 2477 at 9600 baud -- 23.779 MHz, which is what
+    the vendor tool displays for the same part, and nearly a percent away
+    from the 24 MHz that gets assumed in its place.
+
+    That percent matters little for a UART reload and would matter for
+    anything derived from it, so it is worth taking from the part rather
+    than from a constant.
+    """
+    if len(status) < CLOCK_COUNT.stop:
+        return BOOTLOADER_HZ
+    count, = struct.unpack(">H", status[CLOCK_COUNT])
+    measured = count * handshake_rate
+    # A wildly out-of-range count means this is not the field we think it
+    # is on this part; the nominal clock is the safer answer.
+    if not 16_000_000 <= measured <= 40_000_000:
+        return BOOTLOADER_HZ
+    return measured
+
+
+def transfer_reload(rate: int, clock_hz: int = BOOTLOADER_HZ) -> int:
     """The UART reload the bootloader wants for *rate*.
 
-    Derived from the bootloader's fixed clock, which is why no oscillator
+    Derived from the bootloader's own clock, which is why no oscillator
     trimming is involved.
     """
-    value = 65536 - (BOOTLOADER_HZ // 4) // rate
+    value = 65536 - (clock_hz // 4) // rate
     if not 0 < value < 65536:
         raise Stc8Error(f"no reload for {rate} baud")
     return value
 
 
-def baud_switch(status: bytes, rate: int) -> tuple:
+def baud_switch(status: bytes, rate: int, handshake_rate: int = 0) -> tuple:
     """The payload that moves the session to *rate*.
 
     The two zero bytes are where an oscillator trim would go. Leaving them
@@ -121,7 +154,9 @@ def baud_switch(status: bytes, rate: int) -> tuple:
     """
     if len(status) < 5:
         raise Stc8Error("status frame too short to switch rate")
-    reload_value = transfer_reload(rate)
+    clock = (bootloader_hz(status, handshake_rate) if handshake_rate
+             else BOOTLOADER_HZ)
+    reload_value = transfer_reload(rate, clock)
     return (0x01, status[4], 0x40,
             (reload_value >> 8) & 0xFF, reload_value & 0xFF,
             0x00, 0x00, 0x97)
