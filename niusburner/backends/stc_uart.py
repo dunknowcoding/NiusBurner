@@ -25,7 +25,8 @@ import subprocess
 import sys
 import time
 
-from ..progress import banner, complete, error, info, note, stage
+from ..progress import (banner, complete, error, info, note, stage,
+                        waited, waiting)
 
 #: stcgal's name for the protocol each family speaks.
 PROTOCOLS = {
@@ -344,7 +345,14 @@ def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
         # environment variable is set, and this is the one part of an
         # upload that stands still for a minute waiting for a person. It
         # has to say so in the IDE panel, where nobody has set anything.
-        stc8_isp.program(port, payload, announce=info, progress=stage)
+        def tick(left):
+            if left is None:
+                waited()
+            else:
+                waiting("Waiting", "%ds left" % int(left))
+
+        stc8_isp.program(port, payload, announce=info, progress=stage,
+                         tick=tick)
     except stc8_isp.Stc8Error as exc:
         error(str(exc)[:400], title="programming failed",
               hints=_WHY_NO_ANSWER)

@@ -108,6 +108,47 @@ def stage(percent: int, label: str, detail: str = "",
     out.flush()
 
 
+#: How rarely a wait reports itself when the line cannot be redrawn. An
+#: IDE panel turns a carriage return into a line break, so a countdown that
+#: redraws would fill the panel with one line per tick.
+_QUIET_WAIT = 30.0
+
+_last_wait: float = 0.0
+
+
+def waiting(label: str, detail: str, stream: TextIO | None = None) -> None:
+    """A wait that reports itself without filling the screen.
+
+    On a terminal the line is redrawn in place, so a countdown costs one
+    line however long the wait runs. Where the line cannot be redrawn it
+    is printed rarely instead: a carriage return becomes a line break in
+    an IDE panel, and a countdown that redraws there would fill it with
+    one line per tick.
+    """
+    global _last_wait
+    out = _out(stream)
+    if _rewritable(out):
+        out.write(f"\r  NIUS  {_bar(0)}    0%  {label}  {detail}    ")
+        out.flush()
+        return
+    now = time.monotonic()
+    if now - _last_wait < _QUIET_WAIT:
+        return
+    _last_wait = now
+    out.write(f"  {label}: {detail}\n")
+    out.flush()
+
+
+def waited(stream: TextIO | None = None) -> None:
+    """Close a redrawn wait line, so what follows starts on its own."""
+    global _last_wait
+    _last_wait = 0.0
+    out = _out(stream)
+    if _rewritable(out):
+        out.write("\n")
+        out.flush()
+
+
 def banner(subtitle: str, stream: TextIO | None = None) -> None:
     """Printed once, at the start of a run. Starts the elapsed-time clock."""
     global _start_utc

@@ -390,7 +390,7 @@ RATE_SETTLE = 0.02
 ERASE_TIMEOUT = 20.0
 
 
-def await_bootloader(ser, session, wait: float, say) -> bytes:
+def await_bootloader(ser, session, wait: float, say, tick=None) -> bytes:
     """Sit until the board is powered on, then return its status frame.
 
     This bootloader is entered on power-on and on nothing else, so the wait
@@ -410,7 +410,9 @@ def await_bootloader(ser, session, wait: float, say) -> bytes:
 
     And it says so while it waits. A wait that prints nothing cannot be
     told from one that has died, which wastes the time of whoever is stood
-    at the board wondering whether to try again.
+    at the board wondering whether to try again. *tick* is called with the
+    seconds remaining, and once with None when the wait is over, so a
+    caller can redraw one line rather than print a column of them.
     """
     deadline = time.monotonic() + wait
     spoken = 0.0
@@ -429,14 +431,20 @@ def await_bootloader(ser, session, wait: float, say) -> bytes:
         now = time.monotonic()
         if now - spoken >= NOTICE_SECONDS:
             spoken = now
-            say("still waiting for the board to be powered on, %ds left"
-                % int(deadline - now))
+            left = max(0.0, deadline - now)
+            if tick is not None:
+                tick(left)
+            else:
+                say("still waiting for the board to be powered on, "
+                    "%ds left" % int(left))
+    if tick is not None:
+        tick(None)
     return None
 
 
 def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             transfer: int = TRANSFER_BAUD, wait: float = 120.0,
-            announce=None, progress=None) -> None:
+            announce=None, progress=None, tick=None) -> None:
     """Sync, then erase and write *image*, over a port opened here.
 
     Raises Stc8Error if the part does not answer, so a caller can report
@@ -447,6 +455,10 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     end, because most of this run is spent waiting for somebody to power
     the board on: a run that prints nothing while it waits cannot be told
     from one that has hung, and the person waiting is stood at the board.
+
+    *tick* carries the seconds left in that wait, and None once it is over,
+    so the countdown can be one line that changes rather than a column of
+    lines that scrolls.
     """
     import serial
 
@@ -469,7 +481,9 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
         step(0, "Waiting", "power the board off and on")
         say("waiting for the board to be powered on -- switch its supply "
             "off, wait a moment, and switch it back on")
-        status = await_bootloader(ser, session, wait, say)
+        status = await_bootloader(ser, session, wait, say, tick)
+        if tick is not None:
+            tick(None)
         if status is None:
             raise Stc8Error(
                 f"no power-on seen in {wait:.0f}s. The bootloader is entered "
