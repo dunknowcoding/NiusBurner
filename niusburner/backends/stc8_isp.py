@@ -369,19 +369,84 @@ class Session:
         raise Stc8Error(f"{what}: no reply")
 
 
+#: How the wait for a power-on is paced. The listening window is kept
+#: shorter than the second or so the bootloader waits before it gives up
+#: and runs the application, because a window longer than that can be busy
+#: at the wrong moment and miss the power-on entirely.
+DRAIN_SECONDS = 0.35
+LISTEN_SECONDS = 0.9
+
+#: How often the wait says it is still waiting.
+NOTICE_SECONDS = 5.0
+
+
+def await_bootloader(ser, session, wait: float, say) -> bytes:
+    """Sit until the board is powered on, then return its status frame.
+
+    This bootloader is entered on power-on and on nothing else, so the wait
+    is the whole interface: there is no reset line to pull and no command
+    that gets back into it. Three things decide whether the power-on is
+    seen at all.
+
+    It holds TX low between listening windows. That looks pointless and is
+    not. A board fed through the serial line by a clamp diode is not off
+    when its supply is switched out -- an idle-high TX keeps it running --
+    so switching the supply back in raises the rail rather than starting
+    it, and no reset happens. Holding the line low empties the rail, which
+    is what makes the supply coming back a power-on. A board with a supply
+    of its own ignores the low phase entirely, so this costs nothing there.
+
+    It listens in short windows, for the reason given at LISTEN_SECONDS.
+
+    And it says so while it waits. A wait that prints nothing cannot be
+    told from one that has died, which wastes the time of whoever is stood
+    at the board wondering whether to try again.
+    """
+    deadline = time.monotonic() + wait
+    spoken = 0.0
+    while time.monotonic() < deadline:
+        ser.break_condition = True
+        until = time.monotonic() + DRAIN_SECONDS
+        while time.monotonic() < until:
+            ser.read(64)
+        ser.break_condition = False
+        ser.reset_input_buffer()
+
+        status = session.sync(LISTEN_SECONDS)
+        if status is not None:
+            return status
+
+        now = time.monotonic()
+        if now - spoken >= NOTICE_SECONDS:
+            spoken = now
+            say("still waiting for the board to be powered on, %ds left"
+                % int(deadline - now))
+    return None
+
+
 def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             transfer: int = TRANSFER_BAUD, wait: float = 120.0,
-            announce=None) -> None:
+            announce=None, progress=None) -> None:
     """Sync, then erase and write *image*, over a port opened here.
 
     Raises Stc8Error if the part does not answer, so a caller can report
     the step that failed rather than a return code.
+
+    *announce* takes a line of text and *progress* takes a percentage, a
+    label and a detail. Both are called throughout rather than only at the
+    end, because most of this run is spent waiting for somebody to power
+    the board on: a run that prints nothing while it waits cannot be told
+    from one that has hung, and the person waiting is stood at the board.
     """
     import serial
 
     def say(text):
         if announce is not None:
             announce(text)
+
+    def step(percent, label, detail=""):
+        if progress is not None:
+            progress(percent, label, detail)
 
     ser = serial.Serial()
     ser.port, ser.baudrate = port, handshake
@@ -390,11 +455,23 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     ser.open()
     try:
         session = Session(ser)
-        status = session.sync(wait)
+        step(0, "Waiting", "power the board off and on")
+        say("waiting for the board to be powered on -- switch its supply "
+            "off, wait a moment, and switch it back on")
+        status = await_bootloader(ser, session, wait, say)
         if status is None:
             raise Stc8Error(
-                "the bootloader did not answer; it is entered on power-on "
-                "only, so the supply has to be interrupted while this waits")
+                f"no power-on seen in {wait:.0f}s. The bootloader is entered "
+                "on power-on and on nothing else, so the board's supply has "
+                "to be interrupted and restored while this waits")
+        if len(status) >= 23:
+            found = "%s, BSL %d.%d.%d%s" % (
+                status[20:22].hex().upper(), status[17] >> 4,
+                status[17] & 0x0F, status[22] & 0x0F, chr(status[18]))
+        else:
+            found = "part answered"
+        step(10, "Handshake", found)
+        say("powered on: %s" % found)
         clock = bootloader_hz(status, handshake)
         say("part reports %.3f MHz for its own clock" % (clock / 1e6))
 
@@ -414,8 +491,10 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                 "means the board is not on a supply of its own while it "
                 "is being programmed") from None
         ser.baudrate = transfer
+        step(20, "Link", "%d baud" % transfer)
         say("running at %d baud" % transfer)
 
+        step(30, "Erasing", "whole chip")
         erased = session.command(ERASE, 0x03, "erase")
         # The erase is what returns the part's unique id; nothing else does.
         if len(erased) >= 8:
@@ -423,9 +502,14 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
         else:
             say("erased")
 
-        for addr, frame in write_blocks(image):
+        blocks = list(write_blocks(image))
+        for done, (addr, frame) in enumerate(blocks, 1):
             session.command(frame, WRITE_ACK, "write at %04X" % addr,
                             WRITE_OK)
+            written = min(done * BLOCK, len(image))
+            step(30 + int(65 * done / len(blocks)), "Programming",
+                 "%d/%d B" % (written, len(image)))
+        step(97, "Finishing", "committing the last block")
         session.command(WRITE_FINISH, WRITE_FINISH_ACK, "finish writing",
                         WRITE_OK)
         say("wrote %d bytes" % len(image))

@@ -324,11 +324,10 @@ def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
     banner(f"8051 Flash Console - Target: {target}")
     stage(0, "Waiting", f"{port} at {stc8_isp.HANDSHAKE_BAUD} baud")
     info(f"{protocol}: programming without retrimming the oscillator")
-    if soft_entry and ask_for_bootloader(port, sketch_baud):
-        info("asking the running sketch to reset into its bootloader")
-    else:
-        info("power-cycle the board now: the bootloader is entered on "
-             "power-on only, and this is already listening for it")
+    if soft_entry:
+        ask_for_bootloader(port, sketch_baud)
+    info("power-cycle the board now: the bootloader is entered on power-on "
+         "only, and this is already listening for it")
 
     try:
         from ..vendor.stcgal.ihex import IHex
@@ -341,7 +340,11 @@ def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
         return 1
 
     try:
-        stc8_isp.program(port, payload, announce=note)
+        # info and stage, not note: note is silent unless the verbose
+        # environment variable is set, and this is the one part of an
+        # upload that stands still for a minute waiting for a person. It
+        # has to say so in the IDE panel, where nobody has set anything.
+        stc8_isp.program(port, payload, announce=info, progress=stage)
     except stc8_isp.Stc8Error as exc:
         error(str(exc)[:400], title="programming failed",
               hints=_WHY_NO_ANSWER)
