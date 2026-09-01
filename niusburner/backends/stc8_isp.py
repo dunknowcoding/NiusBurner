@@ -442,9 +442,67 @@ def await_bootloader(ser, session, wait: float, say, tick=None) -> bytes:
     return None
 
 
+def _one_pass(ser, session, status, image, handshake, transfer,
+              say, step) -> None:
+    """Rate change, erase and write, on a bootloader already handshaken.
+
+    Raises Stc8Error at the first unanswered frame. Everything here is
+    restartable: the caller can run it again from a fresh power-on, and it
+    erases before it writes, so a pass interrupted halfway leaves nothing
+    the next pass has to reason about.
+    """
+    patience = session.reply_timeout
+
+    # The rate change is acknowledged at the old rate, and the host moves
+    # only once that answer is in. Handshaking again at the new rate would
+    # look like a confirmation and is not one: the bootloader measures the
+    # host's rate from every sync byte it is sent, so it answers a
+    # handshake at whatever rate one arrives at, whether it took the
+    # reload or never saw the frame at all.
+    session.command(baud_switch(status, transfer), 0x01, "rate change")
+    ser.baudrate = transfer
+    # The part has to reconfigure its own UART before it can hear anything
+    # at the new rate, and a frame sent into that gap is lost.
+    time.sleep(RATE_SETTLE)
+    step(20, "Link", "%d baud" % transfer)
+    say("running at %d baud" % transfer)
+
+    # Confirming the new rate before erasing is not a formality. It is the
+    # first frame sent at the new rate, so it is the one that finds out
+    # whether the rate change really took -- and finding that out with a
+    # ping costs a frame, where finding it out with the erase means a chip
+    # erased by a session that cannot then talk to it.
+    session.command(PING, 0x05, "confirm the new rate")
+    say("rate confirmed")
+
+    step(30, "Erasing", "whole chip")
+    session.reply_timeout = ERASE_TIMEOUT
+    try:
+        erased = session.command(ERASE, 0x03, "erase")
+    finally:
+        session.reply_timeout = patience
+    # The erase is what returns the part's unique id; nothing else does.
+    if len(erased) >= 8:
+        say("erased, target id %s" % erased[1:8].hex())
+    else:
+        say("erased")
+
+    blocks = list(write_blocks(image))
+    for done, (addr, frame) in enumerate(blocks, 1):
+        session.command(frame, WRITE_ACK, "write at %04X" % addr, WRITE_OK)
+        written = min(done * BLOCK, len(image))
+        step(30 + int(65 * done / len(blocks)), "Programming",
+             "%d/%d B" % (written, len(image)))
+    step(97, "Finishing", "committing the last block")
+    session.command(WRITE_FINISH, WRITE_FINISH_ACK, "finish writing",
+                    WRITE_OK)
+    say("wrote %d bytes" % len(image))
+
+
 def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             transfer: int = TRANSFER_BAUD, wait: float = 120.0,
-            announce=None, progress=None, tick=None) -> None:
+            announce=None, progress=None, tick=None,
+            attempts: int = 4) -> None:
     """Sync, then erase and write *image*, over a port opened here.
 
     Raises Stc8Error if the part does not answer, so a caller can report
@@ -459,6 +517,16 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     *tick* carries the seconds left in that wait, and None once it is over,
     so the countdown can be one line that changes rather than a column of
     lines that scrolls.
+
+    A pass that dies partway is started again from the next power-on,
+    *attempts* times. On a board whose supply is a switch under somebody's
+    thumb, the supply going away in the middle of a write is not an
+    exceptional case -- it is the same gesture that started the upload,
+    made once too often. Cutting it there resets the part, which ends the
+    session and leaves the flash half written. Rather than report that as a
+    failure and leave it half written, this waits for the board to come
+    back and does the whole thing again from the erase, which is the one
+    recovery that always lands somewhere known.
     """
     import serial
 
@@ -476,85 +544,47 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     ser.timeout = 0.05
     ser.open()
     try:
-        session = Session(ser)
-        patience = session.reply_timeout
-        step(0, "Waiting", "power the board off and on")
-        say("waiting for the board to be powered on -- switch its supply "
-            "off, wait a moment, and switch it back on")
-        status = await_bootloader(ser, session, wait, say, tick)
-        if tick is not None:
-            tick(None)
-        if status is None:
-            raise Stc8Error(
-                f"no power-on seen in {wait:.0f}s. The bootloader is entered "
-                "on power-on and on nothing else, so the board's supply has "
-                "to be interrupted and restored while this waits")
-        if len(status) >= 23:
-            found = "%s, BSL %d.%d.%d%s" % (
-                status[20:22].hex().upper(), status[17] >> 4,
-                status[17] & 0x0F, status[22] & 0x0F, chr(status[18]))
-        else:
-            found = "part answered"
-        step(10, "Handshake", found)
-        say("powered on: %s" % found)
-        clock = bootloader_hz(status, handshake)
-        say("part reports %.3f MHz for its own clock" % (clock / 1e6))
+        for attempt in range(1, max(1, attempts) + 1):
+            ser.baudrate = handshake
+            session = Session(ser)
+            step(0, "Waiting", "power the board off and on")
+            if attempt == 1:
+                say("waiting for the board to be powered on -- switch its "
+                    "supply off, wait a moment, and switch it back on")
+            status = await_bootloader(ser, session, wait, say, tick)
+            if tick is not None:
+                tick(None)
+            if status is None:
+                raise Stc8Error(
+                    f"no power-on seen in {wait:.0f}s. The bootloader is "
+                    "entered on power-on and on nothing else, so the "
+                    "board's supply has to be interrupted and restored "
+                    "while this waits")
+            if len(status) >= 23:
+                found = "%s, BSL %d.%d.%d%s" % (
+                    status[20:22].hex().upper(), status[17] >> 4,
+                    status[17] & 0x0F, status[22] & 0x0F, chr(status[18]))
+            else:
+                found = "part answered"
+            step(10, "Handshake", found)
+            say("powered on: %s" % found)
+            say("part reports %.3f MHz for its own clock"
+                % (bootloader_hz(status, handshake) / 1e6))
 
-        # The rate change is acknowledged at the old rate, and the host
-        # moves only once that answer is in. Handshaking again at the new
-        # rate would look like a confirmation and is not one: the
-        # bootloader measures the host's rate from every sync byte it is
-        # sent, so it answers a handshake at whatever rate one arrives at,
-        # whether it took the reload or never saw the frame at all.
-        try:
-            session.command(baud_switch(status, transfer), 0x01,
-                            "rate change")
-        except Stc8Error as exc:
-            raise Stc8Error(
-                f"{exc}. The handshake worked, so the part is there and "
-                "listening; a first command that draws nothing usually "
-                "means the board is not on a supply of its own while it "
-                "is being programmed") from None
-        ser.baudrate = transfer
-        # The part has to reconfigure its own UART before it can hear
-        # anything at the new rate, and a frame sent into that gap is lost.
-        # The reference implementation waits ten milliseconds here before
-        # it speaks again; this waits a little longer for margin.
-        time.sleep(RATE_SETTLE)
-        step(20, "Link", "%d baud" % transfer)
-        say("running at %d baud" % transfer)
-
-        # Confirming the new rate before erasing is not a formality. It is
-        # the first frame sent at the new rate, so it is the one that finds
-        # out whether the rate change really took -- and finding that out
-        # with a ping costs nothing, where finding it out with the erase
-        # means a chip erased by a session that cannot then talk to it.
-        session.command(PING, 0x05, "confirm the new rate")
-        say("rate confirmed")
-
-        step(30, "Erasing", "whole chip")
-        # A whole-chip erase is the one step that can take seconds.
-        session.reply_timeout = ERASE_TIMEOUT
-        try:
-            erased = session.command(ERASE, 0x03, "erase")
-        finally:
-            session.reply_timeout = patience
-        # The erase is what returns the part's unique id; nothing else does.
-        if len(erased) >= 8:
-            say("erased, target id %s" % erased[1:8].hex())
-        else:
-            say("erased")
-
-        blocks = list(write_blocks(image))
-        for done, (addr, frame) in enumerate(blocks, 1):
-            session.command(frame, WRITE_ACK, "write at %04X" % addr,
-                            WRITE_OK)
-            written = min(done * BLOCK, len(image))
-            step(30 + int(65 * done / len(blocks)), "Programming",
-                 "%d/%d B" % (written, len(image)))
-        step(97, "Finishing", "committing the last block")
-        session.command(WRITE_FINISH, WRITE_FINISH_ACK, "finish writing",
-                        WRITE_OK)
-        say("wrote %d bytes" % len(image))
+            try:
+                _one_pass(ser, session, status, image, handshake, transfer,
+                          say, step)
+                return
+            except Stc8Error as exc:
+                if attempt >= max(1, attempts):
+                    raise Stc8Error(
+                        f"{exc}. The handshake worked, so the part is there; "
+                        "a command that draws nothing usually means the "
+                        "board lost power partway, or is not on a supply of "
+                        "its own while it is being programmed") from None
+                say("%s -- the board went away partway through. Nothing is "
+                    "lost: power it off and on again and this starts over "
+                    "from the erase." % exc)
+                step(0, "Restarting", "waiting for the board again")
     finally:
         ser.close()
