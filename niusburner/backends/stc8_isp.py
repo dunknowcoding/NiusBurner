@@ -560,7 +560,7 @@ def _one_pass(ser, session, status, image, handshake, transfer,
 def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             transfer: int = TRANSFER_BAUD, wait: float = 120.0,
             announce=None, progress=None, tick=None,
-            attempts: int = 4) -> None:
+            attempts: int = 200) -> None:
     """Sync, then erase and write *image*, over a port opened here.
 
     Raises Stc8Error if the part does not answer, so a caller can report
@@ -576,15 +576,25 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     so the countdown can be one line that changes rather than a column of
     lines that scrolls.
 
-    A pass that dies partway is started again from the next power-on,
-    *attempts* times. On a board whose supply is a switch under somebody's
-    thumb, the supply going away in the middle of a write is not an
-    exceptional case -- it is the same gesture that started the upload,
+    A pass that dies partway is started again from the next power-on, for
+    as long as *wait* allows. On a board whose supply is a switch under
+    somebody's thumb, the supply going away in the middle of a write is not
+    an exceptional case -- it is the same gesture that started the upload,
     made once too often. Cutting it there resets the part, which ends the
     session and leaves the flash half written. Rather than report that as a
     failure and leave it half written, this waits for the board to come
     back and does the whole thing again from the erase, which is the one
     recovery that always lands somewhere known.
+
+    The budget is the clock and not a count of tries, because the two are
+    not the same thing here. While the supply is switched out the part
+    still answers a handshake -- the sync byte is high nine tenths of the
+    time and costs it almost nothing -- and then fails at the first
+    command, in about a second. A budget of a few tries is spent in well
+    under a minute of somebody simply holding the switch off, and the
+    upload would give up on a board that was about to be perfectly fine.
+    *attempts* remains only as a stop against a fault that fails instantly
+    and for ever.
     """
     import serial
 
@@ -603,7 +613,16 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     ser.open()
     try:
         paced = False
-        for attempt in range(1, max(1, attempts) + 1):
+        deadline = time.monotonic() + wait
+        attempt = 0
+        while True:
+            attempt += 1
+            left = deadline - time.monotonic()
+            if left <= 0:
+                raise Stc8Error(
+                    f"gave up after {wait:.0f}s. The board has to be on its "
+                    "own supply, and stay on it, from the handshake to the "
+                    "last block")
             ser.baudrate = handshake
             session = Session(
                 ser,
@@ -616,7 +635,7 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             if attempt == 1:
                 say("waiting for the board to be powered on -- switch its "
                     "supply off, wait a moment, and switch it back on")
-            status = await_bootloader(ser, session, wait, say, tick)
+            status = await_bootloader(ser, session, left, say, tick)
             if tick is not None:
                 tick(None)
             if status is None:
@@ -642,7 +661,8 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                           say, step)
                 return
             except Stc8Error as exc:
-                if attempt >= max(1, attempts):
+                if (attempt >= max(1, attempts)
+                        or time.monotonic() >= deadline):
                     raise Stc8Error(
                         f"{exc}. The handshake worked, so the part is there; "
                         "a command that draws nothing usually means the "
