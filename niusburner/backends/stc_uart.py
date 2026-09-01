@@ -314,7 +314,11 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
 #: are not asked to trim their oscillator first, which is the step they do
 #: not answer and the reason the general-purpose route cannot write a byte
 #: to them.
-NATIVE_PROTOCOLS = ("stc8g", "stc8d")
+NATIVE_PROTOCOLS = ("stc8g", "stc8d", "stc15")
+#: Which of those have been run against a part. The rest are the same
+#: exchange with one constant changed, which is well founded and is not
+#: the same as having been seen to work.
+CONFIRMED_PROTOCOLS = ("stc8g",)
 
 
 def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
@@ -351,8 +355,12 @@ def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
             else:
                 waiting("Waiting for handshake", "%ds left" % int(left))
 
+        if protocol not in CONFIRMED_PROTOCOLS:
+            info(f"{protocol}: this exchange has not been run against a part "
+                 "of this generation; it differs from the confirmed one by "
+                 "the wait-state byte alone")
         stc8_isp.program(port, payload, announce=info, progress=stage,
-                         tick=tick, expect_part=target)
+                         tick=tick, expect_part=target, protocol=protocol)
     except stc8_isp.Stc8Error as exc:
         error(str(exc)[:400], title="programming failed",
               hints=_WHY_NO_ANSWER)

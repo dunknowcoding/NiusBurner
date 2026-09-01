@@ -82,6 +82,17 @@ BOOTLOADER_HZ = 24_000_000
 #: its own cycles per host bit period.
 CLOCK_COUNT = slice(13, 15)
 
+#: The last byte of the rate-change frame, which is an IAP wait-state
+#: setting and is a constant per generation rather than anything derived.
+#: The STC8G and STC8H want 0x97; the STC15 family wants 0xC3. Everything
+#: else about the exchange is the same for both, which is why one handler
+#: covers them.
+IAP_WAIT = {"stc8g": 0x97, "stc8d": 0x81, "stc15": 0xC3}
+
+#: Where each generation reports the oscillator it is trimmed to. Read for
+#: display only; nothing is derived from it -- see bootloader_hz.
+FOSC_AT = {"stc8g": slice(1, 5), "stc8d": slice(1, 5), "stc15": slice(8, 12)}
+
 #: Payloads, minus the reply byte each one is answered with.
 PING = (0x05, 0x00, 0x00, 0x5A, 0xA5)
 ERASE = (0x03, 0x00, 0x00, 0x5A, 0xA5)
@@ -300,11 +311,25 @@ def transfer_reload(rate: int, clock_hz: int = BOOTLOADER_HZ) -> int:
     return value
 
 
-def baud_switch(status: bytes, rate: int) -> tuple:
+def baud_switch(status: bytes, rate: int,
+                protocol: str = "stc8g") -> tuple:
     """The payload that moves the session to *rate*.
 
     The two zero bytes are where an oscillator trim would go. Leaving them
     zero is what "do not touch the RC" looks like on the wire.
+
+    For the STC15 family the two implementations this was checked against
+    disagree, and only one of them can be tried here. stc8prog sends this
+    exact frame with 0xC3 as the last byte and the same nominal 24 MHz
+    reload, and trims nothing. stcgal instead runs a calibration exchange
+    first and puts the resulting programming-frequency trim in those two
+    bytes, with a reload worked out from 22.1184 MHz. The form here follows
+    stc8prog, because trimming is the thing this path exists to avoid: it
+    moves the part's clock away from the frequency the runtime was built
+    for. If an STC15 does not answer this, the reload constant is the first
+    thing to change and 22118400 is the number to try -- on this bootloader
+    a wrong reload is answered with silence rather than a refusal, so it
+    will look like the part is not there.
 
     The reload comes from the nominal 24 MHz and not from the clock the
     part reports for itself, which looks like the worse choice and is not.
@@ -327,7 +352,7 @@ def baud_switch(status: bytes, rate: int) -> tuple:
     reload_value = transfer_reload(rate, BOOTLOADER_HZ)
     return (0x01, status[4], 0x40,
             (reload_value >> 8) & 0xFF, reload_value & 0xFF,
-            0x00, 0x00, 0x97)
+            0x00, 0x00, IAP_WAIT.get(protocol, IAP_WAIT["stc8g"]))
 
 
 def write_blocks(image: bytes):
@@ -629,7 +654,7 @@ def await_bootloader(ser, session, wait: float, say, tick=None,
 
 
 def _one_pass(ser, session, status, image, handshake, transfer,
-              say, step) -> None:
+              say, step, protocol: str = "stc8g") -> None:
     """Rate change, erase and write, on a bootloader already handshaken.
 
     Raises Stc8Error at the first unanswered frame. Everything here is
@@ -647,7 +672,8 @@ def _one_pass(ser, session, status, image, handshake, transfer,
     # reload or never saw the frame at all.
     session.reply_timeout = RATE_TIMEOUT
     try:
-        session.command(baud_switch(status, transfer), 0x01, "rate change")
+        session.command(baud_switch(status, transfer, protocol), 0x01,
+                        "rate change")
     finally:
         session.reply_timeout = patience
     ser.baudrate = transfer
@@ -698,7 +724,8 @@ def _one_pass(ser, session, status, image, handshake, transfer,
 def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             transfer: int = TRANSFER_BAUD, wait: float = 120.0,
             announce=None, progress=None, tick=None,
-            attempts: int = 200, expect_part: str = "") -> None:
+            attempts: int = 200, expect_part: str = "",
+            protocol: str = "stc8g") -> None:
     """Sync, then erase and write *image*, over a port opened here.
 
     Raises Stc8Error if the part does not answer, so a caller can report
@@ -805,7 +832,7 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
 
             try:
                 _one_pass(ser, session, status, image, handshake, transfer,
-                          say, step)
+                          say, step, protocol)
                 return
             except Stc8Error as exc:
                 if (attempt >= max(1, attempts)
