@@ -70,6 +70,14 @@ WRITE_ACK = 0x02
 #: Flash is written a block at a time; the bootloader expects this size.
 BLOCK = 128
 
+#: The rate the handshake runs at. Low rates give the bootloader a longer
+#: pulse to measure, but this part does not answer below 4800 at all, and
+#: 9600 has synced it on every attempt.
+HANDSHAKE_BAUD = 9600
+
+#: The rate the session moves to once the bootloader agrees to it.
+TRANSFER_BAUD = 115200
+
 #: What a status frame starts with, so it can be told from a reply.
 STATUS = 0x50
 
@@ -247,3 +255,49 @@ class Session:
                     f"{what}: expected {expect:02X}, got {reply[:4].hex()}")
             return reply
         raise Stc8Error(f"{what}: no reply")
+
+
+def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
+            transfer: int = TRANSFER_BAUD, wait: float = 120.0,
+            announce=None) -> None:
+    """Sync, then erase and write *image*, over a port opened here.
+
+    Raises Stc8Error if the part does not answer, so a caller can report
+    the step that failed rather than a return code.
+    """
+    import serial
+
+    def say(text):
+        if announce is not None:
+            announce(text)
+
+    ser = serial.Serial()
+    ser.port, ser.baudrate = port, handshake
+    ser.parity = serial.PARITY_NONE
+    ser.timeout = 0.05
+    ser.open()
+    try:
+        session = Session(ser)
+        status = session.sync(wait)
+        if status is None:
+            raise Stc8Error(
+                "the bootloader did not answer; it is entered on power-on "
+                "only, so the supply has to be interrupted while this waits")
+        clock = bootloader_hz(status, handshake)
+        say("part reports %.3f MHz for its own clock" % (clock / 1e6))
+
+        session.command(baud_switch(status, transfer, handshake), 0x01,
+                        "baud switch")
+        ser.baudrate = transfer
+        time.sleep(0.01)
+        session.command(PING, 0x05, "ping")
+        say("running at %d baud" % transfer)
+
+        session.command(ERASE, 0x03, "erase")
+        say("erased")
+
+        for addr, frame in write_blocks(image):
+            session.command(frame, WRITE_ACK, "write at %04X" % addr)
+        say("wrote %d bytes" % len(image))
+    finally:
+        ser.close()

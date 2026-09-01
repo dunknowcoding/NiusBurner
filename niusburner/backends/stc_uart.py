@@ -309,6 +309,55 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
     return 0
 
 
+#: Families programmed here rather than through stcgal. Those bootloaders
+#: are not asked to trim their oscillator first, which is the step they do
+#: not answer and the reason the general-purpose route cannot write a byte
+#: to them.
+NATIVE_PROTOCOLS = ("stc8g", "stc8d")
+
+
+def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
+                soft_entry: bool, sketch_baud: int) -> int:
+    """Program an STC8G/STC8H part directly."""
+    from . import stc8_isp
+
+    banner(f"8051 Flash Console - Target: {target}")
+    stage(0, "Waiting", f"{port} at {stc8_isp.HANDSHAKE_BAUD} baud")
+    info(f"{protocol}: programming without retrimming the oscillator")
+    if soft_entry and ask_for_bootloader(port, sketch_baud):
+        info("asking the running sketch to reset into its bootloader")
+    else:
+        info("power-cycle the board now: the bootloader is entered on "
+             "power-on only, and this is already listening for it")
+
+    try:
+        from ..vendor.stcgal.ihex import IHex
+
+        with image.open("rb") as handle:
+            payload = IHex.read(handle).extract_data()
+    except (OSError, ValueError) as exc:
+        error(str(exc)[:400], title="the image could not be read",
+              hints=("the file should be Intel HEX from a NiusBurner build",))
+        return 1
+
+    try:
+        stc8_isp.program(port, payload, announce=note)
+    except stc8_isp.Stc8Error as exc:
+        error(str(exc)[:400], title="programming failed",
+              hints=_WHY_NO_ANSWER)
+        return 1
+    except OSError as exc:
+        error(str(exc)[:400], title="STC upload transport failed",
+              hints=(f"confirm {port} is still the exact adapter endpoint",))
+        return 1
+
+    complete("Upload complete",
+             "Oscillator        : left as it was; the sketch runs at the "
+             "catalog frequency",
+             "Power             : supplied by the board, not the programmer")
+    return 0
+
+
 def flash(image: pathlib.Path, target: str, port: str,
           baud: int = DEFAULT_BAUD, run: bool = True,
           reset_pin: str = "", soft_entry: bool = True,
@@ -319,13 +368,19 @@ def flash(image: pathlib.Path, target: str, port: str,
     is one command with nobody touching anything. Without it, a person has
     to interrupt power, and the console says so.
     """
-    tool = find_stcgal()
-    if tool is None:
-        return _missing()
     if not image.is_file():
         error(f"image not found: {image}", title="nothing to program",
               hints=("did Verify succeed?",))
         return 1
+
+    protocol = _protocol(target)
+    if protocol in NATIVE_PROTOCOLS:
+        return _flash_stc8(image, target, port, protocol, soft_entry,
+                           sketch_baud)
+
+    tool = find_stcgal()
+    if tool is None:
+        return _missing()
 
     banner(f"8051 Flash Console - Target: {target}")
     stage(0, "Waiting", f"{port} at {HANDSHAKE_BAUD} baud")
