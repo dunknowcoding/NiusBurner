@@ -130,6 +130,26 @@ _WRITE_PERCENT = re.compile(r"writing flash:\s*(\d+)%")
 _WRITE_FROM, _WRITE_TO = 40, 94
 
 
+#: The furthest the bar has got in this attempt. The tool ends its write
+#: with a summary line carrying no percentage, which falls through to the
+#: general case and would otherwise send the bar backwards from 94 to 40 --
+#: and a bar that retreats is a lie about progress. Reset per attempt,
+#: because a retry really does start again.
+_furthest = 0
+
+
+def _restart_bar() -> None:
+    global _furthest
+    _furthest = 0
+
+
+def _advance(percent: int, label: str, detail: str) -> None:
+    """Draw a stage, never behind one already drawn."""
+    global _furthest
+    _furthest = max(_furthest, percent)
+    stage(_furthest, label, detail)
+
+
 def _restyle(line: str) -> None:
     """Show one line of the tool's output the way this package shows things.
 
@@ -145,12 +165,12 @@ def _restyle(line: str) -> None:
     written = _WRITE_PERCENT.search(lowered)
     if written:
         share = min(100, max(0, int(written.group(1))))
-        stage(_WRITE_FROM + (_WRITE_TO - _WRITE_FROM) * share // 100,
-              "Programming", "%d%% of the image" % share)
+        _advance(_WRITE_FROM + (_WRITE_TO - _WRITE_FROM) * share // 100,
+                 "Programming", "%d%% of the image" % share)
         return
     for needle, percent, label, detail in _STCGAL_STAGES:
         if needle in lowered:
-            stage(percent, label, detail or text.rstrip(":. "))
+            _advance(percent, label, detail or text.rstrip(":. "))
             return
     info(text)
 
@@ -164,6 +184,7 @@ def _stream_guarded(command: list[str], port: str) -> int:
     line, because the tool marks progress with carriage returns and a line
     that never ends in a newline would never be shown.
     """
+    _restart_bar()
     before = serial_identity(port)
     proc = subprocess.Popen(command, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True,
