@@ -379,6 +379,16 @@ LISTEN_SECONDS = 0.9
 #: How often the wait says it is still waiting.
 NOTICE_SECONDS = 5.0
 
+#: Quiet time after the rate change, before anything is sent at the new
+#: rate. The part reconfigures its own UART on being told to switch, and a
+#: frame sent into that gap is simply lost -- which shows up as the next
+#: command going unanswered rather than as anything to do with the rate.
+RATE_SETTLE = 0.02
+
+#: A whole-chip erase is the one step that can take seconds rather than
+#: milliseconds, so it gets its own patience.
+ERASE_TIMEOUT = 20.0
+
 
 def await_bootloader(ser, session, wait: float, say) -> bytes:
     """Sit until the board is powered on, then return its status frame.
@@ -455,6 +465,7 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     ser.open()
     try:
         session = Session(ser)
+        patience = session.reply_timeout
         step(0, "Waiting", "power the board off and on")
         say("waiting for the board to be powered on -- switch its supply "
             "off, wait a moment, and switch it back on")
@@ -491,11 +502,29 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                 "means the board is not on a supply of its own while it "
                 "is being programmed") from None
         ser.baudrate = transfer
+        # The part has to reconfigure its own UART before it can hear
+        # anything at the new rate, and a frame sent into that gap is lost.
+        # The reference implementation waits ten milliseconds here before
+        # it speaks again; this waits a little longer for margin.
+        time.sleep(RATE_SETTLE)
         step(20, "Link", "%d baud" % transfer)
         say("running at %d baud" % transfer)
 
+        # Confirming the new rate before erasing is not a formality. It is
+        # the first frame sent at the new rate, so it is the one that finds
+        # out whether the rate change really took -- and finding that out
+        # with a ping costs nothing, where finding it out with the erase
+        # means a chip erased by a session that cannot then talk to it.
+        session.command(PING, 0x05, "confirm the new rate")
+        say("rate confirmed")
+
         step(30, "Erasing", "whole chip")
-        erased = session.command(ERASE, 0x03, "erase")
+        # A whole-chip erase is the one step that can take seconds.
+        session.reply_timeout = ERASE_TIMEOUT
+        try:
+            erased = session.command(ERASE, 0x03, "erase")
+        finally:
+            session.reply_timeout = patience
         # The erase is what returns the part's unique id; nothing else does.
         if len(erased) >= 8:
             say("erased, target id %s" % erased[1:8].hex())
