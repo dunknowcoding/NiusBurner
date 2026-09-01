@@ -502,7 +502,7 @@ stc15w408as.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc15w408as.menu.compiler.configured.build.nb_compiler=configured
 
 # ----------------------------------------------------------------------
-# 8 KB flash plus 4 KB EEPROM, 1T core, internal RC only. The RC is nominally 24 MHz and is trimmed at download time, so f_cpu here is the trim the tool asks for rather than a crystal: 22.1184 MHz, which is the closest exact UART divisor to nominal. The bootloader is the later STC8G generation, which uses a different calibration exchange from the STC8A parts.
+# 8 KB flash plus 4 KB EEPROM, 1T core, internal RC only. The RC is set at download time and the part ships untrimmed, so f_cpu here is the frequency the programmer asks for: 24 MHz, the preset the bootloader uses when it is told not to trim. At that clock an 8-bit reload carries 9600 to within 0.16% and little else, so a sketch wanting other rates should ask for a different IRC frequency.
 stc8h1k08.name=STC8H1K08 (8 KB, serial bootloader) [experimental]
 stc8h1k08.upload.tool=niusburner
 stc8h1k08.upload.protocol=stcgal
@@ -510,7 +510,7 @@ stc8h1k08.upload.maximum_size=8192
 stc8h1k08.upload.maximum_data_size=256
 stc8h1k08.upload.require_upload_port=true
 stc8h1k08.build.mcu=stc8h1k08
-stc8h1k08.build.f_cpu=22118400L
+stc8h1k08.build.f_cpu=24000000L
 stc8h1k08.build.board=STC8H1K08
 stc8h1k08.build.core=niusburner
 stc8h1k08.build.variant=standard

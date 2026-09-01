@@ -39,6 +39,12 @@ void nius_isp_entry_begin(void);
 #define NIUS_UART_AUXR 0
 #endif
 
+/* How far the produced rate may sit from the requested one. A UART
+   tolerates a couple of percent either side before framing suffers. */
+#ifndef NIUS_BAUD_TOLERANCE_PCT
+#define NIUS_BAUD_TOLERANCE_PCT 2
+#endif
+
 #ifdef __SDCC
 #include <8052.h>
 #if NIUS_HAS_TIMER2
@@ -82,6 +88,36 @@ __sfr __at(0x8E) AUXR;
  */
 unsigned char nius_serial_ok = 1;
 
+/*
+ * Nearest reload for a rate, and whether it is close enough to use.
+ *
+ * The comparison is on the rate produced rather than on the divisor: the
+ * error that matters is what the far end sees, and at small reloads one
+ * count is a large fraction. Kept in a 32-bit product because reload
+ * times rate exceeds 16 bits well before either does.
+ */
+static unsigned char nius_fits(unsigned int base, unsigned int want,
+                               unsigned int *reload_out)
+{
+    unsigned int reload;
+    unsigned long produced;
+    unsigned long slack;
+
+    if (want == 0U || base == 0U)
+        return 0;
+    reload = (unsigned int)(((unsigned long)base + (want >> 1)) / want);
+    if (reload < 1U || reload > 256U)
+        return 0;
+    produced = (unsigned long)reload * want;
+    slack = (produced > (unsigned long)base)
+            ? produced - (unsigned long)base
+            : (unsigned long)base - produced;
+    if (slack * (100UL / NIUS_BAUD_TOLERANCE_PCT) > produced)
+        return 0;
+    *reload_out = reload;
+    return 1;
+}
+
 void nius_serial_begin(unsigned long baud)
 {
 #ifdef __SDCC
@@ -102,24 +138,21 @@ void nius_serial_begin(unsigned long baud)
         nius_serial_ok = 1;
 
         /*
-         * Only an exact division is accepted. Taking the nearest reload
-         * without checking is how a request for 38400 at 11.0592 MHz ends
-         * up transmitting at 28800: the rate is simply not available from
-         * an 8-bit reload, and saying so beats sending at the wrong speed.
+         * The nearest reload is accepted when the rate it actually
+         * produces lands within NIUS_BAUD_TOLERANCE_PCT of the one asked
+         * for, and refused otherwise. Taking the nearest without checking
+         * is how a request for 38400 at 11.0592 MHz ends up transmitting
+         * at 28800 -- that reload is 25% out. Demanding an exact division
+         * is the opposite mistake: a 24 MHz part can carry 9600 to within
+         * 0.16%, and refusing it leaves the sketch with no serial port at
+         * all over a sixth of a percent.
          */
         if (baud != 0UL && baud <= 65535UL) {
-            reload = NIUS_T1_BASE0 / want;
-            if (reload >= 1U && reload <= 256U
-                && (unsigned long)reload * want == (unsigned long)NIUS_T1_BASE0) {
+            if (nius_fits(NIUS_T1_BASE0, want, &reload)) {
                 placed = 1;
-            } else {
-                reload = NIUS_T1_BASE1 / want;
-                if (reload >= 1U && reload <= 256U
-                    && (unsigned long)reload * want
-                       == (unsigned long)NIUS_T1_BASE1) {
-                    smod = 1;
-                    placed = 1;
-                }
+            } else if (nius_fits(NIUS_T1_BASE1, want, &reload)) {
+                smod = 1;
+                placed = 1;
             }
         }
 

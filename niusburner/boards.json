@@ -464,10 +464,10 @@
       "aliases": [
         "8h1k08"
       ],
-      "f_cpu": 22118400,
+      "f_cpu": 24000000,
       "clocks_per_mc": 1,
       "timer2": false,
-      "note": "8 KB flash plus 4 KB EEPROM, 1T core, internal RC only. The RC is nominally 24 MHz and is trimmed at download time, so f_cpu here is the trim the tool asks for rather than a crystal: 22.1184 MHz, which is the closest exact UART divisor to nominal. The bootloader is the later STC8G generation, which uses a different calibration exchange from the STC8A parts.",
+      "note": "8 KB flash plus 4 KB EEPROM, 1T core, internal RC only. The RC is set at download time and the part ships untrimmed, so f_cpu here is the frequency the programmer asks for: 24 MHz, the preset the bootloader uses when it is told not to trim. At that clock an 8-bit reload carries 9600 to within 0.16% and little else, so a sketch wanting other rates should ask for a different IRC frequency.",
       "peripherals": {
         "gpio": "hardware",
         "uart": "hardware",
