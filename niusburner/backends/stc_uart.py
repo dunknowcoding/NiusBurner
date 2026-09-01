@@ -100,6 +100,83 @@ def serial_identity(port: str) -> tuple[str, int | None, int | None, str, str, s
     )
 
 
+#: What the tool prints, and where each phrase belongs in the house
+#: progress. stcgal writes its own running commentary, which is fine on a
+#: terminal and is not what an upload looks like everywhere else in this
+#: package -- and, being another program's stdout, it arrives whenever it
+#: arrives rather than when there is something to say.
+_STCGAL_STAGES = (
+    ("waiting for mcu", 0, "Waiting for handshake",
+     "switch the board's supply off and on"),
+    ("target model", 10, "Handshake", ""),
+    ("switching to", 20, "Link", ""),
+    ("erasing", 30, "Erasing", ""),
+    ("writing flash", 40, "Programming", ""),
+    ("finishing write", 95, "Finishing", "committing the last block"),
+    ("setting options", 97, "Options", ""),
+    ("disconnected", 99, "Starting", "leaving the bootloader"),
+)
+
+
+def _restyle(line: str) -> None:
+    """Show one line of the tool's output the way this package shows things.
+
+    Everything is shown, because an upload that stands still waiting for
+    somebody to switch a supply has to look alive in an IDE panel, and the
+    lines that say so come from the tool rather than from here. The ones
+    that name a stage also move the bar; the rest are printed as they are.
+    """
+    text = line.strip()
+    if not text:
+        return
+    lowered = text.lower()
+    for needle, percent, label, detail in _STCGAL_STAGES:
+        if needle in lowered:
+            stage(percent, label, detail or text.rstrip(":. "))
+            return
+    info(text)
+
+
+def _stream_guarded(command: list[str], port: str) -> int:
+    """Run the tool, restyling its output as it arrives, under the guard.
+
+    Not capture-and-replay: the wait for a power-on is most of a first
+    upload, and a panel that prints nothing until it is over cannot be told
+    from one that has hung. Output is read in small pieces rather than by
+    line, because the tool marks progress with carriage returns and a line
+    that never ends in a newline would never be shown.
+    """
+    before = serial_identity(port)
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, text=True,
+                            errors="replace", bufsize=1)
+    pending = ""
+    deadline = time.monotonic() + PROCESS_TIMEOUT_SECONDS
+    try:
+        while True:
+            piece = proc.stdout.read(1)
+            if piece == "":
+                break
+            if piece in "\r\n":
+                _restyle(pending)
+                pending = ""
+            else:
+                pending += piece
+            if time.monotonic() > deadline:
+                proc.kill()
+                raise subprocess.TimeoutExpired(command,
+                                                PROCESS_TIMEOUT_SECONDS)
+        _restyle(pending)
+    finally:
+        proc.stdout.close()
+        proc.wait()
+    after = serial_identity(port)
+    if after != before:
+        raise RuntimeError(
+            f"UART identity changed from {before!r} to {after!r}")
+    return proc.returncode
+
+
 def _run_guarded(command: list[str], port: str) -> subprocess.CompletedProcess[str]:
     """Run stcgal under a deadline and require the same UART afterwards."""
     before = serial_identity(port)
@@ -419,20 +496,15 @@ def flash(image: pathlib.Path, target: str, port: str,
     cmd += [str(image)]
     note(" ".join(cmd))
     try:
-        done = _run_guarded(cmd, port)
+        code = _stream_guarded(cmd, port)
     except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
         error(str(exc)[:400], title="STC upload transport failed",
               hints=(f"confirm {port} is still the exact CH341 endpoint",))
         return 1
-    output = (done.stdout or "") + (done.stderr or "")
-    if done.returncode != 0:
-        error(output.strip()[:400] or "stcgal reported a failure",
-              title="programming failed",
-              hints=_WHY_NO_ANSWER)
+    if code != 0:
+        error("the programming tool reported a failure; its output is above",
+              title="programming failed", hints=_WHY_NO_ANSWER)
         return 1
-    for line in output.splitlines():
-        if line.strip():
-            note(line.strip())
     complete("Upload complete",
              "Reset             : the bootloader starts the new firmware "
              "itself",
