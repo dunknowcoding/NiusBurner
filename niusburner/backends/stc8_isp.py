@@ -175,19 +175,45 @@ def write_blocks(image: bytes):
 class Session:
     """One bootloader conversation, over an already-open serial port."""
 
-    def __init__(self, ser, reply_timeout: float = 3.0):
+    def __init__(self, ser, reply_timeout: float = 3.0,
+                 sync_run: int = 1, sync_gap: float = 0.03):
         self.ser = ser
         self.reply_timeout = reply_timeout
+        #: Sync bytes per burst, and the quiet time after each burst.
+        self.sync_run = sync_run
+        self.sync_gap = sync_gap
         self.status = None
 
     def sync(self, timeout: float):
-        """Pulse until the bootloader identifies itself."""
+        """Stream the sync byte until the bootloader identifies itself.
+
+        Two things pull in opposite directions here, so both are settable.
+
+        A gap between bytes gives the part a quiet window to answer in,
+        and that is what makes the handshake reliable -- spaced bytes have
+        synced this hardware every time it was asked, and a continuous
+        stream did not.
+
+        Against that, the gap decides how much of the time the line is
+        held low, which matters on a board where the part is fed through
+        that same line by a clamp diode. 0x7f is low for two bit times in
+        ten, so back-to-back bytes hold the rail down a fifth of the time
+        while a byte every 30 ms holds it down well under one percent. On
+        such a board, with nothing else pulling the supply down, it never
+        falls far enough for restoring it to be a power-on reset.
+
+        The defaults favour the handshake, because a board that cannot
+        drop its own rail has a better answer available: hold a break to
+        drop it, which is a power cut rather than a duty cycle.
+        """
+        run = SYNC * self.sync_run
         buf = b""
         started = time.monotonic()
         while time.monotonic() - started < timeout:
-            self.ser.write(SYNC)
+            self.ser.write(run)
             self.ser.flush()
-            time.sleep(0.03)
+            if self.sync_gap:
+                time.sleep(self.sync_gap)
             buf += self.ser.read(512)
             try:
                 payload = parse(buf)
