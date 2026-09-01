@@ -430,31 +430,34 @@ class Session:
         raise Stc8Error(f"{what}: no reply")
 
 
-#: How the wait for a power-on is paced. Three constraints, and the
-#: figures are where they all hold at once.
+#: How the wait for a power-on is paced.
 #:
-#: The low phase must empty the rail of a board fed through the serial
-#: line, because on such a board an idle line is a powered board: switching
-#: its supply out during a listening window turns nothing off, and
-#: switching it back in is a step in voltage rather than a power-on. A
-#: fifth of a second is far more than enough -- thirteen bytes of traffic
-#: measurably resets that board -- so this constraint is cheap.
+#: The difficulty is that the supply is a switch under somebody's hand, and
+#: the two things the wait must do used to be in opposite phases. It has to
+#: hold the line low, because on a board fed through that line an idle line
+#: is a powered board -- switching its supply out while the line is idle
+#: turns nothing off, and switching it back in is a step in voltage rather
+#: than a power-on. And it has to be listening, because the bootloader
+#: waits only about a second after a power-on before running the
+#: application, and that clock starts when the supply returns.
 #:
-#: The low phase must also be short, and this is the one that is easy to
-#: get wrong in the other direction. The bootloader waits about a second
-#: after a power-on and then runs the application, and that clock starts
-#: when the supply is restored, not when the host next listens. Every
-#: millisecond spent holding the line low is a millisecond of that window
-#: spent. A drain approaching the window length loses the power-on it was
-#: waiting for -- reliably, and looking exactly like nothing happened.
+#: Splitting those into phases makes both of them wrong some of the time: a
+#: flick landing in a listening phase drains nothing, and a flick landing
+#: in a long low phase spends the window before anyone listens. Adjusting
+#: the split trades one failure for the other.
 #:
-#: And the gap between low phases must be shorter than the interruption
-#: somebody makes by hand, or that interruption falls entirely inside a
-#: listening window and drains nothing. The gap here is the listening
-#: window, so any interruption of about half a second is certain to overlap
-#: a low phase, while the longest a power-on can wait to be noticed is a
-#: quarter of a second.
-DRAIN_SECONDS = 0.25
+#: They are not actually opposed. A sync byte is 0x7f, low for two bit
+#: times in ten, and sent back to back that is a fifth of the time -- which
+#: is measurably enough to hold such a board down. So streaming the sync
+#: byte continuously drains the rail *and* handshakes, and the listening
+#: phase is a draining phase. Nothing can land in the wrong one, a flick of
+#: any length is covered, and a power-on is answered within a byte time
+#: rather than within a phase.
+#:
+#: The short break each cycle is belt and braces: a fifth of the time low
+#: is enough on the board measured, and a solid low is enough on any board.
+#: It is kept far below the window it is spent from.
+DRAIN_SECONDS = 0.15
 LISTEN_SECONDS = 0.55
 
 #: How often the wait says it is still waiting.
@@ -514,7 +517,15 @@ def await_bootloader(ser, session, wait: float, say, tick=None,
         ser.break_condition = False
         ser.reset_input_buffer()
 
-        status = session.sync(LISTEN_SECONDS)
+        # Stream the sync byte rather than spacing it out: while waiting,
+        # the stream is what holds a line-fed board down, and it answers a
+        # power-on within a byte time. The spaced cadence is for talking to
+        # a part that is already awake.
+        spacing, session.sync_gap = session.sync_gap, 0.0
+        try:
+            status = session.sync(LISTEN_SECONDS)
+        finally:
+            session.sync_gap = spacing
         if status is not None:
             return status
 
