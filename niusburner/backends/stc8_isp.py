@@ -142,6 +142,19 @@ PARITY = "E"
 #: the rail. It was measuring the supply, not the bootloader.
 HANDSHAKE_BAUD = 2400
 
+#: The rates the wait cycles through while looking for a power-on.
+#:
+#: One rate is not enough, because the best rate depends on where the board
+#: gets its power and the wait cannot know that yet. A slow sync byte gives
+#: the bootloader a longer pulse to measure, which is why 2400 is what
+#: programs this part from its own supply. But a slow sync byte also holds
+#: the line low for longer -- 0.83 ms at 2400 against 0.21 ms at 9600 --
+#: and on a board fed through that line, the line is the supply. Measured
+#: on one: at 2400 not one power-on in twelve was ever answered, and at
+#: 4800 and above, twelve out of twelve. So the wait tries both rather than
+#: pick one and be wrong about half the boards.
+HANDSHAKE_RATES = (2400, 9600)
+
 #: The rate the session moves to once the bootloader agrees to it.
 TRANSFER_BAUD = 115200
 
@@ -423,7 +436,8 @@ RATE_SETTLE = 0.02
 ERASE_TIMEOUT = 20.0
 
 
-def await_bootloader(ser, session, wait: float, say, tick=None) -> bytes:
+def await_bootloader(ser, session, wait: float, say, tick=None,
+                     rates=HANDSHAKE_RATES) -> bytes:
     """Sit until the board is powered on, then return its status frame.
 
     This bootloader is entered on power-on and on nothing else, so the wait
@@ -441,6 +455,10 @@ def await_bootloader(ser, session, wait: float, say, tick=None) -> bytes:
 
     It listens in short windows, for the reason given at LISTEN_SECONDS.
 
+    And it cycles through *rates*, for the reason given at HANDSHAKE_RATES:
+    the rate that suits a board on its own supply is the one that cannot
+    start a board fed from the line.
+
     And it says so while it waits. A wait that prints nothing cannot be
     told from one that has died, which wastes the time of whoever is stood
     at the board wondering whether to try again. *tick* is called with the
@@ -449,7 +467,11 @@ def await_bootloader(ser, session, wait: float, say, tick=None) -> bytes:
     """
     deadline = time.monotonic() + wait
     spoken = 0.0
+    turn = 0
+    choices = tuple(rates) or (ser.baudrate,)
     while time.monotonic() < deadline:
+        ser.baudrate = choices[turn % len(choices)]
+        turn += 1
         ser.break_condition = True
         until = time.monotonic() + DRAIN_SECONDS
         while time.monotonic() < until:
@@ -608,8 +630,9 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                 found = "part answered"
             step(10, "Handshake", found)
             say("powered on: %s" % found)
+            say("handshake at %d baud" % ser.baudrate)
             say("part reports %.3f MHz for its own clock"
-                % (bootloader_hz(status, handshake) / 1e6))
+                % (bootloader_hz(status, ser.baudrate) / 1e6))
 
             try:
                 _one_pass(ser, session, status, image, handshake, transfer,
