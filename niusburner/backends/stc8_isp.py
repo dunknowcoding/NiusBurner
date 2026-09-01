@@ -102,6 +102,23 @@ WRITE_OK = 0x54
 #: Flash is written a block at a time; the bootloader expects this size.
 BLOCK = 128
 
+#: How a frame is paced when the board is fed from the serial line itself.
+#:
+#: Such a board is supplied only while the line is idle, so a frame sent
+#: solid is a gap in its supply as much as it is data. A block frame is
+#: 136 bytes -- twelve milliseconds at 115200, better than half of it low
+#: -- and on a measured board that is enough to empty the rail partway
+#: through the writes, after the shorter frames of the handshake, the rate
+#: change and the erase have all been answered. Sent in small pieces with
+#: the line left idle between them, the same frame arrives without the
+#: supply ever falling far, because a UART does not care how long the gaps
+#: between bytes are.
+#:
+#: This costs time and is not needed by a board with a supply of its own,
+#: so it is off until a write actually fails.
+PACED_CHUNK = 8
+PACED_GAP = 0.002
+
 #: Even parity, for the whole session including the handshake.
 #:
 #: This is easy to get wrong and hard to notice, because the sync byte
@@ -267,7 +284,8 @@ class Session:
 
     def __init__(self, ser, reply_timeout: float = 3.0,
                  sync_run: int = 1, sync_gap: float = 0.03,
-                 reply_quiet: float = 0.08):
+                 reply_quiet: float = 0.08,
+                 write_chunk: int = 0, write_gap: float = 0.0):
         self.ser = ser
         self.reply_timeout = reply_timeout
         #: Sync bytes per burst, and the quiet time after each burst.
@@ -276,7 +294,23 @@ class Session:
         #: How long to keep listening, writing nothing, once a reply has
         #: started to arrive. Long enough for the slowest frame to finish.
         self.reply_quiet = reply_quiet
+        #: Bytes per write and the idle time after each. Zero sends a frame
+        #: whole, which is right for a board that has its own supply.
+        self.write_chunk = write_chunk
+        self.write_gap = write_gap
         self.status = None
+
+    def send(self, data: bytes) -> None:
+        """Put *data* on the line, in pieces if this session is paced."""
+        if not self.write_chunk:
+            self.ser.write(data)
+            self.ser.flush()
+            return
+        for at in range(0, len(data), self.write_chunk):
+            self.ser.write(data[at:at + self.write_chunk])
+            self.ser.flush()
+            if self.write_gap:
+                time.sleep(self.write_gap)
 
     def sync(self, timeout: float):
         """Stream the sync byte until the bootloader identifies itself.
@@ -345,8 +379,7 @@ class Session:
         where there is one.
         """
         self.ser.reset_input_buffer()
-        self.ser.write(build(payload))
-        self.ser.flush()
+        self.send(build(payload))
         buf = b""
         deadline = time.monotonic() + self.reply_timeout
         while time.monotonic() < deadline:
@@ -544,9 +577,16 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
     ser.timeout = 0.05
     ser.open()
     try:
+        paced = False
         for attempt in range(1, max(1, attempts) + 1):
             ser.baudrate = handshake
-            session = Session(ser)
+            session = Session(
+                ser,
+                write_chunk=PACED_CHUNK if paced else 0,
+                write_gap=PACED_GAP if paced else 0.0)
+            if paced:
+                say("sending in small pieces this time, so a board fed from "
+                    "the serial line keeps its supply through the writes")
             step(0, "Waiting", "power the board off and on")
             if attempt == 1:
                 say("waiting for the board to be powered on -- switch its "
@@ -582,6 +622,12 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                         "a command that draws nothing usually means the "
                         "board lost power partway, or is not on a supply of "
                         "its own while it is being programmed") from None
+                # A write that fails after the erase was answered is the
+                # signature of a board fed from the serial line: the short
+                # frames were fine and the long ones are not. Pace the next
+                # attempt rather than repeating the one that just failed.
+                if "write" in str(exc) and not paced:
+                    paced = True
                 say("%s -- the board went away partway through. Nothing is "
                     "lost: power it off and on again and this starts over "
                     "from the erase." % exc)
