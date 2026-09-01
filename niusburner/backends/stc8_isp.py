@@ -505,6 +505,18 @@ class Session:
 DRAIN_SECONDS = 0.35
 LISTEN_SECONDS = 0.45
 
+#: How long to wait for the rate change to be acknowledged.
+#:
+#: Short, because it is answered in milliseconds when it is answered at
+#: all, and every second spent waiting for an answer that is not coming is
+#: a second not spent watching for a power-on. On a board whose supply is a
+#: switch under somebody's hand that matters: the handshake succeeds
+#: through the leakage while the switch is out, this command then goes
+#: unanswered, and if the switch is put back during the wait for it, the
+#: bootloader's second of listening passes unseen. Three seconds of
+#: patience here made that the likely outcome rather than a rare one.
+RATE_TIMEOUT = 0.6
+
 #: How long a read waits between sync bytes while waiting for a power-on.
 #: Short, so a byte goes out often and a part that has just come up is
 #: answered promptly rather than up to a port timeout later.
@@ -633,7 +645,11 @@ def _one_pass(ser, session, status, image, handshake, transfer,
     # host's rate from every sync byte it is sent, so it answers a
     # handshake at whatever rate one arrives at, whether it took the
     # reload or never saw the frame at all.
-    session.command(baud_switch(status, transfer), 0x01, "rate change")
+    session.reply_timeout = RATE_TIMEOUT
+    try:
+        session.command(baud_switch(status, transfer), 0x01, "rate change")
+    finally:
+        session.reply_timeout = patience
     ser.baudrate = transfer
     # The part has to reconfigure its own UART before it can hear anything
     # at the new rate, and a frame sent into that gap is lost.
