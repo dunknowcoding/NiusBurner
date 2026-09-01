@@ -446,6 +446,14 @@ def compile_plan(
     )
 
 
+#: What a programmer this tool does not drive actually needs, said in
+#: words rather than as the catalog's key for it.
+_PROGRAMMER_NEEDS = {
+    "parallel_hv": "a parallel high-voltage programmer",
+    "nano_at89c2051": "an AT89C2051 carrier board",
+}
+
+
 def upload_image(plan: CompilePlan, image: Path, *,
                  hold_reset: bool = False, port: str = "",
                  reset_pin: str = "") -> int:
@@ -459,11 +467,26 @@ def upload_image(plan: CompilePlan, image: Path, *,
 
     board = plan.board
     if not board.flashable:
-        raise ValueError(
-            f"compile succeeded, but `upload` cannot flash {board.id} yet "
-            f"(programmer {board.programmer}, status {board.status}). "
-            "See docs/families/8051.md."
-        )
+        # Said in the same console as every other outcome, rather than as a
+        # bare exception. A part that cannot be flashed from here is an
+        # ordinary answer -- the AT89C series wants a parallel programmer,
+        # and the build that just succeeded is still the useful result --
+        # so it is reported the way the other paths report themselves.
+        from .progress import banner, error, info
+        banner(f"8051 Flash Console - Target: {board.part}")
+        info(f"the image is built and ready: {image}")
+        error(
+            f"{board.part.upper()} is programmed by {_PROGRAMMER_NEEDS.get(board.programmer, board.programmer)}, "
+            "which this tool does not drive",
+            title="nothing here can write this part",
+            hints=(
+                "the compile succeeded; the image above can be written by "
+                "whatever tool does drive that programmer",
+                "an AT89S part in the same socket is programmed over the "
+                "ISP header with no hands on it",
+                "see docs/families/8051.md for what reaches which part",
+            ))
+        return 2
     # No pre-probe. `burn` opens its own ISP session and checks the
     # signature before it erases anything, so probing first only costs a
     # second round trip and puts a stray line above the banner.
