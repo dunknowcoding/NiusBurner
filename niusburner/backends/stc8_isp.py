@@ -794,16 +794,18 @@ def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
                         "a command that draws nothing usually means the "
                         "board lost power partway, or is not on a supply of "
                         "its own while it is being programmed") from None
-                # A command unanswered after a successful handshake says
-                # the part is powered enough to answer a sync byte, which
-                # is high nine tenths of the time, and not enough for a
-                # frame that is half low. Pacing is the only thing left to
-                # vary, and repeating the attempt that just failed,
-                # unchanged, is the one thing certain not to help. On a
-                # board whose supply is switched out entirely it will not
-                # help either -- see PACED_CHUNK -- but that case is not
-                # one this can distinguish from a marginal supply.
-                if not paced:
+                # Pace only when the writes are what failed, which means
+                # the short frames were answered and the long ones were
+                # not: a supply that is marginal rather than absent, and
+                # the one case pacing can do anything about.
+                #
+                # A first command met with silence is the other thing
+                # entirely -- no supply at all -- and pacing that helps
+                # nothing while making the pass that finally succeeds
+                # several times slower. It was escalating on both, so
+                # somebody holding the switch out for a few seconds paid
+                # for it with a slow upload once they let go.
+                if "write" in str(exc) and not paced:
                     paced = True
                 if "rate change" in str(exc):
                     # Nothing was written, so nothing was lost, and the
