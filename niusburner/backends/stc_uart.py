@@ -20,6 +20,7 @@ to do.
 from __future__ import annotations
 
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -39,6 +40,11 @@ PROTOCOLS = {
 }
 
 DEFAULT_BAUD = 19200
+
+#: How long to keep retrying a failed attempt. The tool itself makes one
+#: and gives up; on a board powered through a hand-operated switch that is
+#: not enough, and a second attempt costs only another power cycle.
+RETRY_BUDGET_SECONDS = 180.0
 
 
 def _protocol(target: str) -> str:
@@ -114,8 +120,14 @@ _STCGAL_STAGES = (
     ("writing flash", 40, "Programming", ""),
     ("finishing write", 95, "Finishing", "committing the last block"),
     ("setting options", 97, "Options", ""),
-    ("disconnected", 99, "Starting", "leaving the bootloader"),
 )
+
+#: The tool draws its own progress bar. Nesting one inside this package's
+#: is unreadable -- and its block characters arrive as mojibake in a
+#: console that is not UTF-8 -- so the number is taken and the bar is
+#: redrawn here. Writing is the span from the erase to the finish.
+_WRITE_PERCENT = re.compile(r"writing flash:\s*(\d+)%")
+_WRITE_FROM, _WRITE_TO = 40, 94
 
 
 def _restyle(line: str) -> None:
@@ -130,6 +142,12 @@ def _restyle(line: str) -> None:
     if not text:
         return
     lowered = text.lower()
+    written = _WRITE_PERCENT.search(lowered)
+    if written:
+        share = min(100, max(0, int(written.group(1))))
+        stage(_WRITE_FROM + (_WRITE_TO - _WRITE_FROM) * share // 100,
+              "Programming", "%d%% of the image" % share)
+        return
     for needle, percent, label, detail in _STCGAL_STAGES:
         if needle in lowered:
             stage(percent, label, detail or text.rstrip(":. "))
@@ -358,13 +376,18 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
     cycle = autoreset_args(reset_pin)
     if cycle:
         info(f"cycling target power from {reset_pin.upper()}")
-    elif soft_entry and ask_for_bootloader(port, sketch_baud):
-        info("asking the running sketch to reset into its bootloader")
     else:
+        if soft_entry:
+            ask_for_bootloader(port, sketch_baud)
+            # Asked, not achieved. Writing the request says nothing about
+            # whether anything received it: a part with no sketch on it, or
+            # one built without the watcher, ignores it silently. Claiming
+            # success here also suppressed the instruction that is actually
+            # needed, which is the one below.
+            info("asked any running sketch to reset itself into the "
+                 "bootloader; if none does, the supply is the way in")
         info("power-cycle the board now, and hold it off for a moment: the "
              "bootloader is entered on power-on only")
-        info("the surest order is to remove power first, start this, then "
-             "restore it -- the listening window is short and opens once")
     cmd = tool + ["-P", _protocol(target), "-p", port,
                   "-b", str(baud), "-l", str(HANDSHAKE_BAUD), "-D"]
     cmd += cycle
@@ -483,28 +506,51 @@ def flash(image: pathlib.Path, target: str, port: str,
     cycle = autoreset_args(reset_pin)
     if cycle:
         info(f"cycling target power from {reset_pin.upper()}")
-    elif soft_entry and ask_for_bootloader(port, sketch_baud):
-        info("asking the running sketch to reset into its bootloader")
     else:
+        if soft_entry:
+            ask_for_bootloader(port, sketch_baud)
+            # Asked, not achieved. Writing the request says nothing about
+            # whether anything received it: a part with no sketch on it, or
+            # one built without the watcher, ignores it silently. Claiming
+            # success here also suppressed the instruction that is actually
+            # needed, which is the one below.
+            info("asked any running sketch to reset itself into the "
+                 "bootloader; if none does, the supply is the way in")
         info("power-cycle the board now, and hold it off for a moment: the "
              "bootloader is entered on power-on only")
-        info("the surest order is to remove power first, start this, then "
-             "restore it -- the listening window is short and opens once")
     cmd = tool + ["-P", _protocol(target), "-p", port,
                   "-b", str(baud), "-l", str(HANDSHAKE_BAUD)]
     cmd += cycle
     cmd += [str(image)]
     note(" ".join(cmd))
-    try:
-        code = _stream_guarded(cmd, port)
-    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
-        error(str(exc)[:400], title="STC upload transport failed",
-              hints=(f"confirm {port} is still the exact CH341 endpoint",))
-        return 1
-    if code != 0:
-        error("the programming tool reported a failure; its output is above",
-              title="programming failed", hints=_WHY_NO_ANSWER)
-        return 1
+    # Retry, for as long as the budget allows.
+    #
+    # The tool makes one attempt and gives up, which is not enough on a
+    # board whose supply is a switch under somebody's hand: a flick during
+    # the exchange ends the session, and so does a rate change that happens
+    # to time out. Both were seen here on a board that programmed perfectly
+    # on the next attempt. Retrying is safe because the tool erases before
+    # it writes, so every attempt starts from the same place.
+    deadline = time.monotonic() + RETRY_BUDGET_SECONDS
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            code = _stream_guarded(cmd, port)
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+            error(str(exc)[:400], title="STC upload transport failed",
+                  hints=(f"confirm {port} is still the exact CH341 endpoint",))
+            return 1
+        if code == 0:
+            break
+        if time.monotonic() >= deadline:
+            error("the programming tool reported a failure; its output is "
+                  "above", title="programming failed", hints=_WHY_NO_ANSWER)
+            return 1
+        stage(0, "Restarting", "power the board off and on again")
+        info("that attempt did not finish; nothing is lost, because the "
+             "next one erases before it writes. Switch the supply off and "
+             "on again when ready")
     complete("Upload complete",
              "Reset             : the bootloader starts the new firmware "
              "itself",
