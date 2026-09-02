@@ -343,6 +343,7 @@ def compile_plan(
     compiler: Path | None = None,
     optimize: str = "size",
     isp_entry: bool = False,
+    debug_symbols: bool = False,
 ) -> Mcs51Build:
     output.mkdir(parents=True, exist_ok=True)
     if plan.generated is not None:
@@ -443,6 +444,7 @@ def compile_plan(
         xram_size=plan.xram_size,
         defines=defines,
         optimize=optimize,
+        debug_symbols=debug_symbols,
     )
 
 

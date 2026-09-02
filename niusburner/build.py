@@ -242,10 +242,16 @@ def build_mcs51(
     xram_size: int = 0,
     defines: list[str] | None = None,
     optimize: str = "size",
+    debug_symbols: bool = False,
 ) -> Mcs51Build:
     """Compile C through optimized assembly and fail closed on exact limits.
 
     *optimize* picks what SDCC spends its effort on; see OPTIMIZE_FLAGS.
+
+    *debug_symbols* asks SDCC for its debug database and keeps the listings
+    that go with it. The linker map names only globals, so without this a
+    static variable or a static function has no name and no address anywhere
+    in the output.
     """
 
     if not sources or code_size <= 0 or iram_size <= 0:
@@ -294,6 +300,8 @@ def build_mcs51(
     ]
     if stack_auto:
         flags.append("--stack-auto")
+    if debug_symbols:
+        flags.append("--debug")
     for name in defines or []:
         flags.append(f"-D{name}")
     for include in resolved_includes:
@@ -349,7 +357,8 @@ def build_mcs51(
         (output / name).unlink(missing_ok=True)
     # Listings, symbol tables and link maps are scratch: the image and
     # its manifest are the deliverables.
-    keep: tuple[str, ...] = ()
+    keep: tuple[str, ...] = (
+        ("*.cdb", "*.rst", "*.sym") if debug_symbols else ())
     for pattern in ("*.lst", "*.rst", "*.sym", "*.lk", "*.cdb"):
         if pattern in keep:
             symbols.extend(sorted(output.glob(pattern)))
