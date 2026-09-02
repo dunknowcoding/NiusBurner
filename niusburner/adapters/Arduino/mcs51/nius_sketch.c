@@ -30,46 +30,60 @@
 #endif
 
 /*
- * Two measured constants, from timing delay(1000) on an AT89S52 at
- * 11.0592 MHz with two different spin counts and fitting a line:
- *   NIUS_SPIN_MC   machine cycles one nius_spin() iteration costs
- *   NIUS_DELAY_MC_Q8  everything else one delay() iteration costs, in
- *                     1/256 machine cycles: the millis counter, the loop
- *                     test, and the fractional-spin carry
- *
- * Both are fitted by building delay() twice with the spin cost forced
- * wide apart and fitting a line through the two points. They have to be
- * refitted whenever the body of delay() changes: adding the fractional
- * carry moved the overhead from 39 to 65 machine cycles, and leaving it at
- * 39 put delay(1000) at +2.48 %.
- */
-#ifndef NIUS_SPIN_MC
-#define NIUS_SPIN_MC 16UL
-#endif
-/*
- * The overhead is carried in Q8 as well. As a whole number of machine
- * cycles it could only be tuned in steps of 1 cycle in 921.6, which is
- * 0.11 % -- coarser than the error being corrected. In Q8 the step is
- * 0.0004 %.
- */
-#ifndef NIUS_DELAY_MC_Q8
-#define NIUS_DELAY_MC_Q8 16428UL          /* 64.17 machine cycles */
-#endif
-
-/*
  * How many oscillator periods one machine cycle costs. A classic 8051
  * divides by 12; the 1T parts in this family run the same instruction set
  * at one clock per cycle, and everything below is written in machine
  * cycles, so this is the only place the difference belongs.
  *
- * It does not rescale NIUS_SPIN_MC. That is the cost of the spin loop in
- * machine cycles, fitted on a 12-clock core, and a 1T core does not
- * execute the same opcodes in the same number of cycles. On such a part
- * the constant is an estimate until it is refitted there, which is why
- * those boards are marked experimental.
+ * It comes first because the two timing constants below depend on it: a
+ * 1T core does not execute the same opcodes in the same number of cycles,
+ * so the spin loop has to be measured separately on each generation.
  */
 #ifndef NIUS_CLOCKS_PER_MC
 #define NIUS_CLOCKS_PER_MC 12UL
+#endif
+
+/*
+ * Two measured constants:
+ *   NIUS_SPIN_MC      machine cycles one nius_spin() iteration costs
+ *   NIUS_DELAY_MC_Q8  everything else one delay() iteration costs, in
+ *                     1/256 machine cycles: the millis counter, the loop
+ *                     test, and the fractional-spin carry
+ *
+ * Both are fitted by building delay() twice with the spin cost forced wide
+ * apart and fitting a line through the two points. One point cannot do it:
+ * a spin cheaper than assumed and an overhead dearer than assumed only ever
+ * appear added together. They have to be refitted whenever the body of
+ * delay() changes: adding the fractional carry moved the overhead from 39
+ * to 65 machine cycles, and leaving it at 39 put delay(1000) at +2.48 %.
+ *
+ * Fitted on an AT89S52 at 11.0592 MHz (12 clocks per cycle), and again on
+ * an STC8H1K08 at 24 MHz (1 clock per cycle), where the same source spins
+ * in 14 cycles rather than 16. Carrying the 12-clock numbers onto a 1T part
+ * put delay(1000) at 875.1 ms -- 12.5 % fast, and wrong in a way nothing
+ * downstream could correct. The two 1T points were 875.1 ms at an assumed
+ * 16 and 438.8 ms at an assumed 32, which fit S = 13.999 and an overhead of
+ * 60.05 cycles.
+ *
+ * The overhead is carried in Q8 as well. As a whole number of machine
+ * cycles it could only be tuned in steps of 1 cycle in 921.6, which is
+ * 0.11 % -- coarser than the error being corrected. In Q8 the step is
+ * 0.0004 %.
+ */
+#if NIUS_CLOCKS_PER_MC == 1
+#ifndef NIUS_SPIN_MC
+#define NIUS_SPIN_MC 14UL
+#endif
+#ifndef NIUS_DELAY_MC_Q8
+#define NIUS_DELAY_MC_Q8 15374UL          /* 60.05 machine cycles */
+#endif
+#else
+#ifndef NIUS_SPIN_MC
+#define NIUS_SPIN_MC 16UL
+#endif
+#ifndef NIUS_DELAY_MC_Q8
+#define NIUS_DELAY_MC_Q8 16428UL          /* 64.17 machine cycles */
+#endif
 #endif
 
 #define NIUS_CLOCKS_PER_MS (NIUS_CLOCKS_PER_MC * 1000UL)
