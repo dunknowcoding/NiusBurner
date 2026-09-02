@@ -388,7 +388,7 @@ def compile_plan(
         # The 1T generations select UART1's clock source in AUXR, and it
         # does not come up pointing at Timer 1. Without this the reload is
         # written and then ignored, which looks like a wiring fault.
-        auxr = 1 if plan.board.protocol.startswith(("stc15", "stc8")) else 0
+        auxr = 1 if plan.board.is_one_t else 0
         for macro in (f"NIUS_HAS_TIMER2={1 if plan.board.timer2 else 0}",
                       f"NIUS_UART_AUXR={auxr}",
                       f"NIUS_CLOCKS_PER_MC={plan.board.clocks_per_mc}UL"):

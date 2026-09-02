@@ -133,6 +133,35 @@ class Board:
         """
         return "words" if self.family == "pic16" else "bytes"
 
+    #: Programmers that reach a part over its own UART bootloader rather
+    #: than through a wired programming header.
+    BOOTLOADER_PROGRAMMERS = ("stcgal",)
+
+    @property
+    def uses_bootloader(self) -> bool:
+        """True when the part is programmed over its own serial bootloader.
+
+        Keyed on the programmer rather than the part's name, because it
+        decides real behaviour: a bootloader part is entered by
+        interrupting its supply, and exposes no reset line and no flash
+        readback, so halt, erase, dump and verify have nothing to talk to.
+        """
+        return self.programmer in self.BOOTLOADER_PROGRAMMERS
+
+    @property
+    def is_one_t(self) -> bool:
+        """True for the 1T generations -- the STC15 and STC8 families.
+
+        Keyed on clocks per machine cycle, which is the property actually
+        being asked about, and never on the name or the protocol: "stc89"
+        starts with "stc8" and is a 12-clock 8052. Getting this wrong is
+        not cosmetic. These parts select UART1's clock in AUXR, divide
+        their timers by a different amount, and put different registers at
+        0xC8-0xCA, so a part wrongly called 1T is told about hardware it
+        does not have.
+        """
+        return self.clocks_per_mc == 1
+
     @property
     def flashable(self) -> bool:
         """True when `upload` can program this board itself.
