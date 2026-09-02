@@ -389,6 +389,13 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
     is one command with nobody touching anything. Without it, a person has
     to interrupt power, and the console says so.
     """
+    protocol = _protocol(target)
+    if protocol in NATIVE_PROTOCOLS:
+        # The same routing flash() uses. These parts have a native handler
+        # precisely because stcgal could not hold their handshake, so
+        # probing them through stcgal asks the one transport already known
+        # not to answer -- and then reports it as a silent board.
+        return _probe_stc8(target, port, soft_entry, sketch_baud)
     tool = find_stcgal()
     if tool is None:
         return _missing()
@@ -409,8 +416,13 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
                  "bootloader; if none does, the supply is the way in")
         info("power-cycle the board now, and hold it off for a moment: the "
              "bootloader is entered on power-on only")
+    # No image argument: stcgal then connects, reports what answered, and
+    # exits, which is exactly what a probe is. Nothing else belongs here --
+    # an option this build of stcgal does not have makes it exit on argument
+    # parsing, long before the port is opened, and the failure then reads as
+    # a silent bootloader.
     cmd = tool + ["-P", _protocol(target), "-p", port,
-                  "-b", str(baud), "-l", str(HANDSHAKE_BAUD), "-D"]
+                  "-b", str(baud), "-l", str(HANDSHAKE_BAUD)]
     cmd += cycle
     note(" ".join(cmd))
     try:
@@ -420,7 +432,17 @@ def probe(target: str, port: str, baud: int = DEFAULT_BAUD,
               hints=(f"confirm {port} is still the exact CH341 endpoint",))
         return 1
     if done.returncode != 0:
-        error((done.stderr or done.stdout).strip()[:400],
+        said = (done.stderr or done.stdout).strip()
+        if said.startswith("usage:"):
+            # An argument error, not a silent part. Saying "the bootloader
+            # did not answer" here sends the reader to the wiring for a
+            # fault that never reached the wire.
+            error(said[:400],
+                  title="stcgal rejected its own arguments",
+                  hints=("this is a fault in the command built above, not "
+                         "in the board or its wiring",))
+            return 1
+        error(said[:400],
               title="the bootloader did not answer",
               hints=_WHY_NO_ANSWER + (
                   f"confirm {port} is the adapter wired to this part",))
@@ -440,6 +462,44 @@ NATIVE_PROTOCOLS = ("stc8g", "stc8d", "stc15")
 #: exchange with one constant changed, which is well founded and is not
 #: the same as having been seen to work.
 CONFIRMED_PROTOCOLS = ("stc8g",)
+
+
+def _probe_stc8(target: str, port: str, soft_entry: bool,
+                sketch_baud: int) -> int:
+    """Identify an STC8G/STC8H/STC15 part through the native handler."""
+    from . import stc8_isp
+
+    banner(f"8051 Flash Console - Target: {target}")
+    stage(0, "Waiting", f"{port} at {stc8_isp.HANDSHAKE_BAUD} baud")
+    if soft_entry:
+        ask_for_bootloader(port, sketch_baud)
+    info("power-cycle the board now: the bootloader is entered on power-on "
+         "only, and this is already listening for it")
+
+    def tick(left):
+        if left is None:
+            waited()
+        else:
+            waiting("Waiting for handshake", "%ds left" % int(left))
+
+    try:
+        status = stc8_isp.identify(
+            port, announce=info, progress=stage, tick=tick,
+            expect_part=target)
+    except stc8_isp.Stc8Error as exc:
+        error(str(exc)[:400], title="the bootloader did not answer",
+              hints=("is anything else feeding VCC? Two supplies tied "
+                     "together cannot be interrupted at one of them",
+                     f"confirm {port} is the adapter wired to this part"))
+        return 1
+    except (OSError, RuntimeError) as exc:
+        error(str(exc)[:400], title="STC probe transport failed",
+              hints=(f"confirm {port} is still the exact CH341 endpoint",))
+        return 1
+    info(f"part      {stc8_isp.part_name(status)}")
+    stage(100, "Identified", stc8_isp.part_name(status))
+    info("left the bootloader; the part is running its own firmware again")
+    return 0
 
 
 def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,

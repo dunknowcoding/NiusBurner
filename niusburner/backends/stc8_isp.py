@@ -721,6 +721,61 @@ def _one_pass(ser, session, status, image, handshake, transfer,
     say("started the sketch")
 
 
+def identify(port: str, handshake: int = HANDSHAKE_BAUD, wait: float = 120.0,
+             announce=None, progress=None, tick=None,
+             expect_part: str = "") -> bytes:
+    """Wait for a power-on, report what answered, and leave it running.
+
+    The same handshake `program` opens with and nothing after it. It has to
+    be its own entry point because `program` cannot stand in for it: that
+    one erases the part, which is a steep price for asking what it is.
+
+    Raises Stc8Error if nothing answers inside *wait*, so the caller can say
+    which step failed rather than return a bare code.
+    """
+    import serial
+
+    def say(text):
+        if announce is not None:
+            announce(text)
+
+    def step(percent, label, detail=""):
+        if progress is not None:
+            progress(percent, label, detail)
+
+    ser = serial.Serial()
+    ser.port, ser.baudrate = port, handshake
+    ser.parity = PARITY
+    ser.timeout = 0.05
+    ser.open()
+    try:
+        session = Session(ser)
+        step(0, "Waiting for handshake",
+             "switch the board's supply off and on")
+        say("waiting for handshake -- switch the board's supply off and "
+            "back on, any time in the next %d seconds" % wait)
+        status = await_bootloader(ser, session, wait, say, tick)
+        if tick is not None:
+            tick(None)
+        if status is None:
+            raise Stc8Error(
+                f"no power-on seen in {wait:.0f}s. The bootloader is entered "
+                "on power-on and on nothing else, so the board's supply has "
+                "to be interrupted and restored while this waits")
+        check_part(status, expect_part)
+        say("powered on: %s" % part_name(status))
+        say("part reports %.3f MHz for its own clock"
+            % (bootloader_hz(status, ser.baudrate) / 1e6))
+        step(100, "Handshake", part_name(status))
+        # Hand the part back to its own firmware. Without this it sits in
+        # the bootloader until the next power cycle, and a board that was
+        # running a sketch before the probe would come back mute.
+        session.send(build(RUN))
+        return status
+    finally:
+        ser.close()
+
+
 def program(port: str, image: bytes, handshake: int = HANDSHAKE_BAUD,
             transfer: int = TRANSFER_BAUD, wait: float = 120.0,
             announce=None, progress=None, tick=None,
