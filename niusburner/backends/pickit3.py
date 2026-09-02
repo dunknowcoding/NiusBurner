@@ -268,6 +268,17 @@ _SPECIFIC_HINTS = (
     ("Invalid Device ID",
      "the part answering is not the one selected -- check the board choice "
      "and pin 1 of the ICSP header"),
+    # Both of these were reported as "the part must be powered -- pass
+    # --power", which is right for one of them and actively misleading for
+    # the other: --power was already given, and giving it harder does not
+    # help a tool that cannot source the current.
+    ("could not detect target voltage",
+     "nothing is powering the board: give it its own supply, or pass "
+     "--power to let the programmer do it"),
+    ("but the target VDD is measured to be",
+     "the programmer is supplying VDD and the board is pulling it down -- "
+     "a PICkit 3 sources only tens of milliamps, so this board needs its "
+     "own supply and --power should be left off"),
 )
 
 

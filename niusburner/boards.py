@@ -75,6 +75,16 @@ class Board:
     #: STC only: address of the ISP/IAP control register. 0xE7 on
     #: the STC89 and STC90, 0xC7 on the STC15.
     isp_contr: int = 0xE7
+    #: 8051 only: what one delay() spin iteration costs this core, in
+    #: machine cycles, and what the rest of one delay() iteration costs in
+    #: 1/256 machine cycles. Both are measured, not derived: cores that
+    #: agree on clocks_per_mc still execute the same opcodes in different
+    #: numbers of cycles, which is how an STC8 running the constants fitted
+    #: on an AT89S52 came out 12.5 % fast. Left unset, the runtime uses the
+    #: default for the core's clocks_per_mc; set them here once a part has
+    #: actually been timed by `bench`.
+    spin_mc: int = 0
+    delay_mc_q8: int = 0
     #: 8-pin PICs name their port GPIO/TRISIO, not PORTA/TRISA.
     gpio_style: bool = False
     #: 0 crystal, 1 internal RC as INTRCIO, 2 internal as INTOSCIO.
@@ -213,6 +223,8 @@ def all_boards(path: Path | None = None) -> dict[str, Board]:
             config_profile=int(entry.get("config_profile", 1)),
             ports_present=str(entry.get("ports_present", "")),
             clocks_per_mc=int(entry.get("clocks_per_mc", 12)),
+            spin_mc=int(entry.get("spin_mc", 0)),
+            delay_mc_q8=int(entry.get("delay_mc_q8", 0)),
             isp_contr=int(str(entry.get("isp_contr", "0xE7")), 0),
             gpio_style=bool(entry.get("gpio_style", False)),
             internal_osc=int(entry.get("internal_osc", 0)),

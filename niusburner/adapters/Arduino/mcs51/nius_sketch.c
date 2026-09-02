@@ -57,9 +57,17 @@
  * delay() changes: adding the fractional carry moved the overhead from 39
  * to 65 machine cycles, and leaving it at 39 put delay(1000) at +2.48 %.
  *
- * Fitted on an AT89S52 at 11.0592 MHz (12 clocks per cycle), and again on
- * an STC8H1K08 at 24 MHz (1 clock per cycle), where the same source spins
- * in 14 cycles rather than 16. Carrying the 12-clock numbers onto a 1T part
+ * These are per *core*, not per clock rate. Fitted on an AT89S52 at
+ * 11.0592 MHz (12 clocks per cycle), and again on an STC8H1K08 at 24 MHz
+ * (1 clock per cycle), where the same source spins in 14 cycles rather
+ * than 16.
+ *
+ * The 1T pair below is therefore an STC8 measurement. An STC15 is also a
+ * 1T part and picks it up, but the two cores do not execute every opcode
+ * in the same number of clocks, so on an STC15 it is an estimate of the
+ * same kind the 12-clock numbers were on an STC8 -- and that one was 12.5 %
+ * out. A board that has been timed can carry its own pair in the catalog
+ * (spin_mc, delay_mc_q8); the #ifndef guards below let it win. Carrying the 12-clock numbers onto a 1T part
  * put delay(1000) at 875.1 ms -- 12.5 % fast, and wrong in a way nothing
  * downstream could correct. The two 1T points were 875.1 ms at an assumed
  * 16 and 438.8 ms at an assumed 32, which fit S = 13.999 and an overhead of

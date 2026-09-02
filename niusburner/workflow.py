@@ -389,6 +389,14 @@ def compile_plan(
         # does not come up pointing at Timer 1. Without this the reload is
         # written and then ignored, which looks like a wiring fault.
         auxr = 1 if plan.board.is_one_t else 0
+        # Only when the catalog actually carries a measurement. The runtime
+        # keeps a default per core generation behind #ifndef, and a board
+        # that has never been timed is better off on that default than on a
+        # number invented here.
+        for macro, value in (("NIUS_SPIN_MC", plan.board.spin_mc),
+                             ("NIUS_DELAY_MC_Q8", plan.board.delay_mc_q8)):
+            if value and not any(d.startswith(macro + "=") for d in defines):
+                defines.append(f"{macro}={value}UL")
         for macro in (f"NIUS_HAS_TIMER2={1 if plan.board.timer2 else 0}",
                       f"NIUS_UART_AUXR={auxr}",
                       f"NIUS_CLOCKS_PER_MC={plan.board.clocks_per_mc}UL"):
