@@ -6,9 +6,11 @@
 
 Write a sketch that looks like Arduino. Press Upload. It lands on an 8051 or a PIC.
 
+[![Release](https://img.shields.io/badge/release-v0.6.0-brightgreen.svg)](https://github.com/dunknowcoding/NiusBurner/releases/latest)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Parts](https://img.shields.io/badge/parts-58-green.svg)](#supported-parts)
+[![Parts](https://img.shields.io/badge/parts-62-green.svg)](#supported-parts)
+[![Boards Manager](https://img.shields.io/badge/install-Boards%20Manager-00979D.svg)](#quick-start)
 [![Toolchains](https://img.shields.io/badge/toolchains-never%20vendored-orange.svg)](docs/toolchains.md)
 
 </div>
@@ -79,6 +81,16 @@ because the default `python` on a clean Windows is a Store placeholder that
 does nothing.
 
 ## Supported parts
+
+**62 parts across four platforms.** 52 of them flash from the Upload button;
+the other ten compile and then say exactly what they need instead.
+
+| transport | parts | what it is |
+|---|---|---|
+| **USB-ISP header** | 7 | AT89S over ICSP — nothing to press |
+| **UART bootloader** | 12 | STC89/90, STC15 and STC8, through a USB-serial adapter |
+| **PICkit 3** | 33 | every PIC12/16, PIC18 and dsPIC30F here |
+| **parallel / carrier** | 10 | compile only — a 12 V socket, or a carrier board |
 
 **Serial ISP** — written straight through the ISP header. Nothing to press.
 
@@ -242,10 +254,28 @@ a reason, not miscompiled. See [docs/translation.md](docs/translation.md).
 interrupt-sensitive, the bit-banged buses run slow on purpose, and every one
 of those trades is written down rather than hidden.
 
+## When something goes wrong
+
+Every failure names the step it happened in and what to do about it. The ones
+worth knowing before they happen:
+
+| what you see | what it is telling you |
+|---|---|
+| `could not detect target voltage VDD` | the PIC board has no power. Give it a supply, or `--power` to let the programmer do it |
+| `the target VDD is measured to be …` | the programmer *is* supplying VDD and the board is pulling it down. A PICkit 3 sources tens of milliamps; this board needs its own supply |
+| `the bootloader did not answer` | an STC part enters its bootloader on power-on and on nothing else — interrupt its supply while the upload waits |
+| `ISP enable: no 0x69 ACK` | the AT89S did not answer over ICSP. Check pin 1 of the header first |
+| `Could not find device` from MPLAB | MPLAB X 6.x removed PICkit 3 support. Install 5.35; the PIC backend skips versions that are too new |
+| an image that verifies but never runs | check the part's clock, and on an AT89S check that EA (pin 31) is tied to VCC — serial ISP does not care about EA, but execution does |
+
+More in [docs/getting-started.md](docs/getting-started.md), which covers the
+drivers, the compilers and the wiring for both families.
+
 ## Guides
 
 | | |
 |---|---|
+| [CHANGELOG.md](CHANGELOG.md) | what changed in each release, and why |
 | [docs/getting-started.md](docs/getting-started.md) | **start here** — what to buy, which drivers and compilers to install, how to wire it |
 | [docs/workflow.md](docs/workflow.md) | setup, compile, upload |
 | [docs/arduino-ide.md](docs/arduino-ide.md) | board and programmer menus, and what Upload prints |

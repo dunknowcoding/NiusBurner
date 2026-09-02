@@ -6,6 +6,22 @@ runs SDCC through NiusBurner, and Upload programs the chip over USB-ISP.
 
 ## Install
 
+The IDE installs this the way it installs any boards platform. Put this in
+**File → Preferences → Additional Boards Manager URLs**:
+
+```
+https://github.com/dunknowcoding/NiusBurner/releases/latest/download/package_niusrobotlab_index.json
+```
+
+then **Tools → Board → Boards Manager**, search `NiusBurner`, and install the
+families you want. That URL always points at the newest release, so it is
+pasted once and never again.
+
+Each platform carries the tool inside it, so **Python 3.10+ is the only
+prerequisite** and nothing is installed into it.
+
+### From a checkout instead
+
 ```bash
 pip install hidapi pyserial
 python -m niusburner setup
@@ -24,9 +40,10 @@ again after installing anything.
 
 | Menu | Choices | Default |
 |---|---|---|
-| **Board → NiusBurner 8051 (SDCC)** | 25 parts: AT89S, AT89C, STC89/90, W78E, SST89 | AT89S52 |
-| **Board → NiusBurner PIC (XC8)** | 16 parts: PIC12F6xx, PIC16F84A/62xA/88/87x | PIC16F877A |
+| **Board → NiusBurner 8051 (SDCC)** | 29 parts: AT89S, AT89C, STC8, STC15, STC89/90, W78E, SST89 | AT89S52 |
+| **Board → NiusBurner PIC16 (XC8)** | 16 parts: PIC12F6xx, PIC16F84A/62xA/88/87x | PIC16F877A |
 | **Board → NiusBurner PIC18 (XC8)** | 8 parts: 18F2550/4550, 18F2520/4520, 18F2620/4620, 18F252/452 | PIC18F4550 |
+| **Board → NiusBurner PIC24 (XC16)** | 9 parts: dsPIC30F2010/3013/4011/4013 and kin | dsPIC30F4013 |
 | **Programmer** | USB-ISP HID (03EB:C8B4), USBasp, Nano 12 V | USB-ISP HID |
 | **Optimize** | Size, Speed, None | **Size** |
 | **Compiler** | Auto-detect SDCC, configured path | Auto-detect |
@@ -39,11 +56,14 @@ The defaults are the safe answers, not the fastest ones:
 - **Auto-detect**, because SDCC is normally on PATH or in its installer's
   directory. Switch to the configured path only after recording one.
 
-Only AT89S52 and AT89S51 can be flashed from the Upload button today. The
-other two compile; AT89C2051 has no ISP at all (it needs the 12 V parallel
-programmer) and the STC part is written through its UART bootloader, not this
-header. Selecting a programmer that does not match the board is reported
-before anything is erased.
+**52 of the 62 parts flash from the Upload button**, over whichever transport
+the part actually has: the USB-ISP header for AT89S, the part's own UART
+bootloader for STC, and a PICkit 3 for every PIC.
+
+The other ten compile but cannot be programmed from here, and say so before
+anything is erased: nine need a 12 V parallel programming socket, and the
+AT89C2051 needs its own carrier board. Choosing a programmer that does not
+match the board is reported the same way -- before the erase, not after.
 
 ## Compiler path
 
