@@ -67,6 +67,12 @@ _FOUND = re.compile(r"Target device .* found", re.I)
 #: run reports the refusal, recovers, programs and verifies cleanly -- and
 #: reading the refusal as failure turns a good upload into a red error.
 _SUCCESS = re.compile(r"(Operation Succeeded|Verify Succeeded)", re.I)
+#: What ipecmd prints when the session never reached the tool's scripting
+#: engine. It still exits 0 and can print "Operation Succeeded" for a
+#: request that was never executed -- seen on this bench from a tool whose
+#: application firmware had stopped reading its USB pipe -- so this line
+#: vetoes a verdict that the success line alone would carry.
+_CONNECT_FAIL = re.compile(r"Connection Failed", re.I)
 _TROUBLE = re.compile(
     r"(fail|error|unable|no device|cannot|invalid|mismatch|"
     r"target device was not found|check your connections|"
@@ -268,6 +274,15 @@ _SPECIFIC_HINTS = (
     ("Invalid Device ID",
      "the part answering is not the one selected -- check the board choice "
      "and pin 1 of the ICSP header"),
+    # A tool whose application firmware has stopped reading its USB pipe
+    # enumerates cleanly and times out on the first scripting packet. No
+    # ICSP hint fixes that: the tool needs a power cycle, and if the state
+    # survives one, the button held while plugging in makes the next
+    # connect reload its firmware.
+    ("connection failed",
+     "the PICkit 3 itself did not answer, before any ICSP traffic: unplug "
+     "and replug its USB, then retry -- and if it still fails, hold the "
+     "tool's button while plugging in so its firmware is reloaded"),
     # Both of these were reported as "the part must be powered -- pass
     # --power", which is right for one of them and actively misleading for
     # the other: --power was already given, and giving it harder does not
@@ -349,7 +364,8 @@ def flash(image: pathlib.Path, target: str, power: bool = False,
     stage(20, "Programming", image.name)
     code, output = _run(tool, args, image.parent)
     problems = _trouble(output)
-    if code != 0 or not _SUCCESS.search(output):
+    if (code != 0 or not _SUCCESS.search(output)
+            or _CONNECT_FAIL.search(output)):
         error("ipecmd did not report a clean program and verify",
               title="programming failed", hints=_hints_for(output),
               details=problems)
@@ -379,7 +395,7 @@ def reset(target: str, power: bool = False, *,
     if power:
         args.append("-W")
     code, output = _run(tool, args, pathlib.Path.cwd())
-    if code != 0:
+    if code != 0 or _CONNECT_FAIL.search(output):
         error("could not release the part", title="reset failed",
               hints=_hints_for(output), details=_trouble(output))
         return 1
@@ -402,7 +418,8 @@ def readback(output: pathlib.Path, target: str, power: bool = False, *,
     if power:
         args.append("-W")
     code, result = _run(tool, args, output.parent)
-    if code != 0 or not output.is_file():
+    if (code != 0 or not output.is_file()
+            or _CONNECT_FAIL.search(result)):
         error("the PIC readback did not produce an image",
               title="readback failed", hints=_hints_for(result),
               details=_trouble(result))
