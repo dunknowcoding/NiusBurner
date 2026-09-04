@@ -267,13 +267,13 @@ _HINTS = (
 )
 
 #: Some failures have one obvious cause, and a generic hint list buries it.
+#: Ordered by where the failure sits in the chain, not by topic: the first
+#: match leads the report, and a run can print several of these at once. A
+#: tool that never connected also prints that it could not power or read the
+#: target, and sending the reader to the board's supply for that wastes the
+#: one thing they have -- so the failures nearest the host come first, and
+#: only then the ones that need the target to have been reached at all.
 _SPECIFIC_HINTS = (
-    ("cannot supply power to the target",
-     "this board has its own supply: select the plain PICkit 3 programmer, "
-     "not the one that powers the target"),
-    ("Invalid Device ID",
-     "the part answering is not the one selected -- check the board choice "
-     "and pin 1 of the ICSP header"),
     # A tool whose application firmware has stopped reading its USB pipe
     # enumerates cleanly and times out on the first scripting packet. No
     # ICSP hint fixes that: the tool needs a power cycle, and if the state
@@ -283,6 +283,12 @@ _SPECIFIC_HINTS = (
      "the PICkit 3 itself did not answer, before any ICSP traffic: unplug "
      "and replug its USB, then retry -- and if it still fails, hold the "
      "tool's button while plugging in so its firmware is reloaded"),
+    ("cannot supply power to the target",
+     "this board has its own supply: select the plain PICkit 3 programmer, "
+     "not the one that powers the target"),
+    ("Invalid Device ID",
+     "the part answering is not the one selected -- check the board choice "
+     "and pin 1 of the ICSP header"),
     # Both of these were reported as "the part must be powered -- pass
     # --power", which is right for one of them and actively misleading for
     # the other: --power was already given, and giving it harder does not
