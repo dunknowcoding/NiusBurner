@@ -14,6 +14,7 @@
 
 menu.optimize=Optimize
 menu.compiler=Compiler
+menu.fcpu=Clock
 
 # ----------------------------------------------------------------------
 # 7 KB flash, 512 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
@@ -43,6 +44,25 @@ dspic30f2010.menu.compiler.auto.build.nb_compiler=auto
 dspic30f2010.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f2010.menu.compiler.configured.build.nb_compiler=configured
 
+dspic30f2010.menu.fcpu.board=As the board says (default)
+dspic30f2010.menu.fcpu.board.build.nb_fcpu=board
+dspic30f2010.menu.fcpu.4000000=4 MHz
+dspic30f2010.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f2010.menu.fcpu.8000000=8 MHz
+dspic30f2010.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f2010.menu.fcpu.11059200=11.0592 MHz
+dspic30f2010.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f2010.menu.fcpu.12000000=12 MHz
+dspic30f2010.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f2010.menu.fcpu.16000000=16 MHz
+dspic30f2010.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f2010.menu.fcpu.20000000=20 MHz
+dspic30f2010.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f2010.menu.fcpu.22118400=22.1184 MHz
+dspic30f2010.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f2010.menu.fcpu.24000000=24 MHz
+dspic30f2010.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 7 KB flash, 1024 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCD. UART1 on fixed pins.
 dspic30f2011.name=dsPIC30F series - 30F2011 (7 KB, PICkit 3) [experimental]
@@ -70,6 +90,25 @@ dspic30f2011.menu.compiler.auto=Auto-detect SDCC (default)
 dspic30f2011.menu.compiler.auto.build.nb_compiler=auto
 dspic30f2011.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f2011.menu.compiler.configured.build.nb_compiler=configured
+
+dspic30f2011.menu.fcpu.board=As the board says (default)
+dspic30f2011.menu.fcpu.board.build.nb_fcpu=board
+dspic30f2011.menu.fcpu.4000000=4 MHz
+dspic30f2011.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f2011.menu.fcpu.8000000=8 MHz
+dspic30f2011.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f2011.menu.fcpu.11059200=11.0592 MHz
+dspic30f2011.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f2011.menu.fcpu.12000000=12 MHz
+dspic30f2011.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f2011.menu.fcpu.16000000=16 MHz
+dspic30f2011.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f2011.menu.fcpu.20000000=20 MHz
+dspic30f2011.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f2011.menu.fcpu.22118400=22.1184 MHz
+dspic30f2011.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f2011.menu.fcpu.24000000=24 MHz
+dspic30f2011.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 7 KB flash, 1024 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDF. UART1 on fixed pins.
@@ -99,6 +138,25 @@ dspic30f2012.menu.compiler.auto.build.nb_compiler=auto
 dspic30f2012.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f2012.menu.compiler.configured.build.nb_compiler=configured
 
+dspic30f2012.menu.fcpu.board=As the board says (default)
+dspic30f2012.menu.fcpu.board.build.nb_fcpu=board
+dspic30f2012.menu.fcpu.4000000=4 MHz
+dspic30f2012.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f2012.menu.fcpu.8000000=8 MHz
+dspic30f2012.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f2012.menu.fcpu.11059200=11.0592 MHz
+dspic30f2012.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f2012.menu.fcpu.12000000=12 MHz
+dspic30f2012.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f2012.menu.fcpu.16000000=16 MHz
+dspic30f2012.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f2012.menu.fcpu.20000000=20 MHz
+dspic30f2012.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f2012.menu.fcpu.22118400=22.1184 MHz
+dspic30f2012.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f2012.menu.fcpu.24000000=24 MHz
+dspic30f2012.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 15 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCD. UART1 on fixed pins.
 dspic30f3012.name=dsPIC30F series - 30F3012 (15 KB, PICkit 3) [experimental]
@@ -126,6 +184,25 @@ dspic30f3012.menu.compiler.auto=Auto-detect SDCC (default)
 dspic30f3012.menu.compiler.auto.build.nb_compiler=auto
 dspic30f3012.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f3012.menu.compiler.configured.build.nb_compiler=configured
+
+dspic30f3012.menu.fcpu.board=As the board says (default)
+dspic30f3012.menu.fcpu.board.build.nb_fcpu=board
+dspic30f3012.menu.fcpu.4000000=4 MHz
+dspic30f3012.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f3012.menu.fcpu.8000000=8 MHz
+dspic30f3012.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f3012.menu.fcpu.11059200=11.0592 MHz
+dspic30f3012.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f3012.menu.fcpu.12000000=12 MHz
+dspic30f3012.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f3012.menu.fcpu.16000000=16 MHz
+dspic30f3012.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f3012.menu.fcpu.20000000=20 MHz
+dspic30f3012.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f3012.menu.fcpu.22118400=22.1184 MHz
+dspic30f3012.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f3012.menu.fcpu.24000000=24 MHz
+dspic30f3012.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 15 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDF. UART1 on fixed pins.
@@ -155,6 +232,25 @@ dspic30f3013.menu.compiler.auto.build.nb_compiler=auto
 dspic30f3013.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f3013.menu.compiler.configured.build.nb_compiler=configured
 
+dspic30f3013.menu.fcpu.board=As the board says (default)
+dspic30f3013.menu.fcpu.board.build.nb_fcpu=board
+dspic30f3013.menu.fcpu.4000000=4 MHz
+dspic30f3013.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f3013.menu.fcpu.8000000=8 MHz
+dspic30f3013.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f3013.menu.fcpu.11059200=11.0592 MHz
+dspic30f3013.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f3013.menu.fcpu.12000000=12 MHz
+dspic30f3013.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f3013.menu.fcpu.16000000=16 MHz
+dspic30f3013.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f3013.menu.fcpu.20000000=20 MHz
+dspic30f3013.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f3013.menu.fcpu.22118400=22.1184 MHz
+dspic30f3013.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f3013.menu.fcpu.24000000=24 MHz
+dspic30f3013.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 15 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports ABCDF. UART1 on fixed pins.
 dspic30f3014.name=dsPIC30F series - 30F3014 (15 KB, PICkit 3) [experimental]
@@ -182,6 +278,25 @@ dspic30f3014.menu.compiler.auto=Auto-detect SDCC (default)
 dspic30f3014.menu.compiler.auto.build.nb_compiler=auto
 dspic30f3014.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f3014.menu.compiler.configured.build.nb_compiler=configured
+
+dspic30f3014.menu.fcpu.board=As the board says (default)
+dspic30f3014.menu.fcpu.board.build.nb_fcpu=board
+dspic30f3014.menu.fcpu.4000000=4 MHz
+dspic30f3014.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f3014.menu.fcpu.8000000=8 MHz
+dspic30f3014.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f3014.menu.fcpu.11059200=11.0592 MHz
+dspic30f3014.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f3014.menu.fcpu.12000000=12 MHz
+dspic30f3014.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f3014.menu.fcpu.16000000=16 MHz
+dspic30f3014.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f3014.menu.fcpu.20000000=20 MHz
+dspic30f3014.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f3014.menu.fcpu.22118400=22.1184 MHz
+dspic30f3014.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f3014.menu.fcpu.24000000=24 MHz
+dspic30f3014.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 31 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
@@ -211,6 +326,25 @@ dspic30f4011.menu.compiler.auto.build.nb_compiler=auto
 dspic30f4011.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f4011.menu.compiler.configured.build.nb_compiler=configured
 
+dspic30f4011.menu.fcpu.board=As the board says (default)
+dspic30f4011.menu.fcpu.board.build.nb_fcpu=board
+dspic30f4011.menu.fcpu.4000000=4 MHz
+dspic30f4011.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f4011.menu.fcpu.8000000=8 MHz
+dspic30f4011.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f4011.menu.fcpu.11059200=11.0592 MHz
+dspic30f4011.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f4011.menu.fcpu.12000000=12 MHz
+dspic30f4011.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f4011.menu.fcpu.16000000=16 MHz
+dspic30f4011.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f4011.menu.fcpu.20000000=20 MHz
+dspic30f4011.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f4011.menu.fcpu.22118400=22.1184 MHz
+dspic30f4011.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f4011.menu.fcpu.24000000=24 MHz
+dspic30f4011.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 31 KB flash, 2048 B RAM, 28-pin. 16-bit core, PICkit 3 over ICSP. Ports BCDEF. UART1 on fixed pins.
 dspic30f4012.name=dsPIC30F series - 30F4012 (31 KB, PICkit 3) [experimental]
@@ -239,6 +373,25 @@ dspic30f4012.menu.compiler.auto.build.nb_compiler=auto
 dspic30f4012.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f4012.menu.compiler.configured.build.nb_compiler=configured
 
+dspic30f4012.menu.fcpu.board=As the board says (default)
+dspic30f4012.menu.fcpu.board.build.nb_fcpu=board
+dspic30f4012.menu.fcpu.4000000=4 MHz
+dspic30f4012.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f4012.menu.fcpu.8000000=8 MHz
+dspic30f4012.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f4012.menu.fcpu.11059200=11.0592 MHz
+dspic30f4012.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f4012.menu.fcpu.12000000=12 MHz
+dspic30f4012.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f4012.menu.fcpu.16000000=16 MHz
+dspic30f4012.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f4012.menu.fcpu.20000000=20 MHz
+dspic30f4012.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f4012.menu.fcpu.22118400=22.1184 MHz
+dspic30f4012.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f4012.menu.fcpu.24000000=24 MHz
+dspic30f4012.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 31 KB flash, 2048 B RAM, 40-pin. 16-bit core, PICkit 3 over ICSP. Ports ABCDF. UART1 on fixed pins.
 dspic30f4013.name=dsPIC30F series - 30F4013 (31 KB, PICkit 3) [experimental]
@@ -266,3 +419,22 @@ dspic30f4013.menu.compiler.auto=Auto-detect SDCC (default)
 dspic30f4013.menu.compiler.auto.build.nb_compiler=auto
 dspic30f4013.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 dspic30f4013.menu.compiler.configured.build.nb_compiler=configured
+
+dspic30f4013.menu.fcpu.board=As the board says (default)
+dspic30f4013.menu.fcpu.board.build.nb_fcpu=board
+dspic30f4013.menu.fcpu.4000000=4 MHz
+dspic30f4013.menu.fcpu.4000000.build.nb_fcpu=4000000
+dspic30f4013.menu.fcpu.8000000=8 MHz
+dspic30f4013.menu.fcpu.8000000.build.nb_fcpu=8000000
+dspic30f4013.menu.fcpu.11059200=11.0592 MHz
+dspic30f4013.menu.fcpu.11059200.build.nb_fcpu=11059200
+dspic30f4013.menu.fcpu.12000000=12 MHz
+dspic30f4013.menu.fcpu.12000000.build.nb_fcpu=12000000
+dspic30f4013.menu.fcpu.16000000=16 MHz
+dspic30f4013.menu.fcpu.16000000.build.nb_fcpu=16000000
+dspic30f4013.menu.fcpu.20000000=20 MHz
+dspic30f4013.menu.fcpu.20000000.build.nb_fcpu=20000000
+dspic30f4013.menu.fcpu.22118400=22.1184 MHz
+dspic30f4013.menu.fcpu.22118400.build.nb_fcpu=22118400
+dspic30f4013.menu.fcpu.24000000=24 MHz
+dspic30f4013.menu.fcpu.24000000.build.nb_fcpu=24000000

@@ -105,6 +105,23 @@ MENUS = (
         ("configured", "Use the path from `niusburner setup --sdcc`",
          "configured"),
     )),
+    # The catalog records the crystal a part is usually sold with, which is
+    # a default and not a fact about the board on the bench. Fitting another
+    # one moves every derived number -- baud divisors, delay loops, and on a
+    # PIC the oscillator mode in the config word -- so the board has to be
+    # able to say which one it has. "As the board says" keeps the catalog
+    # value, so a user who never opens this menu sees no change.
+    ("fcpu", "Clock", (
+        ("board", "As the board says (default)", "board"),
+        ("4000000", "4 MHz", "4000000"),
+        ("8000000", "8 MHz", "8000000"),
+        ("11059200", "11.0592 MHz", "11059200"),
+        ("12000000", "12 MHz", "12000000"),
+        ("16000000", "16 MHz", "16000000"),
+        ("20000000", "20 MHz", "20000000"),
+        ("22118400", "22.1184 MHz", "22118400"),
+        ("24000000", "24 MHz", "24000000"),
+    )),
 )
 
 
@@ -114,8 +131,19 @@ MENUS = (
 #: only meaningful for a part programmed through its own bootloader.
 _MENU_OWNERS = {"entry": "stcgal", "reset": "stcgal"}
 
+#: Menus gated on something other than which programmer writes the part. A
+#: key absent from both tables is offered on every board in the package.
+_MENU_WHEN = {
+    # A part running from its own internal RC has no crystal to change, and
+    # offering one would invite a setting that cannot be true.
+    "fcpu": lambda b: not b.internal_osc and bool(b.f_cpu),
+}
+
 
 def _menu_applies(key: str, board) -> bool:
+    when = _MENU_WHEN.get(key)
+    if when is not None:
+        return when(board)
     owner = _MENU_OWNERS.get(key)
     return owner is None or board.programmer == owner
 
@@ -286,12 +314,14 @@ def resolve_compiler(choice: str, family: str = "mcs51") -> Path | None:
 
 def cmd_compile(sketch: Path, build_path: Path, board: str,
                 optimize: str = "size", compiler_choice: str = "auto",
-                entry: str = "none") -> int:
+                entry: str = "none", fcpu: str = "board") -> int:
     from . import boards as boards_mod
 
     out = build_path / "niusburner"
     optimize = _menu(optimize, ("size", "speed", "none"), "size")
     isp_entry = _menu(entry, ("none", "soft"), "none") == "soft"
+    # "board", empty, or anything unexpected all mean the catalog value.
+    clock = int(fcpu) if fcpu.isdigit() else None
     # No banner here: the upload tool prints it once, and Verify runs in a
     # separate process that would otherwise repeat the whole thing.
     stage(0, "Compiling", f"target {board}")
@@ -301,7 +331,7 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
         plan = workflow.plan_compile(sketch, board, output=out)
         result = workflow.compile_plan(
             plan, out, compiler=compiler,
-            optimize=optimize, isp_entry=isp_entry)
+            optimize=optimize, isp_entry=isp_entry, f_cpu=clock)
     except (OSError, ValueError, KeyError) as exc:
         error(str(exc), title="compile failed")
         return 1
@@ -309,7 +339,8 @@ def cmd_compile(sketch: Path, build_path: Path, board: str,
     shutil.copy2(result.image, build_path / ("firmware" + result.image.suffix))
     spec = plan.board
     note(f"{len(plan.sources)} translation unit(s), optimize={optimize}"
-         + (", bootloader entry" if isp_entry else ""))
+         + (", bootloader entry" if isp_entry else "")
+         + (f", clock {clock / 1e6:g} MHz" if clock else ""))
     if spec.is_pic_family:
         detail = (f"flash {result.program_words}/{spec.code_size} "
                   f"{spec.program_unit} "
@@ -449,7 +480,8 @@ def arduino_main(argv: list[str]) -> int:
                 Path(rest[0]), Path(rest[1]), rest[2],
                 optimize=rest[3] if len(rest) > 3 else "size",
                 compiler_choice=rest[4] if len(rest) > 4 else "auto",
-                entry=rest[5] if len(rest) > 5 else "none")
+                entry=rest[5] if len(rest) > 5 else "none",
+                fcpu=rest[6] if len(rest) > 6 else "board")
         if cmd == "preproc":
             return cmd_preproc(Path(rest[0]), Path(rest[1]))
         if cmd == "dummy-o":

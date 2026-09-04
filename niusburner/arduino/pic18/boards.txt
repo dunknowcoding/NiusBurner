@@ -14,6 +14,7 @@
 
 menu.optimize=Optimize
 menu.compiler=Compiler
+menu.fcpu=Clock
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 1536 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
@@ -43,6 +44,25 @@ pic18f252.menu.compiler.auto.build.nb_compiler=auto
 pic18f252.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic18f252.menu.compiler.configured.build.nb_compiler=configured
 
+pic18f252.menu.fcpu.board=As the board says (default)
+pic18f252.menu.fcpu.board.build.nb_fcpu=board
+pic18f252.menu.fcpu.4000000=4 MHz
+pic18f252.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic18f252.menu.fcpu.8000000=8 MHz
+pic18f252.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic18f252.menu.fcpu.11059200=11.0592 MHz
+pic18f252.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic18f252.menu.fcpu.12000000=12 MHz
+pic18f252.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic18f252.menu.fcpu.16000000=16 MHz
+pic18f252.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic18f252.menu.fcpu.20000000=20 MHz
+pic18f252.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic18f252.menu.fcpu.22118400=22.1184 MHz
+pic18f252.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic18f252.menu.fcpu.24000000=24 MHz
+pic18f252.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 32 KB flash, 1536 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
 pic18f2520.name=PIC18F series - 18F2520 (32 KB, PICkit 3) [experimental]
@@ -70,6 +90,25 @@ pic18f2520.menu.compiler.auto=Auto-detect SDCC (default)
 pic18f2520.menu.compiler.auto.build.nb_compiler=auto
 pic18f2520.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic18f2520.menu.compiler.configured.build.nb_compiler=configured
+
+pic18f2520.menu.fcpu.board=As the board says (default)
+pic18f2520.menu.fcpu.board.build.nb_fcpu=board
+pic18f2520.menu.fcpu.4000000=4 MHz
+pic18f2520.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic18f2520.menu.fcpu.8000000=8 MHz
+pic18f2520.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic18f2520.menu.fcpu.11059200=11.0592 MHz
+pic18f2520.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic18f2520.menu.fcpu.12000000=12 MHz
+pic18f2520.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic18f2520.menu.fcpu.16000000=16 MHz
+pic18f2520.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic18f2520.menu.fcpu.20000000=20 MHz
+pic18f2520.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic18f2520.menu.fcpu.22118400=22.1184 MHz
+pic18f2520.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic18f2520.menu.fcpu.24000000=24 MHz
+pic18f2520.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 2048 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
@@ -99,6 +138,25 @@ pic18f2550.menu.compiler.auto.build.nb_compiler=auto
 pic18f2550.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic18f2550.menu.compiler.configured.build.nb_compiler=configured
 
+pic18f2550.menu.fcpu.board=As the board says (default)
+pic18f2550.menu.fcpu.board.build.nb_fcpu=board
+pic18f2550.menu.fcpu.4000000=4 MHz
+pic18f2550.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic18f2550.menu.fcpu.8000000=8 MHz
+pic18f2550.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic18f2550.menu.fcpu.11059200=11.0592 MHz
+pic18f2550.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic18f2550.menu.fcpu.12000000=12 MHz
+pic18f2550.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic18f2550.menu.fcpu.16000000=16 MHz
+pic18f2550.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic18f2550.menu.fcpu.20000000=20 MHz
+pic18f2550.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic18f2550.menu.fcpu.22118400=22.1184 MHz
+pic18f2550.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic18f2550.menu.fcpu.24000000=24 MHz
+pic18f2550.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 64 KB flash, 3968 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7.
 pic18f2620.name=PIC18F series - 18F2620 (64 KB, PICkit 3) [experimental]
@@ -126,6 +184,25 @@ pic18f2620.menu.compiler.auto=Auto-detect SDCC (default)
 pic18f2620.menu.compiler.auto.build.nb_compiler=auto
 pic18f2620.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic18f2620.menu.compiler.configured.build.nb_compiler=configured
+
+pic18f2620.menu.fcpu.board=As the board says (default)
+pic18f2620.menu.fcpu.board.build.nb_fcpu=board
+pic18f2620.menu.fcpu.4000000=4 MHz
+pic18f2620.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic18f2620.menu.fcpu.8000000=8 MHz
+pic18f2620.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic18f2620.menu.fcpu.11059200=11.0592 MHz
+pic18f2620.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic18f2620.menu.fcpu.12000000=12 MHz
+pic18f2620.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic18f2620.menu.fcpu.16000000=16 MHz
+pic18f2620.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic18f2620.menu.fcpu.20000000=20 MHz
+pic18f2620.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic18f2620.menu.fcpu.22118400=22.1184 MHz
+pic18f2620.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic18f2620.menu.fcpu.24000000=24 MHz
+pic18f2620.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 1536 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
@@ -155,6 +232,25 @@ pic18f452.menu.compiler.auto.build.nb_compiler=auto
 pic18f452.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic18f452.menu.compiler.configured.build.nb_compiler=configured
 
+pic18f452.menu.fcpu.board=As the board says (default)
+pic18f452.menu.fcpu.board.build.nb_fcpu=board
+pic18f452.menu.fcpu.4000000=4 MHz
+pic18f452.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic18f452.menu.fcpu.8000000=8 MHz
+pic18f452.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic18f452.menu.fcpu.11059200=11.0592 MHz
+pic18f452.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic18f452.menu.fcpu.12000000=12 MHz
+pic18f452.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic18f452.menu.fcpu.16000000=16 MHz
+pic18f452.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic18f452.menu.fcpu.20000000=20 MHz
+pic18f452.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic18f452.menu.fcpu.22118400=22.1184 MHz
+pic18f452.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic18f452.menu.fcpu.24000000=24 MHz
+pic18f452.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 32 KB flash, 1536 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
 pic18f4520.name=PIC18F series - 18F4520 (32 KB, PICkit 3) [experimental]
@@ -182,6 +278,25 @@ pic18f4520.menu.compiler.auto=Auto-detect SDCC (default)
 pic18f4520.menu.compiler.auto.build.nb_compiler=auto
 pic18f4520.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic18f4520.menu.compiler.configured.build.nb_compiler=configured
+
+pic18f4520.menu.fcpu.board=As the board says (default)
+pic18f4520.menu.fcpu.board.build.nb_fcpu=board
+pic18f4520.menu.fcpu.4000000=4 MHz
+pic18f4520.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic18f4520.menu.fcpu.8000000=8 MHz
+pic18f4520.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic18f4520.menu.fcpu.11059200=11.0592 MHz
+pic18f4520.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic18f4520.menu.fcpu.12000000=12 MHz
+pic18f4520.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic18f4520.menu.fcpu.16000000=16 MHz
+pic18f4520.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic18f4520.menu.fcpu.20000000=20 MHz
+pic18f4520.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic18f4520.menu.fcpu.22118400=22.1184 MHz
+pic18f4520.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic18f4520.menu.fcpu.24000000=24 MHz
+pic18f4520.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 32 KB flash, 2048 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
@@ -211,6 +326,25 @@ pic18f4550.menu.compiler.auto.build.nb_compiler=auto
 pic18f4550.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic18f4550.menu.compiler.configured.build.nb_compiler=configured
 
+pic18f4550.menu.fcpu.board=As the board says (default)
+pic18f4550.menu.fcpu.board.build.nb_fcpu=board
+pic18f4550.menu.fcpu.4000000=4 MHz
+pic18f4550.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic18f4550.menu.fcpu.8000000=8 MHz
+pic18f4550.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic18f4550.menu.fcpu.11059200=11.0592 MHz
+pic18f4550.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic18f4550.menu.fcpu.12000000=12 MHz
+pic18f4550.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic18f4550.menu.fcpu.16000000=16 MHz
+pic18f4550.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic18f4550.menu.fcpu.20000000=20 MHz
+pic18f4550.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic18f4550.menu.fcpu.22118400=22.1184 MHz
+pic18f4550.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic18f4550.menu.fcpu.24000000=24 MHz
+pic18f4550.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 64 KB flash, 3968 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7.
 pic18f4620.name=PIC18F series - 18F4620 (64 KB, PICkit 3) [experimental]
@@ -238,3 +372,22 @@ pic18f4620.menu.compiler.auto=Auto-detect SDCC (default)
 pic18f4620.menu.compiler.auto.build.nb_compiler=auto
 pic18f4620.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic18f4620.menu.compiler.configured.build.nb_compiler=configured
+
+pic18f4620.menu.fcpu.board=As the board says (default)
+pic18f4620.menu.fcpu.board.build.nb_fcpu=board
+pic18f4620.menu.fcpu.4000000=4 MHz
+pic18f4620.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic18f4620.menu.fcpu.8000000=8 MHz
+pic18f4620.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic18f4620.menu.fcpu.11059200=11.0592 MHz
+pic18f4620.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic18f4620.menu.fcpu.12000000=12 MHz
+pic18f4620.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic18f4620.menu.fcpu.16000000=16 MHz
+pic18f4620.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic18f4620.menu.fcpu.20000000=20 MHz
+pic18f4620.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic18f4620.menu.fcpu.22118400=22.1184 MHz
+pic18f4620.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic18f4620.menu.fcpu.24000000=24 MHz
+pic18f4620.menu.fcpu.24000000.build.nb_fcpu=24000000

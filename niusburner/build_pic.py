@@ -193,7 +193,7 @@ def build_pic(
         "part": part,
         "compiler": driver.name,
         "version": version.splitlines()[0] if version else "",
-        "build": {"optimize": optimize},
+        "build": {"optimize": optimize, "f_cpu": f_cpu},
         "measured": {
             "program_words": usage.get("program", 0),
             "data_bytes": usage.get("data", 0),

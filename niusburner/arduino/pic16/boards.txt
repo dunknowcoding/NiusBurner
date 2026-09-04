@@ -14,6 +14,7 @@
 
 menu.optimize=Optimize
 menu.compiler=Compiler
+menu.fcpu=Clock
 
 # ----------------------------------------------------------------------
 # 1 K words, 8-pin, internal 4 MHz oscillator. One port, called GPIO. No USART and no converter.
@@ -127,6 +128,25 @@ pic16f627a.menu.compiler.auto.build.nb_compiler=auto
 pic16f627a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f627a.menu.compiler.configured.build.nb_compiler=configured
 
+pic16f627a.menu.fcpu.board=As the board says (default)
+pic16f627a.menu.fcpu.board.build.nb_fcpu=board
+pic16f627a.menu.fcpu.4000000=4 MHz
+pic16f627a.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f627a.menu.fcpu.8000000=8 MHz
+pic16f627a.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f627a.menu.fcpu.11059200=11.0592 MHz
+pic16f627a.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f627a.menu.fcpu.12000000=12 MHz
+pic16f627a.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f627a.menu.fcpu.16000000=16 MHz
+pic16f627a.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f627a.menu.fcpu.20000000=20 MHz
+pic16f627a.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f627a.menu.fcpu.22118400=22.1184 MHz
+pic16f627a.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f627a.menu.fcpu.24000000=24 MHz
+pic16f627a.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 2 K words, 18-pin, USART, comparators.
 pic16f628a.name=PIC16F series - 16F628A (2 K words, PICkit 3) [experimental]
@@ -154,6 +174,25 @@ pic16f628a.menu.compiler.auto=Auto-detect SDCC (default)
 pic16f628a.menu.compiler.auto.build.nb_compiler=auto
 pic16f628a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f628a.menu.compiler.configured.build.nb_compiler=configured
+
+pic16f628a.menu.fcpu.board=As the board says (default)
+pic16f628a.menu.fcpu.board.build.nb_fcpu=board
+pic16f628a.menu.fcpu.4000000=4 MHz
+pic16f628a.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f628a.menu.fcpu.8000000=8 MHz
+pic16f628a.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f628a.menu.fcpu.11059200=11.0592 MHz
+pic16f628a.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f628a.menu.fcpu.12000000=12 MHz
+pic16f628a.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f628a.menu.fcpu.16000000=16 MHz
+pic16f628a.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f628a.menu.fcpu.20000000=20 MHz
+pic16f628a.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f628a.menu.fcpu.22118400=22.1184 MHz
+pic16f628a.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f628a.menu.fcpu.24000000=24 MHz
+pic16f628a.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 4 K words, 18-pin, USART, comparators.
@@ -183,6 +222,25 @@ pic16f648a.menu.compiler.auto.build.nb_compiler=auto
 pic16f648a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f648a.menu.compiler.configured.build.nb_compiler=configured
 
+pic16f648a.menu.fcpu.board=As the board says (default)
+pic16f648a.menu.fcpu.board.build.nb_fcpu=board
+pic16f648a.menu.fcpu.4000000=4 MHz
+pic16f648a.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f648a.menu.fcpu.8000000=8 MHz
+pic16f648a.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f648a.menu.fcpu.11059200=11.0592 MHz
+pic16f648a.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f648a.menu.fcpu.12000000=12 MHz
+pic16f648a.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f648a.menu.fcpu.16000000=16 MHz
+pic16f648a.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f648a.menu.fcpu.20000000=20 MHz
+pic16f648a.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f648a.menu.fcpu.22118400=22.1184 MHz
+pic16f648a.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f648a.menu.fcpu.24000000=24 MHz
+pic16f648a.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 1 K words, 18-pin, no USART and no analog.
 pic16f84a.name=PIC16F series - 16F84A (1 K words, PICkit 3) [experimental]
@@ -210,6 +268,25 @@ pic16f84a.menu.compiler.auto=Auto-detect SDCC (default)
 pic16f84a.menu.compiler.auto.build.nb_compiler=auto
 pic16f84a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f84a.menu.compiler.configured.build.nb_compiler=configured
+
+pic16f84a.menu.fcpu.board=As the board says (default)
+pic16f84a.menu.fcpu.board.build.nb_fcpu=board
+pic16f84a.menu.fcpu.4000000=4 MHz
+pic16f84a.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f84a.menu.fcpu.8000000=8 MHz
+pic16f84a.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f84a.menu.fcpu.11059200=11.0592 MHz
+pic16f84a.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f84a.menu.fcpu.12000000=12 MHz
+pic16f84a.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f84a.menu.fcpu.16000000=16 MHz
+pic16f84a.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f84a.menu.fcpu.20000000=20 MHz
+pic16f84a.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f84a.menu.fcpu.22118400=22.1184 MHz
+pic16f84a.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f84a.menu.fcpu.24000000=24 MHz
+pic16f84a.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 4 K words flash, 192 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.
@@ -239,6 +316,25 @@ pic16f873.menu.compiler.auto.build.nb_compiler=auto
 pic16f873.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f873.menu.compiler.configured.build.nb_compiler=configured
 
+pic16f873.menu.fcpu.board=As the board says (default)
+pic16f873.menu.fcpu.board.build.nb_fcpu=board
+pic16f873.menu.fcpu.4000000=4 MHz
+pic16f873.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f873.menu.fcpu.8000000=8 MHz
+pic16f873.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f873.menu.fcpu.11059200=11.0592 MHz
+pic16f873.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f873.menu.fcpu.12000000=12 MHz
+pic16f873.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f873.menu.fcpu.16000000=16 MHz
+pic16f873.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f873.menu.fcpu.20000000=20 MHz
+pic16f873.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f873.menu.fcpu.22118400=22.1184 MHz
+pic16f873.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f873.menu.fcpu.24000000=24 MHz
+pic16f873.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 4 K words flash, 192 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.
 pic16f873a.name=PIC16F series - 16F873A (4 K words, PICkit 3)
@@ -266,6 +362,25 @@ pic16f873a.menu.compiler.auto=Auto-detect SDCC (default)
 pic16f873a.menu.compiler.auto.build.nb_compiler=auto
 pic16f873a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f873a.menu.compiler.configured.build.nb_compiler=configured
+
+pic16f873a.menu.fcpu.board=As the board says (default)
+pic16f873a.menu.fcpu.board.build.nb_fcpu=board
+pic16f873a.menu.fcpu.4000000=4 MHz
+pic16f873a.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f873a.menu.fcpu.8000000=8 MHz
+pic16f873a.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f873a.menu.fcpu.11059200=11.0592 MHz
+pic16f873a.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f873a.menu.fcpu.12000000=12 MHz
+pic16f873a.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f873a.menu.fcpu.16000000=16 MHz
+pic16f873a.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f873a.menu.fcpu.20000000=20 MHz
+pic16f873a.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f873a.menu.fcpu.22118400=22.1184 MHz
+pic16f873a.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f873a.menu.fcpu.24000000=24 MHz
+pic16f873a.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 4 K words flash, 192 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A.
@@ -295,6 +410,25 @@ pic16f874.menu.compiler.auto.build.nb_compiler=auto
 pic16f874.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f874.menu.compiler.configured.build.nb_compiler=configured
 
+pic16f874.menu.fcpu.board=As the board says (default)
+pic16f874.menu.fcpu.board.build.nb_fcpu=board
+pic16f874.menu.fcpu.4000000=4 MHz
+pic16f874.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f874.menu.fcpu.8000000=8 MHz
+pic16f874.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f874.menu.fcpu.11059200=11.0592 MHz
+pic16f874.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f874.menu.fcpu.12000000=12 MHz
+pic16f874.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f874.menu.fcpu.16000000=16 MHz
+pic16f874.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f874.menu.fcpu.20000000=20 MHz
+pic16f874.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f874.menu.fcpu.22118400=22.1184 MHz
+pic16f874.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f874.menu.fcpu.24000000=24 MHz
+pic16f874.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 4 K words flash, 192 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A.
 pic16f874a.name=PIC16F series - 16F874A (4 K words, PICkit 3)
@@ -322,6 +456,25 @@ pic16f874a.menu.compiler.auto=Auto-detect SDCC (default)
 pic16f874a.menu.compiler.auto.build.nb_compiler=auto
 pic16f874a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f874a.menu.compiler.configured.build.nb_compiler=configured
+
+pic16f874a.menu.fcpu.board=As the board says (default)
+pic16f874a.menu.fcpu.board.build.nb_fcpu=board
+pic16f874a.menu.fcpu.4000000=4 MHz
+pic16f874a.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f874a.menu.fcpu.8000000=8 MHz
+pic16f874a.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f874a.menu.fcpu.11059200=11.0592 MHz
+pic16f874a.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f874a.menu.fcpu.12000000=12 MHz
+pic16f874a.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f874a.menu.fcpu.16000000=16 MHz
+pic16f874a.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f874a.menu.fcpu.20000000=20 MHz
+pic16f874a.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f874a.menu.fcpu.22118400=22.1184 MHz
+pic16f874a.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f874a.menu.fcpu.24000000=24 MHz
+pic16f874a.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 8 K words flash, 368 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.
@@ -351,6 +504,25 @@ pic16f876.menu.compiler.auto.build.nb_compiler=auto
 pic16f876.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f876.menu.compiler.configured.build.nb_compiler=configured
 
+pic16f876.menu.fcpu.board=As the board says (default)
+pic16f876.menu.fcpu.board.build.nb_fcpu=board
+pic16f876.menu.fcpu.4000000=4 MHz
+pic16f876.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f876.menu.fcpu.8000000=8 MHz
+pic16f876.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f876.menu.fcpu.11059200=11.0592 MHz
+pic16f876.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f876.menu.fcpu.12000000=12 MHz
+pic16f876.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f876.menu.fcpu.16000000=16 MHz
+pic16f876.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f876.menu.fcpu.20000000=20 MHz
+pic16f876.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f876.menu.fcpu.22118400=22.1184 MHz
+pic16f876.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f876.menu.fcpu.24000000=24 MHz
+pic16f876.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 8 K words flash, 368 B RAM, 28-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A, with ports A-C only.
 pic16f876a.name=PIC16F series - 16F876A (8 K words, PICkit 3)
@@ -378,6 +550,25 @@ pic16f876a.menu.compiler.auto=Auto-detect SDCC (default)
 pic16f876a.menu.compiler.auto.build.nb_compiler=auto
 pic16f876a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f876a.menu.compiler.configured.build.nb_compiler=configured
+
+pic16f876a.menu.fcpu.board=As the board says (default)
+pic16f876a.menu.fcpu.board.build.nb_fcpu=board
+pic16f876a.menu.fcpu.4000000=4 MHz
+pic16f876a.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f876a.menu.fcpu.8000000=8 MHz
+pic16f876a.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f876a.menu.fcpu.11059200=11.0592 MHz
+pic16f876a.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f876a.menu.fcpu.12000000=12 MHz
+pic16f876a.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f876a.menu.fcpu.16000000=16 MHz
+pic16f876a.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f876a.menu.fcpu.20000000=20 MHz
+pic16f876a.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f876a.menu.fcpu.22118400=22.1184 MHz
+pic16f876a.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f876a.menu.fcpu.24000000=24 MHz
+pic16f876a.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 8 K words flash, 368 B RAM, 40-pin. PICkit 3 over ICSP. USART on RC6/RC7. Same register layout as the 16F877A.
@@ -407,6 +598,25 @@ pic16f877.menu.compiler.auto.build.nb_compiler=auto
 pic16f877.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f877.menu.compiler.configured.build.nb_compiler=configured
 
+pic16f877.menu.fcpu.board=As the board says (default)
+pic16f877.menu.fcpu.board.build.nb_fcpu=board
+pic16f877.menu.fcpu.4000000=4 MHz
+pic16f877.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f877.menu.fcpu.8000000=8 MHz
+pic16f877.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f877.menu.fcpu.11059200=11.0592 MHz
+pic16f877.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f877.menu.fcpu.12000000=12 MHz
+pic16f877.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f877.menu.fcpu.16000000=16 MHz
+pic16f877.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f877.menu.fcpu.20000000=20 MHz
+pic16f877.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f877.menu.fcpu.22118400=22.1184 MHz
+pic16f877.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f877.menu.fcpu.24000000=24 MHz
+pic16f877.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 8 K words flash, 368 B RAM, 256 B EEPROM. PICkit 3 over ICSP. USART on RC6/RC7. Unlike a classic 8051 this part has real I2C, SPI, PWM and ADC hardware.
 pic16f877a.name=PIC16F series - 16F877A (8 K words, PICkit 3)
@@ -435,6 +645,25 @@ pic16f877a.menu.compiler.auto.build.nb_compiler=auto
 pic16f877a.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f877a.menu.compiler.configured.build.nb_compiler=configured
 
+pic16f877a.menu.fcpu.board=As the board says (default)
+pic16f877a.menu.fcpu.board.build.nb_fcpu=board
+pic16f877a.menu.fcpu.4000000=4 MHz
+pic16f877a.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f877a.menu.fcpu.8000000=8 MHz
+pic16f877a.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f877a.menu.fcpu.11059200=11.0592 MHz
+pic16f877a.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f877a.menu.fcpu.12000000=12 MHz
+pic16f877a.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f877a.menu.fcpu.16000000=16 MHz
+pic16f877a.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f877a.menu.fcpu.20000000=20 MHz
+pic16f877a.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f877a.menu.fcpu.22118400=22.1184 MHz
+pic16f877a.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f877a.menu.fcpu.24000000=24 MHz
+pic16f877a.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 4 K words, 18-pin, USART, ANSEL analog select.
 pic16f88.name=PIC16F series - 16F88 (4 K words, PICkit 3) [experimental]
@@ -462,3 +691,22 @@ pic16f88.menu.compiler.auto=Auto-detect SDCC (default)
 pic16f88.menu.compiler.auto.build.nb_compiler=auto
 pic16f88.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 pic16f88.menu.compiler.configured.build.nb_compiler=configured
+
+pic16f88.menu.fcpu.board=As the board says (default)
+pic16f88.menu.fcpu.board.build.nb_fcpu=board
+pic16f88.menu.fcpu.4000000=4 MHz
+pic16f88.menu.fcpu.4000000.build.nb_fcpu=4000000
+pic16f88.menu.fcpu.8000000=8 MHz
+pic16f88.menu.fcpu.8000000.build.nb_fcpu=8000000
+pic16f88.menu.fcpu.11059200=11.0592 MHz
+pic16f88.menu.fcpu.11059200.build.nb_fcpu=11059200
+pic16f88.menu.fcpu.12000000=12 MHz
+pic16f88.menu.fcpu.12000000.build.nb_fcpu=12000000
+pic16f88.menu.fcpu.16000000=16 MHz
+pic16f88.menu.fcpu.16000000.build.nb_fcpu=16000000
+pic16f88.menu.fcpu.20000000=20 MHz
+pic16f88.menu.fcpu.20000000.build.nb_fcpu=20000000
+pic16f88.menu.fcpu.22118400=22.1184 MHz
+pic16f88.menu.fcpu.22118400.build.nb_fcpu=22118400
+pic16f88.menu.fcpu.24000000=24 MHz
+pic16f88.menu.fcpu.24000000.build.nb_fcpu=24000000

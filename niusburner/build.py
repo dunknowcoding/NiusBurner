@@ -392,6 +392,13 @@ def build_mcs51(
         },
         "build": {
             "optimize": optimize,
+            # What the build was told the oscillator is. An image's timing
+            # is only meaningful against a clock, and without this the
+            # artifact does not say which one it assumed.
+            "f_cpu": next(
+                (int(d.split("=", 1)[1].rstrip("UL"))
+                 for d in (defines or []) if d.startswith("NIUS_FOSC=")),
+                None),
         },
         "sources": [
             {"name": source.name, "sha256": _sha256(source)}

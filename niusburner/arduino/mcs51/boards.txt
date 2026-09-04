@@ -16,6 +16,7 @@ menu.optimize=Optimize
 menu.reset=Power switch
 menu.entry=Bootloader entry
 menu.compiler=Compiler
+menu.fcpu=Clock
 
 # ----------------------------------------------------------------------
 # 2 KB flash. No ISP: 12 V parallel programmer on a Nano. compile works; upload is not yet wired. No Timer 2, so Serial tops out at 57600 rather than 115200.
@@ -45,6 +46,25 @@ at89c2051.menu.compiler.auto.build.nb_compiler=auto
 at89c2051.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89c2051.menu.compiler.configured.build.nb_compiler=configured
 
+at89c2051.menu.fcpu.board=As the board says (default)
+at89c2051.menu.fcpu.board.build.nb_fcpu=board
+at89c2051.menu.fcpu.4000000=4 MHz
+at89c2051.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89c2051.menu.fcpu.8000000=8 MHz
+at89c2051.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89c2051.menu.fcpu.11059200=11.0592 MHz
+at89c2051.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89c2051.menu.fcpu.12000000=12 MHz
+at89c2051.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89c2051.menu.fcpu.16000000=16 MHz
+at89c2051.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89c2051.menu.fcpu.20000000=20 MHz
+at89c2051.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89c2051.menu.fcpu.22118400=22.1184 MHz
+at89c2051.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89c2051.menu.fcpu.24000000=24 MHz
+at89c2051.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it. No Timer 2, so Serial tops out at 57600 rather than 115200.
 at89c51.name=AT89 series - AT89C51 (4 KB, compile only) [experimental]
@@ -72,6 +92,25 @@ at89c51.menu.compiler.auto=Auto-detect SDCC (default)
 at89c51.menu.compiler.auto.build.nb_compiler=auto
 at89c51.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89c51.menu.compiler.configured.build.nb_compiler=configured
+
+at89c51.menu.fcpu.board=As the board says (default)
+at89c51.menu.fcpu.board.build.nb_fcpu=board
+at89c51.menu.fcpu.4000000=4 MHz
+at89c51.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89c51.menu.fcpu.8000000=8 MHz
+at89c51.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89c51.menu.fcpu.11059200=11.0592 MHz
+at89c51.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89c51.menu.fcpu.12000000=12 MHz
+at89c51.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89c51.menu.fcpu.16000000=16 MHz
+at89c51.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89c51.menu.fcpu.20000000=20 MHz
+at89c51.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89c51.menu.fcpu.22118400=22.1184 MHz
+at89c51.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89c51.menu.fcpu.24000000=24 MHz
+at89c51.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 8 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
@@ -101,6 +140,25 @@ at89c52.menu.compiler.auto.build.nb_compiler=auto
 at89c52.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89c52.menu.compiler.configured.build.nb_compiler=configured
 
+at89c52.menu.fcpu.board=As the board says (default)
+at89c52.menu.fcpu.board.build.nb_fcpu=board
+at89c52.menu.fcpu.4000000=4 MHz
+at89c52.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89c52.menu.fcpu.8000000=8 MHz
+at89c52.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89c52.menu.fcpu.11059200=11.0592 MHz
+at89c52.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89c52.menu.fcpu.12000000=12 MHz
+at89c52.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89c52.menu.fcpu.16000000=16 MHz
+at89c52.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89c52.menu.fcpu.20000000=20 MHz
+at89c52.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89c52.menu.fcpu.22118400=22.1184 MHz
+at89c52.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89c52.menu.fcpu.24000000=24 MHz
+at89c52.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 20 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
 at89c55.name=AT89 series - AT89C55 (20 KB, compile only) [experimental]
@@ -128,6 +186,25 @@ at89c55.menu.compiler.auto=Auto-detect SDCC (default)
 at89c55.menu.compiler.auto.build.nb_compiler=auto
 at89c55.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89c55.menu.compiler.configured.build.nb_compiler=configured
+
+at89c55.menu.fcpu.board=As the board says (default)
+at89c55.menu.fcpu.board.build.nb_fcpu=board
+at89c55.menu.fcpu.4000000=4 MHz
+at89c55.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89c55.menu.fcpu.8000000=8 MHz
+at89c55.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89c55.menu.fcpu.11059200=11.0592 MHz
+at89c55.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89c55.menu.fcpu.12000000=12 MHz
+at89c55.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89c55.menu.fcpu.16000000=16 MHz
+at89c55.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89c55.menu.fcpu.20000000=20 MHz
+at89c55.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89c55.menu.fcpu.22118400=22.1184 MHz
+at89c55.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89c55.menu.fcpu.24000000=24 MHz
+at89c55.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 2 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, so most pin numbers address ports this package does not have. No Timer 2, so Serial tops out at 57600 rather than 115200.
@@ -157,6 +234,25 @@ at89s2051.menu.compiler.auto.build.nb_compiler=auto
 at89s2051.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s2051.menu.compiler.configured.build.nb_compiler=configured
 
+at89s2051.menu.fcpu.board=As the board says (default)
+at89s2051.menu.fcpu.board.build.nb_fcpu=board
+at89s2051.menu.fcpu.4000000=4 MHz
+at89s2051.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89s2051.menu.fcpu.8000000=8 MHz
+at89s2051.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89s2051.menu.fcpu.11059200=11.0592 MHz
+at89s2051.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89s2051.menu.fcpu.12000000=12 MHz
+at89s2051.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89s2051.menu.fcpu.16000000=16 MHz
+at89s2051.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89s2051.menu.fcpu.20000000=20 MHz
+at89s2051.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89s2051.menu.fcpu.22118400=22.1184 MHz
+at89s2051.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89s2051.menu.fcpu.24000000=24 MHz
+at89s2051.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 4 KB flash, 20-pin. Serial ISP like the rest of the AT89S family. Only P1 and P3 are bonded out, so most pin numbers address ports this package does not have. No Timer 2, so Serial tops out at 57600 rather than 115200.
 at89s4051.name=AT89 series - AT89S4051 (4 KB, USB-ISP) [experimental]
@@ -184,6 +280,25 @@ at89s4051.menu.compiler.auto=Auto-detect SDCC (default)
 at89s4051.menu.compiler.auto.build.nb_compiler=auto
 at89s4051.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s4051.menu.compiler.configured.build.nb_compiler=configured
+
+at89s4051.menu.fcpu.board=As the board says (default)
+at89s4051.menu.fcpu.board.build.nb_fcpu=board
+at89s4051.menu.fcpu.4000000=4 MHz
+at89s4051.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89s4051.menu.fcpu.8000000=8 MHz
+at89s4051.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89s4051.menu.fcpu.11059200=11.0592 MHz
+at89s4051.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89s4051.menu.fcpu.12000000=12 MHz
+at89s4051.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89s4051.menu.fcpu.16000000=16 MHz
+at89s4051.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89s4051.menu.fcpu.20000000=20 MHz
+at89s4051.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89s4051.menu.fcpu.22118400=22.1184 MHz
+at89s4051.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89s4051.menu.fcpu.24000000=24 MHz
+at89s4051.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 4 KB flash. Same USB-ISP HID route as AT89S52. No Timer 2, so Serial tops out at 57600 rather than 115200.
@@ -213,6 +328,25 @@ at89s51.menu.compiler.auto.build.nb_compiler=auto
 at89s51.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s51.menu.compiler.configured.build.nb_compiler=configured
 
+at89s51.menu.fcpu.board=As the board says (default)
+at89s51.menu.fcpu.board.build.nb_fcpu=board
+at89s51.menu.fcpu.4000000=4 MHz
+at89s51.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89s51.menu.fcpu.8000000=8 MHz
+at89s51.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89s51.menu.fcpu.11059200=11.0592 MHz
+at89s51.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89s51.menu.fcpu.12000000=12 MHz
+at89s51.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89s51.menu.fcpu.16000000=16 MHz
+at89s51.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89s51.menu.fcpu.20000000=20 MHz
+at89s51.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89s51.menu.fcpu.22118400=22.1184 MHz
+at89s51.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89s51.menu.fcpu.24000000=24 MHz
+at89s51.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 8 KB flash, 256 IRAM, no XRAM on a minimum DIP-40. USB-ISP HID. Segment/TM1637 sketches fit; colour graphics need external SRAM.
 at89s52.name=AT89 series - AT89S52 (8 KB, USB-ISP)
@@ -240,6 +374,25 @@ at89s52.menu.compiler.auto=Auto-detect SDCC (default)
 at89s52.menu.compiler.auto.build.nb_compiler=auto
 at89s52.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s52.menu.compiler.configured.build.nb_compiler=configured
+
+at89s52.menu.fcpu.board=As the board says (default)
+at89s52.menu.fcpu.board.build.nb_fcpu=board
+at89s52.menu.fcpu.4000000=4 MHz
+at89s52.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89s52.menu.fcpu.8000000=8 MHz
+at89s52.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89s52.menu.fcpu.11059200=11.0592 MHz
+at89s52.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89s52.menu.fcpu.12000000=12 MHz
+at89s52.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89s52.menu.fcpu.16000000=16 MHz
+at89s52.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89s52.menu.fcpu.20000000=20 MHz
+at89s52.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89s52.menu.fcpu.22118400=22.1184 MHz
+at89s52.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89s52.menu.fcpu.24000000=24 MHz
+at89s52.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 12 KB flash. Same USB-ISP HID route and the same serial-ISP protocol as the AT89S52.
@@ -269,6 +422,25 @@ at89s53.menu.compiler.auto.build.nb_compiler=auto
 at89s53.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s53.menu.compiler.configured.build.nb_compiler=configured
 
+at89s53.menu.fcpu.board=As the board says (default)
+at89s53.menu.fcpu.board.build.nb_fcpu=board
+at89s53.menu.fcpu.4000000=4 MHz
+at89s53.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89s53.menu.fcpu.8000000=8 MHz
+at89s53.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89s53.menu.fcpu.11059200=11.0592 MHz
+at89s53.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89s53.menu.fcpu.12000000=12 MHz
+at89s53.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89s53.menu.fcpu.16000000=16 MHz
+at89s53.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89s53.menu.fcpu.20000000=20 MHz
+at89s53.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89s53.menu.fcpu.22118400=22.1184 MHz
+at89s53.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89s53.menu.fcpu.24000000=24 MHz
+at89s53.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 8 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool.
 at89s8252.name=AT89 series - AT89S8252 (8 KB, USB-ISP) [experimental]
@@ -296,6 +468,25 @@ at89s8252.menu.compiler.auto=Auto-detect SDCC (default)
 at89s8252.menu.compiler.auto.build.nb_compiler=auto
 at89s8252.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s8252.menu.compiler.configured.build.nb_compiler=configured
+
+at89s8252.menu.fcpu.board=As the board says (default)
+at89s8252.menu.fcpu.board.build.nb_fcpu=board
+at89s8252.menu.fcpu.4000000=4 MHz
+at89s8252.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89s8252.menu.fcpu.8000000=8 MHz
+at89s8252.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89s8252.menu.fcpu.11059200=11.0592 MHz
+at89s8252.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89s8252.menu.fcpu.12000000=12 MHz
+at89s8252.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89s8252.menu.fcpu.16000000=16 MHz
+at89s8252.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89s8252.menu.fcpu.20000000=20 MHz
+at89s8252.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89s8252.menu.fcpu.22118400=22.1184 MHz
+at89s8252.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89s8252.menu.fcpu.24000000=24 MHz
+at89s8252.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 12 KB flash plus 2 KB EEPROM. Same serial-ISP protocol; the EEPROM is not written by this tool. The vendor tables put this part in the page-programmed class; this backend writes a byte at a time.
@@ -325,6 +516,25 @@ at89s8253.menu.compiler.auto.build.nb_compiler=auto
 at89s8253.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 at89s8253.menu.compiler.configured.build.nb_compiler=configured
 
+at89s8253.menu.fcpu.board=As the board says (default)
+at89s8253.menu.fcpu.board.build.nb_fcpu=board
+at89s8253.menu.fcpu.4000000=4 MHz
+at89s8253.menu.fcpu.4000000.build.nb_fcpu=4000000
+at89s8253.menu.fcpu.8000000=8 MHz
+at89s8253.menu.fcpu.8000000.build.nb_fcpu=8000000
+at89s8253.menu.fcpu.11059200=11.0592 MHz
+at89s8253.menu.fcpu.11059200.build.nb_fcpu=11059200
+at89s8253.menu.fcpu.12000000=12 MHz
+at89s8253.menu.fcpu.12000000.build.nb_fcpu=12000000
+at89s8253.menu.fcpu.16000000=16 MHz
+at89s8253.menu.fcpu.16000000.build.nb_fcpu=16000000
+at89s8253.menu.fcpu.20000000=20 MHz
+at89s8253.menu.fcpu.20000000.build.nb_fcpu=20000000
+at89s8253.menu.fcpu.22118400=22.1184 MHz
+at89s8253.menu.fcpu.22118400.build.nb_fcpu=22118400
+at89s8253.menu.fcpu.24000000=24 MHz
+at89s8253.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # SST, 20 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
 sst89e54.name=SST89 series - SST89E54 (20 KB, compile only) [experimental]
@@ -353,6 +563,25 @@ sst89e54.menu.compiler.auto.build.nb_compiler=auto
 sst89e54.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 sst89e54.menu.compiler.configured.build.nb_compiler=configured
 
+sst89e54.menu.fcpu.board=As the board says (default)
+sst89e54.menu.fcpu.board.build.nb_fcpu=board
+sst89e54.menu.fcpu.4000000=4 MHz
+sst89e54.menu.fcpu.4000000.build.nb_fcpu=4000000
+sst89e54.menu.fcpu.8000000=8 MHz
+sst89e54.menu.fcpu.8000000.build.nb_fcpu=8000000
+sst89e54.menu.fcpu.11059200=11.0592 MHz
+sst89e54.menu.fcpu.11059200.build.nb_fcpu=11059200
+sst89e54.menu.fcpu.12000000=12 MHz
+sst89e54.menu.fcpu.12000000.build.nb_fcpu=12000000
+sst89e54.menu.fcpu.16000000=16 MHz
+sst89e54.menu.fcpu.16000000.build.nb_fcpu=16000000
+sst89e54.menu.fcpu.20000000=20 MHz
+sst89e54.menu.fcpu.20000000.build.nb_fcpu=20000000
+sst89e54.menu.fcpu.22118400=22.1184 MHz
+sst89e54.menu.fcpu.22118400.build.nb_fcpu=22118400
+sst89e54.menu.fcpu.24000000=24 MHz
+sst89e54.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # SST, 64 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
 sst89e564.name=SST89 series - SST89E564 (64 KB, compile only) [experimental]
@@ -380,6 +609,25 @@ sst89e564.menu.compiler.auto=Auto-detect SDCC (default)
 sst89e564.menu.compiler.auto.build.nb_compiler=auto
 sst89e564.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 sst89e564.menu.compiler.configured.build.nb_compiler=configured
+
+sst89e564.menu.fcpu.board=As the board says (default)
+sst89e564.menu.fcpu.board.build.nb_fcpu=board
+sst89e564.menu.fcpu.4000000=4 MHz
+sst89e564.menu.fcpu.4000000.build.nb_fcpu=4000000
+sst89e564.menu.fcpu.8000000=8 MHz
+sst89e564.menu.fcpu.8000000.build.nb_fcpu=8000000
+sst89e564.menu.fcpu.11059200=11.0592 MHz
+sst89e564.menu.fcpu.11059200.build.nb_fcpu=11059200
+sst89e564.menu.fcpu.12000000=12 MHz
+sst89e564.menu.fcpu.12000000.build.nb_fcpu=12000000
+sst89e564.menu.fcpu.16000000=16 MHz
+sst89e564.menu.fcpu.16000000.build.nb_fcpu=16000000
+sst89e564.menu.fcpu.20000000=20 MHz
+sst89e564.menu.fcpu.20000000.build.nb_fcpu=20000000
+sst89e564.menu.fcpu.22118400=22.1184 MHz
+sst89e564.menu.fcpu.22118400.build.nb_fcpu=22118400
+sst89e564.menu.fcpu.24000000=24 MHz
+sst89e564.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 60 KB flash, 2 KB SRAM. Same 1T core and bootloader generation. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.
@@ -421,6 +669,25 @@ stc15f2k60s2.menu.compiler.auto.build.nb_compiler=auto
 stc15f2k60s2.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc15f2k60s2.menu.compiler.configured.build.nb_compiler=configured
 
+stc15f2k60s2.menu.fcpu.board=As the board says (default)
+stc15f2k60s2.menu.fcpu.board.build.nb_fcpu=board
+stc15f2k60s2.menu.fcpu.4000000=4 MHz
+stc15f2k60s2.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc15f2k60s2.menu.fcpu.8000000=8 MHz
+stc15f2k60s2.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc15f2k60s2.menu.fcpu.11059200=11.0592 MHz
+stc15f2k60s2.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc15f2k60s2.menu.fcpu.12000000=12 MHz
+stc15f2k60s2.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc15f2k60s2.menu.fcpu.16000000=16 MHz
+stc15f2k60s2.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc15f2k60s2.menu.fcpu.20000000=20 MHz
+stc15f2k60s2.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc15f2k60s2.menu.fcpu.22118400=22.1184 MHz
+stc15f2k60s2.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc15f2k60s2.menu.fcpu.24000000=24 MHz
+stc15f2k60s2.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 4 KB flash. Same 1T core and bootloader as the STC15W408AS. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.
 stc15w404as.name=STC15 series - STC15W404AS (4 KB, serial bootloader) [experimental]
@@ -460,6 +727,25 @@ stc15w404as.menu.compiler.auto=Auto-detect SDCC (default)
 stc15w404as.menu.compiler.auto.build.nb_compiler=auto
 stc15w404as.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc15w404as.menu.compiler.configured.build.nb_compiler=configured
+
+stc15w404as.menu.fcpu.board=As the board says (default)
+stc15w404as.menu.fcpu.board.build.nb_fcpu=board
+stc15w404as.menu.fcpu.4000000=4 MHz
+stc15w404as.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc15w404as.menu.fcpu.8000000=8 MHz
+stc15w404as.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc15w404as.menu.fcpu.11059200=11.0592 MHz
+stc15w404as.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc15w404as.menu.fcpu.12000000=12 MHz
+stc15w404as.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc15w404as.menu.fcpu.16000000=16 MHz
+stc15w404as.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc15w404as.menu.fcpu.20000000=20 MHz
+stc15w404as.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc15w404as.menu.fcpu.22118400=22.1184 MHz
+stc15w404as.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc15w404as.menu.fcpu.24000000=24 MHz
+stc15w404as.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 8 KB flash, 8-pin to 28-pin. 1T core: one clock per machine cycle, so it runs a given instruction stream about twelve times faster than an STC89 at the same clock. Internal RC oscillator: no crystal, and the frequency is trimmed at download time. Timing constants here are fitted on a 12-clock core and are an estimate until refitted on a 1T part.
@@ -501,6 +787,25 @@ stc15w408as.menu.compiler.auto.build.nb_compiler=auto
 stc15w408as.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc15w408as.menu.compiler.configured.build.nb_compiler=configured
 
+stc15w408as.menu.fcpu.board=As the board says (default)
+stc15w408as.menu.fcpu.board.build.nb_fcpu=board
+stc15w408as.menu.fcpu.4000000=4 MHz
+stc15w408as.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc15w408as.menu.fcpu.8000000=8 MHz
+stc15w408as.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc15w408as.menu.fcpu.11059200=11.0592 MHz
+stc15w408as.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc15w408as.menu.fcpu.12000000=12 MHz
+stc15w408as.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc15w408as.menu.fcpu.16000000=16 MHz
+stc15w408as.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc15w408as.menu.fcpu.20000000=20 MHz
+stc15w408as.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc15w408as.menu.fcpu.22118400=22.1184 MHz
+stc15w408as.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc15w408as.menu.fcpu.24000000=24 MHz
+stc15w408as.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 8 KB flash plus 4 KB EEPROM, 1T core, internal RC only. The RC is set at download time and the part ships untrimmed, so f_cpu here is the frequency the programmer asks for: 24 MHz, the preset the bootloader uses when it is told not to trim. At that clock an 8-bit reload carries 9600 to within 0.16% and little else, so a sketch wanting other rates should ask for a different IRC frequency.
 stc8h1k08.name=STC8 series - STC8H1K08 (8 KB, serial bootloader) [experimental]
@@ -540,6 +845,25 @@ stc8h1k08.menu.compiler.auto=Auto-detect SDCC (default)
 stc8h1k08.menu.compiler.auto.build.nb_compiler=auto
 stc8h1k08.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc8h1k08.menu.compiler.configured.build.nb_compiler=configured
+
+stc8h1k08.menu.fcpu.board=As the board says (default)
+stc8h1k08.menu.fcpu.board.build.nb_fcpu=board
+stc8h1k08.menu.fcpu.4000000=4 MHz
+stc8h1k08.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc8h1k08.menu.fcpu.8000000=8 MHz
+stc8h1k08.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc8h1k08.menu.fcpu.11059200=11.0592 MHz
+stc8h1k08.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc8h1k08.menu.fcpu.12000000=12 MHz
+stc8h1k08.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc8h1k08.menu.fcpu.16000000=16 MHz
+stc8h1k08.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc8h1k08.menu.fcpu.20000000=20 MHz
+stc8h1k08.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc8h1k08.menu.fcpu.22118400=22.1184 MHz
+stc8h1k08.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc8h1k08.menu.fcpu.24000000=24 MHz
+stc8h1k08.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 4 KB flash. Same UART bootloader as the STC89C52RC.
@@ -581,6 +905,25 @@ stc89c51rc.menu.compiler.auto.build.nb_compiler=auto
 stc89c51rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc89c51rc.menu.compiler.configured.build.nb_compiler=configured
 
+stc89c51rc.menu.fcpu.board=As the board says (default)
+stc89c51rc.menu.fcpu.board.build.nb_fcpu=board
+stc89c51rc.menu.fcpu.4000000=4 MHz
+stc89c51rc.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc89c51rc.menu.fcpu.8000000=8 MHz
+stc89c51rc.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc89c51rc.menu.fcpu.11059200=11.0592 MHz
+stc89c51rc.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc89c51rc.menu.fcpu.12000000=12 MHz
+stc89c51rc.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc89c51rc.menu.fcpu.16000000=16 MHz
+stc89c51rc.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc89c51rc.menu.fcpu.20000000=20 MHz
+stc89c51rc.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc89c51rc.menu.fcpu.22118400=22.1184 MHz
+stc89c51rc.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc89c51rc.menu.fcpu.24000000=24 MHz
+stc89c51rc.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # UART bootloader (stcgal) on the serial adapter, not the ISP header. Entry is power-on only, so the board needs a supply that can be interrupted. Reports 8 KB code flash and a 12-clock machine cycle, so the AT89S52 timing carries over.
 stc89c52rc.name=STC89 series - STC89C52RC (8 KB, serial bootloader)
@@ -620,6 +963,25 @@ stc89c52rc.menu.compiler.auto=Auto-detect SDCC (default)
 stc89c52rc.menu.compiler.auto.build.nb_compiler=auto
 stc89c52rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc89c52rc.menu.compiler.configured.build.nb_compiler=configured
+
+stc89c52rc.menu.fcpu.board=As the board says (default)
+stc89c52rc.menu.fcpu.board.build.nb_fcpu=board
+stc89c52rc.menu.fcpu.4000000=4 MHz
+stc89c52rc.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc89c52rc.menu.fcpu.8000000=8 MHz
+stc89c52rc.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc89c52rc.menu.fcpu.11059200=11.0592 MHz
+stc89c52rc.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc89c52rc.menu.fcpu.12000000=12 MHz
+stc89c52rc.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc89c52rc.menu.fcpu.16000000=16 MHz
+stc89c52rc.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc89c52rc.menu.fcpu.20000000=20 MHz
+stc89c52rc.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc89c52rc.menu.fcpu.22118400=22.1184 MHz
+stc89c52rc.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc89c52rc.menu.fcpu.24000000=24 MHz
+stc89c52rc.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 12 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
@@ -661,6 +1023,25 @@ stc89c53rc.menu.compiler.auto.build.nb_compiler=auto
 stc89c53rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc89c53rc.menu.compiler.configured.build.nb_compiler=configured
 
+stc89c53rc.menu.fcpu.board=As the board says (default)
+stc89c53rc.menu.fcpu.board.build.nb_fcpu=board
+stc89c53rc.menu.fcpu.4000000=4 MHz
+stc89c53rc.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc89c53rc.menu.fcpu.8000000=8 MHz
+stc89c53rc.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc89c53rc.menu.fcpu.11059200=11.0592 MHz
+stc89c53rc.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc89c53rc.menu.fcpu.12000000=12 MHz
+stc89c53rc.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc89c53rc.menu.fcpu.16000000=16 MHz
+stc89c53rc.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc89c53rc.menu.fcpu.20000000=20 MHz
+stc89c53rc.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc89c53rc.menu.fcpu.22118400=22.1184 MHz
+stc89c53rc.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc89c53rc.menu.fcpu.24000000=24 MHz
+stc89c53rc.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 16 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
 stc89c54rd.name=STC89 series - STC89C54RD (16 KB, serial bootloader) [experimental]
@@ -700,6 +1081,25 @@ stc89c54rd.menu.compiler.auto=Auto-detect SDCC (default)
 stc89c54rd.menu.compiler.auto.build.nb_compiler=auto
 stc89c54rd.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc89c54rd.menu.compiler.configured.build.nb_compiler=configured
+
+stc89c54rd.menu.fcpu.board=As the board says (default)
+stc89c54rd.menu.fcpu.board.build.nb_fcpu=board
+stc89c54rd.menu.fcpu.4000000=4 MHz
+stc89c54rd.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc89c54rd.menu.fcpu.8000000=8 MHz
+stc89c54rd.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc89c54rd.menu.fcpu.11059200=11.0592 MHz
+stc89c54rd.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc89c54rd.menu.fcpu.12000000=12 MHz
+stc89c54rd.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc89c54rd.menu.fcpu.16000000=16 MHz
+stc89c54rd.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc89c54rd.menu.fcpu.20000000=20 MHz
+stc89c54rd.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc89c54rd.menu.fcpu.22118400=22.1184 MHz
+stc89c54rd.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc89c54rd.menu.fcpu.24000000=24 MHz
+stc89c54rd.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 32 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
@@ -741,6 +1141,25 @@ stc89c58rd.menu.compiler.auto.build.nb_compiler=auto
 stc89c58rd.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc89c58rd.menu.compiler.configured.build.nb_compiler=configured
 
+stc89c58rd.menu.fcpu.board=As the board says (default)
+stc89c58rd.menu.fcpu.board.build.nb_fcpu=board
+stc89c58rd.menu.fcpu.4000000=4 MHz
+stc89c58rd.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc89c58rd.menu.fcpu.8000000=8 MHz
+stc89c58rd.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc89c58rd.menu.fcpu.11059200=11.0592 MHz
+stc89c58rd.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc89c58rd.menu.fcpu.12000000=12 MHz
+stc89c58rd.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc89c58rd.menu.fcpu.16000000=16 MHz
+stc89c58rd.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc89c58rd.menu.fcpu.20000000=20 MHz
+stc89c58rd.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc89c58rd.menu.fcpu.22118400=22.1184 MHz
+stc89c58rd.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc89c58rd.menu.fcpu.24000000=24 MHz
+stc89c58rd.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 4 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
 stc90c51rc.name=STC90 series - STC90C51RC (4 KB, serial bootloader) [experimental]
@@ -780,6 +1199,25 @@ stc90c51rc.menu.compiler.auto=Auto-detect SDCC (default)
 stc90c51rc.menu.compiler.auto.build.nb_compiler=auto
 stc90c51rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc90c51rc.menu.compiler.configured.build.nb_compiler=configured
+
+stc90c51rc.menu.fcpu.board=As the board says (default)
+stc90c51rc.menu.fcpu.board.build.nb_fcpu=board
+stc90c51rc.menu.fcpu.4000000=4 MHz
+stc90c51rc.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc90c51rc.menu.fcpu.8000000=8 MHz
+stc90c51rc.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc90c51rc.menu.fcpu.11059200=11.0592 MHz
+stc90c51rc.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc90c51rc.menu.fcpu.12000000=12 MHz
+stc90c51rc.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc90c51rc.menu.fcpu.16000000=16 MHz
+stc90c51rc.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc90c51rc.menu.fcpu.20000000=20 MHz
+stc90c51rc.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc90c51rc.menu.fcpu.22118400=22.1184 MHz
+stc90c51rc.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc90c51rc.menu.fcpu.24000000=24 MHz
+stc90c51rc.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # 8 KB flash. Same STC89-generation bootloader.
@@ -821,6 +1259,25 @@ stc90c52rc.menu.compiler.auto.build.nb_compiler=auto
 stc90c52rc.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc90c52rc.menu.compiler.configured.build.nb_compiler=configured
 
+stc90c52rc.menu.fcpu.board=As the board says (default)
+stc90c52rc.menu.fcpu.board.build.nb_fcpu=board
+stc90c52rc.menu.fcpu.4000000=4 MHz
+stc90c52rc.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc90c52rc.menu.fcpu.8000000=8 MHz
+stc90c52rc.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc90c52rc.menu.fcpu.11059200=11.0592 MHz
+stc90c52rc.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc90c52rc.menu.fcpu.12000000=12 MHz
+stc90c52rc.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc90c52rc.menu.fcpu.16000000=16 MHz
+stc90c52rc.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc90c52rc.menu.fcpu.20000000=20 MHz
+stc90c52rc.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc90c52rc.menu.fcpu.22118400=22.1184 MHz
+stc90c52rc.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc90c52rc.menu.fcpu.24000000=24 MHz
+stc90c52rc.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # 32 KB flash. Same STC89-generation UART bootloader as the STC89C52RC, entered on power-on.
 stc90c58rd.name=STC90 series - STC90C58RD (32 KB, serial bootloader) [experimental]
@@ -861,6 +1318,25 @@ stc90c58rd.menu.compiler.auto.build.nb_compiler=auto
 stc90c58rd.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 stc90c58rd.menu.compiler.configured.build.nb_compiler=configured
 
+stc90c58rd.menu.fcpu.board=As the board says (default)
+stc90c58rd.menu.fcpu.board.build.nb_fcpu=board
+stc90c58rd.menu.fcpu.4000000=4 MHz
+stc90c58rd.menu.fcpu.4000000.build.nb_fcpu=4000000
+stc90c58rd.menu.fcpu.8000000=8 MHz
+stc90c58rd.menu.fcpu.8000000.build.nb_fcpu=8000000
+stc90c58rd.menu.fcpu.11059200=11.0592 MHz
+stc90c58rd.menu.fcpu.11059200.build.nb_fcpu=11059200
+stc90c58rd.menu.fcpu.12000000=12 MHz
+stc90c58rd.menu.fcpu.12000000.build.nb_fcpu=12000000
+stc90c58rd.menu.fcpu.16000000=16 MHz
+stc90c58rd.menu.fcpu.16000000.build.nb_fcpu=16000000
+stc90c58rd.menu.fcpu.20000000=20 MHz
+stc90c58rd.menu.fcpu.20000000.build.nb_fcpu=20000000
+stc90c58rd.menu.fcpu.22118400=22.1184 MHz
+stc90c58rd.menu.fcpu.22118400.build.nb_fcpu=22118400
+stc90c58rd.menu.fcpu.24000000=24 MHz
+stc90c58rd.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # Winbond, 4 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it. No Timer 2, so Serial tops out at 57600 rather than 115200.
 w78e51.name=W78 series - W78E51 (4 KB, compile only) [experimental]
@@ -888,6 +1364,25 @@ w78e51.menu.compiler.auto=Auto-detect SDCC (default)
 w78e51.menu.compiler.auto.build.nb_compiler=auto
 w78e51.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 w78e51.menu.compiler.configured.build.nb_compiler=configured
+
+w78e51.menu.fcpu.board=As the board says (default)
+w78e51.menu.fcpu.board.build.nb_fcpu=board
+w78e51.menu.fcpu.4000000=4 MHz
+w78e51.menu.fcpu.4000000.build.nb_fcpu=4000000
+w78e51.menu.fcpu.8000000=8 MHz
+w78e51.menu.fcpu.8000000.build.nb_fcpu=8000000
+w78e51.menu.fcpu.11059200=11.0592 MHz
+w78e51.menu.fcpu.11059200.build.nb_fcpu=11059200
+w78e51.menu.fcpu.12000000=12 MHz
+w78e51.menu.fcpu.12000000.build.nb_fcpu=12000000
+w78e51.menu.fcpu.16000000=16 MHz
+w78e51.menu.fcpu.16000000.build.nb_fcpu=16000000
+w78e51.menu.fcpu.20000000=20 MHz
+w78e51.menu.fcpu.20000000.build.nb_fcpu=20000000
+w78e51.menu.fcpu.22118400=22.1184 MHz
+w78e51.menu.fcpu.22118400.build.nb_fcpu=22118400
+w78e51.menu.fcpu.24000000=24 MHz
+w78e51.menu.fcpu.24000000.build.nb_fcpu=24000000
 
 # ----------------------------------------------------------------------
 # Winbond, 8 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
@@ -917,6 +1412,25 @@ w78e52.menu.compiler.auto.build.nb_compiler=auto
 w78e52.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 w78e52.menu.compiler.configured.build.nb_compiler=configured
 
+w78e52.menu.fcpu.board=As the board says (default)
+w78e52.menu.fcpu.board.build.nb_fcpu=board
+w78e52.menu.fcpu.4000000=4 MHz
+w78e52.menu.fcpu.4000000.build.nb_fcpu=4000000
+w78e52.menu.fcpu.8000000=8 MHz
+w78e52.menu.fcpu.8000000.build.nb_fcpu=8000000
+w78e52.menu.fcpu.11059200=11.0592 MHz
+w78e52.menu.fcpu.11059200.build.nb_fcpu=11059200
+w78e52.menu.fcpu.12000000=12 MHz
+w78e52.menu.fcpu.12000000.build.nb_fcpu=12000000
+w78e52.menu.fcpu.16000000=16 MHz
+w78e52.menu.fcpu.16000000.build.nb_fcpu=16000000
+w78e52.menu.fcpu.20000000=20 MHz
+w78e52.menu.fcpu.20000000.build.nb_fcpu=20000000
+w78e52.menu.fcpu.22118400=22.1184 MHz
+w78e52.menu.fcpu.22118400.build.nb_fcpu=22118400
+w78e52.menu.fcpu.24000000=24 MHz
+w78e52.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # Winbond, 16 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
 w78e54.name=W78 series - W78E54 (16 KB, compile only) [experimental]
@@ -945,6 +1459,25 @@ w78e54.menu.compiler.auto.build.nb_compiler=auto
 w78e54.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 w78e54.menu.compiler.configured.build.nb_compiler=configured
 
+w78e54.menu.fcpu.board=As the board says (default)
+w78e54.menu.fcpu.board.build.nb_fcpu=board
+w78e54.menu.fcpu.4000000=4 MHz
+w78e54.menu.fcpu.4000000.build.nb_fcpu=4000000
+w78e54.menu.fcpu.8000000=8 MHz
+w78e54.menu.fcpu.8000000.build.nb_fcpu=8000000
+w78e54.menu.fcpu.11059200=11.0592 MHz
+w78e54.menu.fcpu.11059200.build.nb_fcpu=11059200
+w78e54.menu.fcpu.12000000=12 MHz
+w78e54.menu.fcpu.12000000.build.nb_fcpu=12000000
+w78e54.menu.fcpu.16000000=16 MHz
+w78e54.menu.fcpu.16000000.build.nb_fcpu=16000000
+w78e54.menu.fcpu.20000000=20 MHz
+w78e54.menu.fcpu.20000000.build.nb_fcpu=20000000
+w78e54.menu.fcpu.22118400=22.1184 MHz
+w78e54.menu.fcpu.22118400.build.nb_fcpu=22118400
+w78e54.menu.fcpu.24000000=24 MHz
+w78e54.menu.fcpu.24000000.build.nb_fcpu=24000000
+
 # ----------------------------------------------------------------------
 # Winbond, 32 KB flash. No serial-ISP interface: this part is written in a parallel programming socket, so it compiles here but the Upload button cannot drive it.
 w78e58.name=W78 series - W78E58 (32 KB, compile only) [experimental]
@@ -972,3 +1505,22 @@ w78e58.menu.compiler.auto=Auto-detect SDCC (default)
 w78e58.menu.compiler.auto.build.nb_compiler=auto
 w78e58.menu.compiler.configured=Use the path from `niusburner setup --sdcc`
 w78e58.menu.compiler.configured.build.nb_compiler=configured
+
+w78e58.menu.fcpu.board=As the board says (default)
+w78e58.menu.fcpu.board.build.nb_fcpu=board
+w78e58.menu.fcpu.4000000=4 MHz
+w78e58.menu.fcpu.4000000.build.nb_fcpu=4000000
+w78e58.menu.fcpu.8000000=8 MHz
+w78e58.menu.fcpu.8000000.build.nb_fcpu=8000000
+w78e58.menu.fcpu.11059200=11.0592 MHz
+w78e58.menu.fcpu.11059200.build.nb_fcpu=11059200
+w78e58.menu.fcpu.12000000=12 MHz
+w78e58.menu.fcpu.12000000.build.nb_fcpu=12000000
+w78e58.menu.fcpu.16000000=16 MHz
+w78e58.menu.fcpu.16000000.build.nb_fcpu=16000000
+w78e58.menu.fcpu.20000000=20 MHz
+w78e58.menu.fcpu.20000000.build.nb_fcpu=20000000
+w78e58.menu.fcpu.22118400=22.1184 MHz
+w78e58.menu.fcpu.22118400.build.nb_fcpu=22118400
+w78e58.menu.fcpu.24000000=24 MHz
+w78e58.menu.fcpu.24000000.build.nb_fcpu=24000000

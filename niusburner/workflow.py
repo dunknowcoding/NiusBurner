@@ -344,6 +344,7 @@ def compile_plan(
     optimize: str = "size",
     isp_entry: bool = False,
     debug_symbols: bool = False,
+    f_cpu: int | None = None,
 ) -> Mcs51Build:
     output.mkdir(parents=True, exist_ok=True)
     if plan.generated is not None:
@@ -402,8 +403,13 @@ def compile_plan(
                       f"NIUS_CLOCKS_PER_MC={plan.board.clocks_per_mc}UL"):
             if macro not in defines:
                 defines.append(macro)
-    if plan.board.family == "mcs51" and plan.board.f_cpu:
-        osc = f"NIUS_FOSC={plan.board.f_cpu}UL"
+    # The catalog records the clock a part is usually fitted with, which is
+    # a default and not a fact about the board in front of you. A different
+    # crystal changes every derived number -- baud divisors, delay loops --
+    # so it has to be sayable per build rather than only per part.
+    clock = f_cpu or plan.board.f_cpu
+    if plan.board.family == "mcs51" and clock:
+        osc = f"NIUS_FOSC={clock}UL"
         if osc not in defines:
             defines.append(osc)
     sources = _runtime_with_sketch_vectors(
@@ -418,7 +424,7 @@ def compile_plan(
             compiler=compiler,
             part=plan.board.part,
             family=plan.board.family,
-            f_cpu=plan.board.f_cpu,
+            f_cpu=clock,
             program_size=plan.board.code_size,
             data_size=plan.board.iram_size,
             defines=defines,
@@ -433,7 +439,7 @@ def compile_plan(
             output,
             compiler=compiler,
             part=plan.board.part,
-            f_cpu=plan.board.f_cpu,
+            f_cpu=clock,
             family=plan.board.family,
             program_size=plan.board.code_size,
             data_size=plan.board.iram_size,
