@@ -54,19 +54,30 @@ void nius_serial_begin(unsigned long baud)
     SPBRG = (unsigned char)divisor;
 
     /*
-     * The USART takes its pins over once SPEN is set, but both have to be
-     * left as inputs for it to do so. Which pins those are depends on the
-     * package: RC6/RC7 on the 28- and 40-pin parts, PORTB on the 18-pin
-     * ones, and naming a port the part does not have is a compile error.
+     * The transmit pin has to be an output. This said the opposite -- that
+     * the USART takes both pins over once SPEN is set, so both could be
+     * left as inputs -- and on a PIC16F877A that is simply not true: the
+     * port keeps the pin, the USART configures perfectly, and nothing ever
+     * reaches the wire.
+     *
+     * It failed silently, which is why it survived. nius_serial_write()
+     * spins on TRMT, and TRMT means "the shift register is empty" -- which
+     * is exactly what it reads when nothing is ever shifted. So every write
+     * returned at once, every println completed, the sketch ran on, and the
+     * only symptom was a port that stayed quiet.
+     *
+     * Which pins these are depends on the package: RC6/RC7 on the 28- and
+     * 40-pin parts, PORTB on the 18-pin ones, and naming a port the part
+     * does not have is a compile error.
      */
 #if NIUS_PIC_USART == 2
-    TRISBbits.TRISB2 = 1;      /* TX */
-    TRISBbits.TRISB1 = 1;      /* RX */
+    TRISBbits.TRISB2 = 0;      /* TX: driven by the USART */
+    TRISBbits.TRISB1 = 1;      /* RX: stays an input */
 #elif NIUS_PIC_USART == 3
-    TRISBbits.TRISB2 = 1;      /* TX */
+    TRISBbits.TRISB2 = 0;      /* TX */
     TRISBbits.TRISB5 = 1;      /* RX */
 #else
-    TRISCbits.TRISC6 = 1;      /* TX */
+    TRISCbits.TRISC6 = 0;      /* TX */
     TRISCbits.TRISC7 = 1;      /* RX */
 #endif
 
