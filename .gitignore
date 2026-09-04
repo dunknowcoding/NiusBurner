@@ -58,6 +58,9 @@ dist/
 Thumbs.db
 .DS_Store
 
+# Local security-scanner state.
+.mimosa/
+
 # MPLAB drops this wherever it is run from.
 MPLABXLog.xml
 
