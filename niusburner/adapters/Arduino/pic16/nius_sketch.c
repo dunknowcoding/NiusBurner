@@ -108,8 +108,32 @@
 #endif
 #pragma config CP = OFF
 
+/*
+ * Brown-out reset holds the part in reset whenever VDD is below its trip
+ * point -- about 4 V on a PIC16F87XA. On a board with a clean 5 V rail
+ * that is exactly what it is for, so it stays on by default.
+ *
+ * On a rail that sits near the trip point it is indistinguishable from a
+ * dead part, and worse than one: ICSP works far below 4 V, so the
+ * programmer finds the device, erases, programs and verifies every byte,
+ * and the part it just programmed perfectly never executes an
+ * instruction. A rail hovering right at the point gives the same thing
+ * intermittently -- runs for a few seconds, stops, will not restart on a
+ * reset.
+ *
+ * NIUS_PIC_CFG_BOREN says whether the part has the bit at all.
+ * NIUS_PIC_CFG_BOREN_ON says what to do with it, so a board with a
+ * marginal supply can be told to run anyway.
+ */
+#ifndef NIUS_PIC_CFG_BOREN_ON
+#define NIUS_PIC_CFG_BOREN_ON 1
+#endif
 #if NIUS_PIC_CFG_BOREN
+#if NIUS_PIC_CFG_BOREN_ON
 #pragma config BOREN = ON
+#else
+#pragma config BOREN = OFF
+#endif
 #endif
 #if NIUS_PIC_CFG_LVP
 #pragma config LVP = OFF

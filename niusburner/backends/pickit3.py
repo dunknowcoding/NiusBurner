@@ -336,8 +336,16 @@ def _hints_for(output: str) -> tuple[str, ...]:
 
 
 def probe(target: str, power: bool = False, *, tool_serial: str | None = None,
-          scratch_root: pathlib.Path | None = None) -> int:
-    """Read the device ID. Programs nothing."""
+          scratch_root: pathlib.Path | None = None, run: bool = True) -> int:
+    """Read the device ID. Programs nothing.
+
+    Reading is meant to be observation, so the part is released when the
+    read finishes. Without ``-OL`` the programmer keeps MCLR asserted after
+    it exits, and the part stays in reset until something else releases it
+    -- so checking on a running board silently stops it, and every check
+    after the first one then agrees that it is not running. Pass
+    ``run=False`` when the caller genuinely wants it held.
+    """
     tool = find_ipecmd()
     if tool is None:
         return _missing()
@@ -354,6 +362,8 @@ def probe(target: str, power: bool = False, *, tool_serial: str | None = None,
     with tempfile.TemporaryDirectory(dir=scratch_root) as scratch:
         args = [f"-P{target}", tool_selector(tool_serial),
                 "-GCF" + str(pathlib.Path(scratch) / "id.hex")]
+        if run:
+            args.append("-OL")
         if power:
             args.append("-W")
         code, output = _run(tool, args, pathlib.Path(scratch))
@@ -435,8 +445,16 @@ def reset(target: str, power: bool = False, *,
 
 
 def readback(output: pathlib.Path, target: str, power: bool = False, *,
-             tool_serial: str | None = None) -> int:
-    """Read the entire target into *output* using one selected programmer."""
+             tool_serial: str | None = None, run: bool = True) -> int:
+    """Read the entire target into *output* using one selected programmer.
+
+    Reading is meant to be observation, so the part is released when the
+    read finishes. Without ``-OL`` the programmer keeps MCLR asserted after
+    it exits, and the part stays in reset until something else releases it
+    -- so checking on a running board silently stops it, and every check
+    after the first one then agrees that it is not running. Pass
+    ``run=False`` when the caller genuinely wants it held.
+    """
     tool = find_ipecmd()
     if tool is None:
         return _missing()
@@ -446,6 +464,8 @@ def readback(output: pathlib.Path, target: str, power: bool = False, *,
               title="cannot save PIC readback")
         return 1
     args = [f"-P{target}", tool_selector(tool_serial), f"-GF{output}"]
+    if run:
+        args.append("-OL")
     if power:
         args.append("-W")
     code, result = _run(tool, args, output.parent)
