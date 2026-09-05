@@ -51,6 +51,31 @@ _INSTALL_ROOTS = (
 # selection.  Increment this when the selector/readback contract changes.
 PICKIT3_BACKEND_API = 1
 
+
+#: dsPIC30F and dsPIC33 are the only parts here whose MPLAB name does not
+#: begin with PIC. Reading the prefix off the part number rather than off
+#: the catalog's family keeps a PIC24F right: it shares the family and does
+#: not share the prefix.
+_DSPIC_PREFIXES = ("30F", "33F", "33E", "33C")
+
+
+def mplab_device_name(part: str) -> str:
+    """The name MPLAB's device database uses for *part*.
+
+    The catalog stores what is printed on the package -- ``16F877A``,
+    ``30F4013`` -- and ipecmd accepts exactly that, so every request built
+    below passes it through unchanged.
+
+    MPLAB's other command-line tools want the full name, ``PIC16F877A``,
+    and are not as forgiving as ipecmd: a device they do not recognise is
+    skipped rather than refused, so a short name there produces a tool that
+    appears to hang rather than one that objects. Anything driving a part
+    through something other than ipecmd should ask for the name here.
+    """
+    name = part.upper()
+    prefix = "dsPIC" if name.startswith(_DSPIC_PREFIXES) else "PIC"
+    return prefix + name
+
 #: ipecmd is chatty and most of it is banner. These are the lines that say
 #: something happened, and the ones that say something went wrong.
 _PROGRESS = re.compile(
