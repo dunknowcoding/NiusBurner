@@ -552,9 +552,11 @@ def _flash_stc8(image: pathlib.Path, target: str, port: str, protocol: str,
         return 1
 
     complete("Upload complete",
+             "Reset             : the bootloader starts the new firmware "
+             "itself",
+             "Power             : supplied by the board, not the programmer",
              "Oscillator        : left as it was; the sketch runs at the "
-             "catalog frequency",
-             "Power             : supplied by the board, not the programmer")
+             "catalog frequency")
     return 0
 
 

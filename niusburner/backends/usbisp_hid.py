@@ -535,7 +535,7 @@ def flash(image: pathlib.Path, target: str, run: bool = True) -> int:
             prog.release_to_run()
             complete(
                 "Upload complete",
-                "Soft reset        : done - board running the new firmware",
+                "Reset             : released - board running the new firmware",
                 "Power             : VCC still supplied by the programmer",
             )
             note("nothing on the UART? check EA (pin 31) is tied to VCC: "

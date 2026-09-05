@@ -31,6 +31,13 @@ it did.
   which works far below 4 V — finds the device, erases, programs and verifies
   every byte. `NIUS_PIC_CFG_BOREN_ON` now carries the value, still on by
   default.
+- **The upload summary changed shape with the transport.** An AT89S called
+  the same field `Soft reset` where a PIC called it `Reset`, and the STC8
+  path reported no reset state at all -- so a user moving between families
+  had to re-read the summary each time to find whether the board was
+  running. Every transport now answers the same two questions in the same
+  order and the same column, `Reset` then `Power`, with anything
+  family-specific after them.
 - **Reading a PIC left it in reset.** Neither `probe` nor the readback passed
   `-OL`, so the programmer kept MCLR asserted after it exited. Checking on a
   running board stopped it, and every check after the first then agreed it
