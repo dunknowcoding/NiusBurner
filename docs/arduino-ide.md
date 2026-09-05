@@ -45,6 +45,7 @@ again after installing anything.
 | **Board → NiusBurner PIC18 (XC8)** | 8 parts: 18F2550/4550, 18F2520/4520, 18F2620/4620, 18F252/452 | PIC18F4550 |
 | **Board → NiusBurner PIC24 (XC16)** | 9 parts: dsPIC30F2010/3013/4011/4013 and kin | dsPIC30F4013 |
 | **Programmer** | USB-ISP HID (03EB:C8B4), USBasp, Nano 12 V | USB-ISP HID |
+| **Clock** | As the board says, 4 / 8 / 11.0592 / 12 / 16 / 20 / 22.1184 / 24 MHz | **As the board says** |
 | **Optimize** | Size, Speed, None | **Size** |
 | **Compiler** | Auto-detect SDCC, configured path | Auto-detect |
 
@@ -55,6 +56,36 @@ The defaults are the safe answers, not the fastest ones:
   you are spending.
 - **Auto-detect**, because SDCC is normally on PATH or in its installer's
   directory. Switch to the configured path only after recording one.
+- **As the board says**, because the catalog already records the crystal each
+  part is usually sold with. Change it only when the board in front of you is
+  fitted with a different one -- see below.
+
+### When the board has a different crystal
+
+The catalog's clock is what a part is normally sold with. It is not a fact
+about the board on your desk, and a legacy board is often fitted with
+whatever its designer had: 11.0592 MHz for exact serial rates, 12 MHz for
+round instruction timing, 22.1184 for both at speed.
+
+Getting it wrong is not subtle, and it does not announce itself. Every
+derived number moves with it:
+
+| what depends on the clock | what a wrong value does |
+|---|---|
+| UART baud divisor | the port talks at the wrong rate -- a PIC16F877A built for 20 MHz but fitted with 11.0592 transmits at 5308 baud, not 9600 |
+| `delay()`, `delayMicroseconds()`, `millis()` | every interval is off by the same ratio -- 1.8x here |
+| **PIC only:** the oscillator mode in the config word | above 4 MHz selects HS, below it XT. Choose the wrong one and the oscillator may not start at all |
+
+So set **Tools → Clock** to the crystal actually fitted. From the command
+line it is `--f-cpu`:
+
+```bash
+python -m niusburner upload sketch --board pic16f877a --f-cpu 11059200 --yes
+```
+
+The menu is offered on every part whose clock comes from outside. It is
+withheld from the three PIC12F parts that run from an internal RC and have
+no crystal to change.
 
 **52 of the 62 parts flash from the Upload button**, over whichever transport
 the part actually has: the USB-ISP header for AT89S, the part's own UART

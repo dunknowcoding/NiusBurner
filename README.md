@@ -80,6 +80,39 @@ On Windows, the one thing worth reading first is
 because the default `python` on a clean Windows is a Store placeholder that
 does nothing.
 
+## One key, end to end
+
+Press **Upload** once. Everything between the sketch and a running part is
+this tool's problem, not yours:
+
+```text
+   8051 Flash Console - Target: at89s52
+
+  NIUS  >.....................    5%  Connected  signature 1E 52 06
+  NIUS  ======================  100%  Erasing  2.1s
+  NIUS  ======================  100%  Programming  1993 B in 50.6s
+  NIUS  ======================  100%  Verifying  2030 B in 26.8s
+  NIUS  ======================  100%  Upload complete
+
+  Total upload time : 79.8s
+  Reset             : released - board running the new firmware
+```
+
+Compile, connect, erase, program, **verify every byte**, then release reset so
+the sketch is already running when the bar finishes. One press, and the same
+sequence whichever family the board belongs to -- an AT89S over its ISP
+header, an STC through its own bootloader, a PIC over a PICkit 3.
+
+What it will not do is tell you it worked when it did not. A programmer that
+answers "succeeded" without ever connecting is caught and reported as a
+failure; a part that erases short is erased again until the array really
+reads blank; and an image is verified against the file, not assumed from a
+tool's exit code.
+
+```bash
+python -m niusburner upload examples/at89s52_blink --board at89s52 --yes
+```
+
 ## Supported parts
 
 **62 parts across four platforms.** 52 of them flash from the Upload button;
