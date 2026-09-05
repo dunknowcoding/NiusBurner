@@ -2,6 +2,50 @@
 
 All notable changes to NiusBurner. Versions follow [semantic versioning](https://semver.org/).
 
+## 0.6.1 — unreleased
+
+Bench release. A PIC16 could be compiled, programmed and verified, and then
+sat there saying nothing — and everything on the path reported success while
+it did.
+
+### Fixed
+
+- **A PIC16's serial port never transmitted.** `nius_serial_begin` cleared
+  the transmit pin's TRIS bit, on the reasoning that a transmit pin has to be
+  an output. This peripheral wants the opposite: *"Bit SPEN (RCSTA<7>) and
+  bits TRISC<7:6> have to be set in order to configure pins RC6/TX/CK and
+  RC7/RX/DT as the USART"* (PIC16F87XA §10.0). Clearing the bit does not help
+  the USART drive the pin, it hands the pin to the port, and out of reset
+  that latch is 0 — so the line was held low, which is a permanent break on a
+  line that must idle high. A sketch printing its own registers shows the
+  trap: TXSTA, RCSTA, SPBRG and even TRISC read identically whether it works
+  or not, because the peripheral clears that TRIS bit as it takes the pin.
+  Only PORTC differs, `0x80` against `0xC0`. Nothing reported a fault along
+  the way either: `nius_serial_write` waits on TRMT, "the shift register is
+  empty", which is exactly what it reads when nothing is ever shifted, so
+  every write returned at once and every `println` completed.
+- **Brown-out reset could not be turned off.** `NIUS_PIC_CFG_BOREN` says
+  whether a part *has* the bit; there was no way to say what it should be, so
+  every image hard-coded `BOREN = ON`. That is right for a clean 5 V rail and
+  wrong near the trip point, where the part is held in reset while ICSP —
+  which works far below 4 V — finds the device, erases, programs and verifies
+  every byte. `NIUS_PIC_CFG_BOREN_ON` now carries the value, still on by
+  default.
+- **Reading a PIC left it in reset.** Neither `probe` nor the readback passed
+  `-OL`, so the programmer kept MCLR asserted after it exited. Checking on a
+  running board stopped it, and every check after the first then agreed it
+  was not running — the diagnostic manufacturing the state it reported.
+
+### Added
+
+- **The serial monitor names a crystal that does not match.** A board fitted
+  with a different crystal from the one an image was built for does not fall
+  silent; it transmits at a proportionally different rate and the screen
+  fills with bytes that nothing has reason to question. When a capture is
+  mostly outside printable ASCII, the monitor now lists the crystals that
+  would account for the rate the bytes arrived at, and points at **Tools →
+  Clock**. `monitor` takes `--f-cpu` so it can do this on its own.
+
 ## 0.6.0 — 2026-09-02
 
 Correctness release. Several faults here had been present for a while and

@@ -213,6 +213,25 @@ correctly, but something on the path — a programming mode, a pin map, where
 a peripheral sits — is still an assumption. The Tools menu and
 `niusburner boards` both say which.
 
+### Verified on hardware
+
+Every part here compiles and sizes correctly. These are the ones a board has
+actually been programmed and run on, end to end:
+
+| part | transport | confirmed on silicon |
+|---|---|---|
+| AT89S52 | USB-ISP header | upload, verify, run, serial |
+| STC89C52RC | UART bootloader | upload, verify, run, serial |
+| STC8H1K08 | UART bootloader | upload, verify, run, serial |
+| **PIC16F877A** | **PICkit 3** | **upload, erase, verify, run, serial out at 9600** |
+
+For the PIC that is the whole path: XC8 compiles the sketch, a PICkit 3
+erases, programs and verifies it over ICSP, the core executes it, and its
+USART transmits — 795 bytes of clean 9600 8N1 in eight seconds. Receiving
+*into* a PIC has not been confirmed yet.
+
+Everything else is the catalog's word, and the ⚠️ parts say so.
+
 `python -m niusburner boards` lists everything; `boards --features` says which
 peripherals each part has.
 
