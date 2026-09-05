@@ -363,6 +363,8 @@ program, the verify and the release from reset.
 | The PIC programmer refuses to power the target | The board already has its own supply. Select the plain PICkit 3 entry, not the one that powers the target. |
 | Serial output is garbage, or `delay()` is visibly wrong | The board is fitted with a different crystal than the catalog assumes. Set **Tools → Clock**, or `--f-cpu`, to the one actually on the board — it fixes the baud divisor, the delay loops, and on a PIC the oscillator mode too. See [arduino-ide.md](arduino-ide.md#when-the-board-has-a-different-crystal). |
 | A PIC programs and verifies but never runs | ICSP is clocked by the programmer, so it works whether or not the target's own oscillator does. Check the crystal and its two load capacitors, and that MCLR has its 10 kΩ pull-up to VDD. |
+| The board runs with the serial adapter unplugged, but not with it connected | The adapter's VCC is on its 3.3 V setting and is dragging the board's rail down. Move its jumper to 5 V. A 5 V part below about 4 V stops executing while still programming perfectly. |
+| The board transmits but never receives | The adapter's TX drives at whatever its VCC pin is set to. With VCC disconnected there is no output rail at all, and at 3.3 V it cannot reach the 0.8xVDD a 5 V input needs for a valid high. Jumper to 5 V, VCC connected. |
 | `sdcc not found` | Not on `PATH`. Re-run the installer with the PATH option, or `setup --sdcc <path>`. |
 | Typing `python` opens the Microsoft Store | That is the Windows placeholder, not Python. See [§2](#2-install-python-windows-first). |
 | `python` is not recognised as a command | Python was installed without **Add python.exe to PATH**. Use `py -3` instead, or re-run the installer and tick it. |
