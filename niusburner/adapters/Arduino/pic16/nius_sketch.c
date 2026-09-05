@@ -90,7 +90,22 @@
 #endif
 
 #pragma config WDTE = OFF
+/*
+ * The power-up timer holds the part in reset for 72 ms after VDD rises,
+ * which is what a board with a slow supply wants. An in-circuit debugger
+ * does not: MPLAB refuses to start a debug session while PWRTE is set,
+ * because it cannot take control during that window. Building with
+ * NIUS_PIC_CFG_PWRTE=0 turns it off for a debug image without editing the
+ * sketch's own configuration.
+ */
+#ifndef NIUS_PIC_CFG_PWRTE
+#define NIUS_PIC_CFG_PWRTE 1
+#endif
+#if NIUS_PIC_CFG_PWRTE
 #pragma config PWRTE = ON
+#else
+#pragma config PWRTE = OFF
+#endif
 #pragma config CP = OFF
 
 #if NIUS_PIC_CFG_BOREN
