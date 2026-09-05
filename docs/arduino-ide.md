@@ -76,6 +76,23 @@ derived number moves with it:
 | `delay()`, `delayMicroseconds()`, `millis()` | every interval is off by the same ratio -- 1.8x here |
 | **PIC only:** the oscillator mode in the config word | above 4 MHz selects HS, below it XT. Choose the wrong one and the oscillator may not start at all |
 
+A wrong clock is at least loud about it. The serial monitor knows what the
+image was built for, and when the bytes coming back are not text it says
+which crystal would account for the rate they arrived at:
+
+```text
+monitor: these bytes are not text. The image was built for a 11.0592 MHz crystal;
+         a board fitted with a different one talks at a different rate:
+
+                 12 MHz  ->  10417 baud
+                  8 MHz  ->  6944 baud
+                 16 MHz  ->  13889 baud
+                 20 MHz  ->  17361 baud
+
+         Set Tools -> Clock (or --f-cpu) to the crystal actually fitted
+         and upload again.
+```
+
 So set **Tools → Clock** to the crystal actually fitted. From the command
 line it is `--f-cpu`:
 

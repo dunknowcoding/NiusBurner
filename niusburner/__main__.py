@@ -344,6 +344,11 @@ def _cmd_upload(args: argparse.Namespace) -> int:
         seconds=args.seconds if args.seconds is not None else 4.0,
         expect=args.expect,
         on_open=(lambda: workflow.reset_board(plan)) if holds_reset else None,
+        # The clock the image was built for. If the board turns out to be
+        # fitted with a different crystal, what comes back is unreadable
+        # rather than absent, and the monitor can say which crystal would
+        # explain it instead of printing the noise and stopping there.
+        f_cpu=getattr(args, "f_cpu", None) or plan.board.f_cpu,
     )
 
 
@@ -380,7 +385,8 @@ def _cmd_lower(args: argparse.Namespace) -> int:
 def _cmd_monitor(args: argparse.Namespace) -> int:
     from . import monitor as monitor_mod
     return monitor_mod.monitor(
-        args.port, args.baud, seconds=args.seconds, expect=args.expect)
+        args.port, args.baud, seconds=args.seconds, expect=args.expect,
+        f_cpu=getattr(args, "f_cpu", None))
 
 
 def _cmd_package(args: argparse.Namespace) -> int:
@@ -579,6 +585,10 @@ def main(argv: list[str] | None = None) -> int:
         "--expect",
         help="fail unless this ASCII substring appears (use after a verified ISP flash)",
     )
+    p.add_argument("--f-cpu", type=int, dest="f_cpu",
+                   help="clock the image on the part was built for; lets "
+                        "unreadable output be reported as a crystal that "
+                        "does not match, instead of just printed")
     p.set_defaults(fn=_cmd_monitor)
 
     sub.add_parser("list", help="what the registry knows about").set_defaults(fn=_cmd_list)
