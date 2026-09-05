@@ -246,12 +246,54 @@ void delayMicroseconds(unsigned int us)
     }
 }
 
+/*
+ * What the `while (ms--)` loop in delay() costs per pass, in instruction
+ * cycles. __delay_ms() is exact, so this is the whole of the remaining
+ * error: the decrement, the test and the branch happen between one
+ * millisecond and the next, and the built-in cannot know about them.
+ *
+ * Fitted on an 11.0592 MHz PIC16F877A: with no compensation, five seconds
+ * of delay() measured 5.0242 s over eleven intervals, which is 4.24 us per
+ * millisecond once the marker line's own transmission is taken out. One
+ * instruction cycle is four oscillator periods, so that is close to twelve.
+ *
+ * Carried in cycles rather than microseconds because cycles are what does
+ * not change with the crystal. Refit it if the body of delay() changes.
+ */
+#ifndef NIUS_PIC_DELAY_LOOP_CY
+#define NIUS_PIC_DELAY_LOOP_CY 12UL
+#endif
+
+#define NIUS_PIC_DELAY_LOOP_US     ((NIUS_PIC_DELAY_LOOP_CY * 4UL * 1000000UL) / _XTAL_FREQ)
+
+/*
+ * A millisecond, less what the loop around it already spends. Below about
+ * 1 MHz the loop costs more than the millisecond it is correcting, so the
+ * correction is dropped rather than allowed to go negative.
+ */
+#if NIUS_PIC_DELAY_LOOP_US > 0 && NIUS_PIC_DELAY_LOOP_US < 500
+#define __delay_ms_compensated() __delay_us(1000 - NIUS_PIC_DELAY_LOOP_US)
+#else
+#define __delay_ms_compensated() __delay_ms(1)
+#endif
+
 void delay(unsigned int ms)
 {
-    while (ms--) {
-        __delay_ms(1);
-        g_ms++;
-    }
+    /*
+     * The millisecond counter is advanced once, not once per iteration.
+     * g_ms is 32-bit and this part has an 8-bit ALU, so incrementing it
+     * inside the loop put a dozen-odd instructions between every
+     * __delay_ms(1) -- time the built-in does not know about and cannot
+     * subtract. Measured on an 11.0592 MHz PIC16F877A, delay(1000) ran
+     * about 1.4 % long because of it.
+     *
+     * Nothing observes g_ms while delay() is running: there is no
+     * interrupt in this runtime, so millis() can only be read before or
+     * after, and both see the same value either way.
+     */
+    g_ms += ms;
+    while (ms--)
+        __delay_ms_compensated();
 }
 
 unsigned long millis(void)
