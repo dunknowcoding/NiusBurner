@@ -104,6 +104,36 @@ def archive(root: pathlib.Path, into: pathlib.Path) -> pathlib.Path:
     return out
 
 
+def platform_version(architecture: str) -> str:
+    """The version a platform declares to Boards Manager once installed."""
+    text = (ROOT / "niusburner" / "arduino" / architecture
+            / "platform.txt").read_text(encoding="utf-8")
+    found = re.search(r"^version=(.+)$", text, re.M)
+    return found.group(1).strip() if found else ""
+
+
+def check_versions(ver: str) -> None:
+    """Refuse to build archives that disagree with themselves.
+
+    The version is written in five places: the package, and one platform.txt
+    per architecture. The index copies the package's, so bumping only that
+    produces archives whose index says one version and whose platform.txt
+    says another -- and Boards Manager keys an installed platform by the
+    platform.txt one, so the IDE would report the old version for new code.
+
+    ci/check_board_packages.py already catches the mismatch, but only after a
+    release has been cut from it, which is exactly too late. Checking here
+    means the archives cannot be built wrong in the first place.
+    """
+    wrong = [f"{a}: platform.txt says {platform_version(a) or 'nothing'}"
+             for a in ide.ARCHITECTURES if platform_version(a) != ver]
+    if wrong:
+        raise SystemExit(
+            "\n".join([f"refusing to build: the package is {ver} but",
+                       *(f"  {line}" for line in wrong),
+                       "bump version= in each platform.txt to match."]))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--output", type=pathlib.Path,
@@ -113,6 +143,7 @@ def main() -> int:
     args = ap.parse_args()
 
     ver = version()
+    check_versions(ver)
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
     staging = out / "staging"

@@ -12,7 +12,7 @@
 # files are sdas8051 (ASXXXX), not AVR GNU as.
 
 name=NiusBurner 8051 (SDCC)
-version=0.6.0
+version=0.6.1
 
 # All recipes go through tools/nb_host — Arduino on Windows cannot use `echo`.
 # python.path is written by setup so the interpreter that has niusburner is used.
