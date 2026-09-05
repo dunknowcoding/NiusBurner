@@ -2,7 +2,7 @@
 
 All notable changes to NiusBurner. Versions follow [semantic versioning](https://semver.org/).
 
-## 0.6.1 — unreleased
+## 0.6.1 — 2026-09-05
 
 Bench release. A PIC16 could be compiled, programmed and verified, and then
 sat there saying nothing — and everything on the path reported success while
