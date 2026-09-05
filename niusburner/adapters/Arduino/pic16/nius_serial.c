@@ -54,30 +54,62 @@ void nius_serial_begin(unsigned long baud)
     SPBRG = (unsigned char)divisor;
 
     /*
-     * The transmit pin has to be an output. This said the opposite -- that
-     * the USART takes both pins over once SPEN is set, so both could be
-     * left as inputs -- and on a PIC16F877A that is simply not true: the
-     * port keeps the pin, the USART configures perfectly, and nothing ever
-     * reaches the wire.
+     * Both USART pins stay inputs. That is not a typo and it is not the
+     * habit carried over from PIC18 or from AVR -- it is what this
+     * peripheral requires:
      *
-     * It failed silently, which is why it survived. nius_serial_write()
-     * spins on TRMT, and TRMT means "the shift register is empty" -- which
-     * is exactly what it reads when nothing is ever shifted. So every write
-     * returned at once, every println completed, the sketch ran on, and the
-     * only symptom was a port that stayed quiet.
+     *     "Bit SPEN (RCSTA<7>) and bits TRISC<7:6> have to be set in
+     *      order to configure pins RC6/TX/CK and RC7/RX/DT as the
+     *      Universal Synchronous Asynchronous Receiver Transmitter."
+     *          -- PIC16F87XA datasheet, section 10.0
+     *
+     * The 18-pin parts say the same thing about TRISB<2:1>. Clearing the
+     * transmit bit does not help the USART drive the pin, it takes the pin
+     * away: the port data latch wins, and since that latch is 0 out of
+     * reset the pin is held low -- a permanent break on a line that must
+     * idle high.
+     *
+     * This was written the other way round once, from the reasoning that a
+     * transmit pin "has to be an output", and the part went quiet. Halted
+     * over ICSP mid-sketch, broken on the left and working on the right:
+     *
+     *                    TRISC6 = 0        TRISC6 = 1
+     *     TXSTA            0x26              0x24      TXEN=1 SYNC=0
+     *     RCSTA            0x90              0x90      SPEN=1 CREN=1
+     *     SPBRG              71                71      9600 baud exactly
+     *     TRISC            0xBF              0xBF      <-- identical
+     *     PORTC            0x80              0xC0      <-- the whole story
+     *     on the wire      nothing           streams
+     *
+     * TRISC reads the same either way, so the register that describes the
+     * direction cannot be used to check it: the peripheral clears that bit
+     * as it takes the pin, and it only takes the pin if the bit was set at
+     * the moment SPEN went high. Clear it first and the port has already
+     * won; the USART never gets the pad and the bit ends up clear anyway.
+     *
+     * PORTC is what tells the truth, because it reads the pad rather than
+     * the intent. An asynchronous line idles high, so RC6 reading 0 is not
+     * an idle transmitter -- it is a pin held low by the port latch, which
+     * is a permanent break.
+     *
+     * None of it is reported anywhere. nius_serial_write() spins on TRMT,
+     * and TRMT means "the shift register is empty", which is exactly what
+     * it reads when nothing is ever shifted -- so every write returns at
+     * once, every println completes, the sketch runs on at full speed, and
+     * the only symptom is a port that stays quiet.
      *
      * Which pins these are depends on the package: RC6/RC7 on the 28- and
      * 40-pin parts, PORTB on the 18-pin ones, and naming a port the part
      * does not have is a compile error.
      */
 #if NIUS_PIC_USART == 2
-    TRISBbits.TRISB2 = 0;      /* TX: driven by the USART */
-    TRISBbits.TRISB1 = 1;      /* RX: stays an input */
+    TRISBbits.TRISB2 = 1;      /* TX: set, so the USART owns the pin */
+    TRISBbits.TRISB1 = 1;      /* RX */
 #elif NIUS_PIC_USART == 3
-    TRISBbits.TRISB2 = 0;      /* TX */
+    TRISBbits.TRISB2 = 1;      /* TX */
     TRISBbits.TRISB5 = 1;      /* RX */
 #else
-    TRISCbits.TRISC6 = 0;      /* TX */
+    TRISCbits.TRISC6 = 1;      /* TX */
     TRISCbits.TRISC7 = 1;      /* RX */
 #endif
 
